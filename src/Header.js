@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars, faHouse } from '@fortawesome/free-solid-svg-icons';
 import './Header.css'
 
 function Header() {
@@ -7,9 +8,9 @@ function Header() {
 
   return (
     <div className="Header">
-      <button >메뉴</button>
-      <h1>Header</h1>
-      <button onClick={navigate(`/`)}>홈</button>
+      <button><FontAwesomeIcon icon={faBars} /></button>
+      <div>아쿠아컴퍼니의 마작기록실</div>
+      <button onClick={navigate(`/`)}><FontAwesomeIcon icon={faHouse} /></button>
     </div>
   )
 }

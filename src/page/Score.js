@@ -75,10 +75,10 @@ function Score() {
           <input className='namePlayer4' type='text' value={namePlayer4} onChange={event => {setNamePlayer4(event.target.value)}}></input>
         </div>  
         <div className='winds'>
-          <input type='radio' name="wind">동</input>
-          <input type='radio' name="wind">남</input>
-          <input type='radio' name="wind">서</input>
-          <input type='radio' name="wind">북</input>
+          <input type='radio' name="wind" value={0}>동</input>
+          <input type='radio' name="wind" value={1}>남</input>
+          <input type='radio' name="wind" value={2}>서</input>
+          <input type='radio' name="wind" value={3}>북</input>
         </div>
         <button onClick={scoreAxios}>제출</button>
       </div>
