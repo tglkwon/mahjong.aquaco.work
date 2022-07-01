@@ -4,9 +4,8 @@ import Item from './Item'
 
 import './Show.css'
 
-
 function Show() {
-  const [ Show, setShow ] = useState([])
+  const [ list, setList ] = useState([])
 
   useEffect(() => {
     (async () => {
@@ -14,7 +13,7 @@ function Show() {
         method: 'GET',
         url: "https://api.mahjong.aquaco.work/score"
       })
-      setShow(data)
+      setList(data.rows)
     })()
   }, [])
       
@@ -36,7 +35,7 @@ function Show() {
           <th>4위</th>
           <th>국수</th>
         </tr>
-        {Show.map(o => {
+        {list.map(o => {
           return (<Item item={o} key={o.resourceId}/>)
         })}
       </tbody>
