@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import axios from 'axios'
 
-import './Login.css'
+// import 'page/Login.css'
 
 function Register() {
   const navigate = useNavigate()
@@ -17,7 +17,7 @@ function Register() {
       data: {
         email: id,
         password: password,
-        nickname    
+        nickname: nickname    
       }
     })
     if (data.success) {

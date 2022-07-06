@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import Item from './Item'
+import Item from 'page/Item'
 
-import './Show.css'
+import 'page/Show.css'
 
 function Show() {
   const [ list, setList ] = useState([])

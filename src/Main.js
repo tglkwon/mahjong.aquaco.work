@@ -1,11 +1,11 @@
 import { Route, Routes } from 'react-router-dom'
 
-import Show from './page/Show'
-import Score from './page/Score'
-import Login from './page/Login'
-import Register from './page/Register'
+import Show from 'page/Show'
+import Score from 'page/Score'
+import Login from 'page/Login'
+import Register from 'page/Register'
 
-import './Main.css'
+import 'Main.css'
 
 function Main() {
   return (
