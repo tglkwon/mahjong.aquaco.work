@@ -1,9 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
+import { useNavigate } from 'react-router-dom';
 
-const VALID_GAME_TOTAL = 1000;
+const VALID_GAME_TOTAL_DEFAULT = 1000;
+const VALID_GAME_TOTAL_HIGH = 100000;
 
-function ScoreTrackerPage({ goToHome, currentLanguage, setCurrentLanguage }) {
+function ScoreTrackerPage({ currentLanguage, setCurrentLanguage }) {
+  const navigate = useNavigate();
+
+  const goToHome = () => {
+    navigate('/');
+  };
+
   const initialPlayerNames = Array(4).fill('');
   const initialGames = [{ id: 1, scores: Array(4).fill('') }];
 
@@ -11,11 +19,6 @@ function ScoreTrackerPage({ goToHome, currentLanguage, setCurrentLanguage }) {
   const [games, setGames] = useState(initialGames);
 
   const { getText } = useTranslation(currentLanguage);
-
-  useEffect(() => {
-    setPlayerNames(initialPlayerNames.map((_, i) => `${getText('player')} ${i + 1}`));
-    // eslint-disable-next-line
-  }, [currentLanguage, getText]);
 
   const handleAddGame = () => {
     const newGameId = games.length > 0 ? Math.max(...games.map(g => g.id)) + 1 : 1;
@@ -103,11 +106,13 @@ function ScoreTrackerPage({ goToHome, currentLanguage, setCurrentLanguage }) {
                       type="text"
                       value={name}
                       onChange={(e) => handlePlayerNameChange(index, e.target.value)}
+                      placeholder={`${getText('player')} ${index + 1}`}
                       className="w-full bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 text-center text-gray-700 font-medium text-xl"
                       aria-label={`${getText('player')} ${index + 1} ${getText('name')}`}
                     />
                   </th>
                 ))}
+                <th className="px-6 py-3 text-center text-xl font-medium text-gray-500 uppercase tracking-wider">O</th>
                 <th className="px-6 py-3 text-center text-xl font-medium text-gray-500 uppercase tracking-wider"></th>
               </tr>
             </thead>
@@ -125,7 +130,8 @@ function ScoreTrackerPage({ goToHome, currentLanguage, setCurrentLanguage }) {
               </tr>
               {games.map(game => {
                 const gameTotal = game.scores.reduce((sum, score) => sum + (score === '' ? 0 : score), 0);
-                const isValid = gameTotal === VALID_GAME_TOTAL;
+                const isValid = gameTotal === 0 || gameTotal === VALID_GAME_TOTAL_DEFAULT || gameTotal === VALID_GAME_TOTAL_HIGH;
+
                 return (
                   <tr key={game.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-xl font-medium text-gray-900">
@@ -142,22 +148,24 @@ function ScoreTrackerPage({ goToHome, currentLanguage, setCurrentLanguage }) {
                         />
                       </td>
                     ))}
+                    {/* 점수 합이 조건을 만족했을 때 O를 별도 칸에 표시 */}
                     <td className="px-6 py-4 whitespace-nowrap text-center text-xl font-medium">
-                      <div className="flex items-center justify-center space-x-2">
-                        <span className={`text-xl font-bold ${isValid ? 'text-green-500' : 'text-red-500'}`}>
-                          {isValid ? 'O' : ''}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteGame(game.id)}
-                          className="text-red-600 hover:text-red-900 text-xl font-semibold p-1 rounded-full hover:bg-red-100 transition-colors duration-200"
-                          aria-label={`${game.id} ${getText('game')} ${getText('delete')}`}
-                          title={`${game.id} ${getText('game')} ${getText('delete')}`}
-                        >
-                          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
+                      <span className={`text-xl font-bold ${isValid ? 'text-green-500' : 'text-red-500'}`}>
+                        {isValid ? 'O' : ''}
+                      </span>
+                    </td>
+                    {/* 삭제 버튼을 별도 칸에 분리 */}
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-xl font-medium">
+                      <button
+                        onClick={() => handleDeleteGame(game.id)}
+                        className="text-red-600 hover:text-red-900 text-xl font-semibold p-1 rounded-full hover:bg-red-100 transition-colors duration-200"
+                        aria-label={`${game.id} ${getText('game')} ${getText('delete')}`}
+                        title={`${game.id} ${getText('game')} ${getText('delete')}`}
+                      >
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </td>
                   </tr>
                 );

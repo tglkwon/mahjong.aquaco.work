@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 export const translations = {
   ko: {
@@ -81,9 +81,7 @@ export const translations = {
   },
 };
 
-export const useTranslation = (initialLang = 'ko') => {
-  const [currentLanguage, setCurrentLanguage] = useState(initialLang);
-
+export const useTranslation = (currentLanguage = 'ko') => {
   const getText = (key, params = {}) => {
     let text = translations[currentLanguage]?.[key] || key;
     for (const param in params) {
@@ -92,5 +90,5 @@ export const useTranslation = (initialLang = 'ko') => {
     return text;
   };
 
-  return { currentLanguage, setCurrentLanguage, getText };
+  return { getText };
 };

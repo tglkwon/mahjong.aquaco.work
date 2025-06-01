@@ -1,33 +1,29 @@
 import React, { useState } from 'react';
-import { useTranslation } from './hooks/useTranslation';
 import HomePage from './pages/HomePage';
 import ScoreTrackerPage from './pages/ScoreTrackerPage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const { currentLanguage, setCurrentLanguage } = useTranslation('ko');
+  // 언어 상태를 App에서 직접 관리
+  const [currentLanguage, setCurrentLanguage] = useState('ko');
 
-  const goToHome = () => setCurrentPage('home');
-  const goToScoreTracker = () => setCurrentPage('scoreTracker');
-
-  // Tailwind 및 폰트는 public/index.html에 넣는 것이 권장됩니다.
   return (
-    <>
-      {/* <script ...>와 <link ...>는 삭제 */}
-      {currentPage === 'home' ? (
-        <HomePage
-          goToScoreTracker={goToScoreTracker}
-          currentLanguage={currentLanguage}
-          setCurrentLanguage={setCurrentLanguage}
-        />
-      ) : (
-        <ScoreTrackerPage
-          goToHome={goToHome}
-          currentLanguage={currentLanguage}
-          setCurrentLanguage={setCurrentLanguage}
-        />
-      )}
-    </>
+    <Router>
+      <Routes>
+        <Route path="/" element={
+          <HomePage
+            currentLanguage={currentLanguage}
+            setCurrentLanguage={setCurrentLanguage}
+          />
+        } />
+        <Route path="/score" element={
+          <ScoreTrackerPage
+            currentLanguage={currentLanguage}
+            setCurrentLanguage={setCurrentLanguage}
+          />
+        } />
+      </Routes>
+    </Router>
   );
 }
 

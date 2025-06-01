@@ -20,7 +20,6 @@ const translations = {
     // 대탁 기록표 페이지
     scoreTrackerTitle: '대탁 기록표',
     addRecord: '기록 추가',
-    aaName: 'Aa 이름', // 이 키는 현재 코드에서 직접 사용되지 않는 것으로 보입니다. 필요시 검토.
     total: '합계',
     game: '경기',
     delete: '삭제',
@@ -51,7 +50,6 @@ const translations = {
     // Score Tracker Page
     scoreTrackerTitle: 'Mahjong Score Tracker',
     addRecord: 'Add Record',
-    aaName: 'Aa Name', // This key does not seem to be directly used in the current code. Review if needed.
     total: 'Total',
     game: 'Game',
     delete: 'Delete',
@@ -82,7 +80,6 @@ const translations = {
     // 麻雀スコア記録表ページ
     scoreTrackerTitle: '麻雀スコア記録表',
     addRecord: '記録追加',
-    aaName: 'Aa 名前', // このキーは現在のコードでは直接使用されていないようです。必要に応じて確認してください。
     total: '合計',
     game: '試合',
     delete: '削除',
