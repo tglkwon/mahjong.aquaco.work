@@ -1,9 +1,0 @@
-div.Header {
-  display: flex;
-  height: 48pt;
-  font-size: 24pt;
-}
-
-div.Header button {
-  font-size: 24pt;
-}
