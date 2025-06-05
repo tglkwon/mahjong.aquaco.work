@@ -19,7 +19,7 @@ function Header({ title, currentLanguage, setCurrentLanguage, getText, showHomeB
         </svg>
       </button>
 
-      <h1 className={`${showHomeButton ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl'} font-bold text-white mx-auto`} style={{ fontFamily: "'KyoboHandwriting2021sjy', sans-serif" }}>
+      <h1 className="text-2xl sm:text-3xl font-bold text-white mx-auto" style={{ fontFamily: "'KyoboHandwriting2021sjy', sans-serif" }}>
         {title}
       </h1>
 

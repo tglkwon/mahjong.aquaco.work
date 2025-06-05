@@ -56,17 +56,23 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
 
   const [showCopyMessage, setShowCopyMessage] = useState(false);
 
+  // Effect to set the language from the URL hash when the component mounts.
+  // This runs once after the initial render because parseStateFromUrl (memoized) 
+  // and setCurrentLanguage (from useState) are stable.
+  // It ensures that if a language is specified in the shared URL, it is applied initially.
+  // The URL hash itself is not cleared, preserving the shared URL.
   useEffect(() => {
     const loadedState = parseStateFromUrl();
-    if (loadedState?.language && loadedState.language !== currentLanguage) {
+    if (loadedState?.language) {
+      // If the loaded state from URL specifies a language, set it.
+      // This won't cause issues if called with the same language.
         setCurrentLanguage(loadedState.language);
     }
-    // Clear hash after loading
-    if (window.location.hash.startsWith('#data=')) {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-  }, [parseStateFromUrl, setCurrentLanguage, currentLanguage]);
-
+    // currentLanguage is intentionally omitted from the dependency array.
+    // This ensures the effect only uses the initial currentLanguage implicitly (if needed for comparison, though removed for simplicity)
+    // and does not re-run to revert language if the user changes it later via UI.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parseStateFromUrl, setCurrentLanguage]); 
 
   useEffect(() => {
     // Update player names if they are default and language changes
@@ -140,13 +146,16 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     const stateToSave = { playerNames, games, targetSum, language: currentLanguage };
     const jsonString = JSON.stringify(stateToSave);
     const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
-    return `${window.location.origin}${window.location.pathname}#/set_score#data=${encodedData}`; // Ensure path matches router
+    // HTML5 history API를 사용하고 현재 경로가 /set_score라고 가정합니다.
+    // URL은 https://<origin>/<pathname>#data=<encodedData> 형식이 되어야 합니다.
+    return `${window.location.origin}${window.location.pathname}#data=${encodedData}`;
   }, [playerNames, games, targetSum, currentLanguage]);
 
   const copyToClipboard = useCallback(() => {
     const url = generateShareableUrl();
     navigator.clipboard.writeText(url).then(() => {
       setShowCopyMessage(true);
+      window.history.replaceState(null, '', url); // 주소창의 URL을 업데이트합니다.
       setTimeout(() => setShowCopyMessage(false), 2000);
     }).catch(err => {
       console.error('URL을 클립보드에 복사하는데 실패했습니다.', err);
