@@ -1,24 +1,28 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import MainPage from './components/MainPage';
+import ScorePage from './components/ScorePage';
+import useTranslation from './hooks/useTranslation';
+import './App.css'; // Assuming you have global styles here
+// import './index.css'; // If Tailwind is processed via PostCSS and imported here
 
 function App() {
+  const { currentLanguage, setCurrentLanguage, getText } = useTranslation('ko');
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route 
+          path="/" 
+          element={<MainPage currentLanguage={currentLanguage} setCurrentLanguage={setCurrentLanguage} getText={getText} />} 
+        />
+        <Route 
+          path="/set_score"
+          element={<ScorePage currentLanguage={currentLanguage} setCurrentLanguage={setCurrentLanguage} getText={getText} />} 
+        />
+        {/* Add other routes here */}
+      </Routes>
+    </Router>
   );
 }
 
