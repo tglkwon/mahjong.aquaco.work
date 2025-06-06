@@ -94,11 +94,15 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
 
   const handleAddGame = () => {
     setGames(prevGames => {
-      const updatedGames = prevGames.map((game, index) =>
-        index === prevGames.length - 1
-          ? { ...game, isEditable: false }
-          : game
-      );
+      const updatedGames = prevGames.map((game, index) => {
+        if (index === prevGames.length - 1) {
+          // 마지막 게임의 빈 점수를 '0'으로 변환
+          const newScores = game.scores.map(score => (score === '' || score === null ? '0' : score));
+          return { ...game, scores: newScores, isEditable: false };
+        }
+        return game;
+      });
+
       const newGameId = updatedGames.length > 0 ? Math.max(...updatedGames.map(g => g.id)) + 1 : 1;
       return [...updatedGames, { id: newGameId, scores: Array(PLAYER_COUNT).fill(''), isEditable: true }];
     });
@@ -165,11 +169,11 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
   return (
     <div className="relative min-h-screen bg-gray-100 flex flex-col items-center font-sans text-gray-800">
       <Header title={getText('scoreTrackerTitle')} currentLanguage={currentLanguage} setCurrentLanguage={setCurrentLanguage} getText={getText} showHomeButton={true} />
-      <div className="pt-[78.4px] w-full max-w-6xl flex flex-col items-center p-4">
+      <div className="pt-[calc(48px+0.5rem)] sm:pt-[calc(56px+0.5rem)] w-full max-w-6xl flex flex-col items-center xs:p-0 px-2 py-4 sm:px-4">
         <Table playerNames={playerNames} games={games} totalScores={totalScores} getText={getText} handlePlayerNameChange={handlePlayerNameChange} handleScoreChange={handleScoreChange} handleDeleteGame={handleDeleteGame} />
         <ControlPanel targetSum={targetSum} setTargetSum={setTargetSum} currentTotal={currentTotal} handleAddGame={handleAddGame} isAddRecordButtonDisabled={isAddRecordButtonDisabled} copyToClipboard={copyToClipboard} getText={getText} />
         <MessageDisplay message={getText('copied')} isVisible={showCopyMessage} />
-        <div className="mt-8 text-sm sm:text-base md:text-lg text-gray-600">
+        <div className="mt-6 sm:mt-8 text-xs sm:text-sm md:text-lg text-gray-600">
           <p>{getText('totalGames', { count: games.filter(g => !g.isEditable).length })}</p>
         </div>
       </div>

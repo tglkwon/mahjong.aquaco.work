@@ -9,8 +9,8 @@ function HomePage({ currentLanguage, setCurrentLanguage, getText }) {
     {
       title: getText('scoreTrackerTitle'),
       description: getText('unitFormationDesc'),
-      icon: (
-        <svg className="h-8 w-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+      icon: ( // Icon size adjusted below
+        <svg className="h-6 w-6 sm:h-7 md:h-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
           <path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 19H10v-1h4v1zm3-3H7V4c0-.55.45-1 1-1h8c.55 0 1 .45 1 1v12zM9 8h6V6H9v2zm0 3h6V9H9v2zm0 3h6v-2H9v2z"/>
         </svg>
       ),
@@ -19,21 +19,21 @@ function HomePage({ currentLanguage, setCurrentLanguage, getText }) {
     },
     {
       title: getText('underConstruction'),
-      description: getText('cardManagementDesc'),
-      icon: '🚧',
+      description: getText('cardManagementDesc'), // Icon size adjusted below
+      icon: '🚧', // Emoji icon
       action: null,
     },
     {
       title: getText('underConstruction'),
-      description: getText('scoreCalculatorDesc'),
-      icon: '🚧',
+      description: getText('scoreCalculatorDesc'), // Icon size adjusted below
+      icon: '🚧', // Emoji icon
       action: null,
     },
     {
       title: getText('settings'),
       description: getText('settingsDesc'),
-      icon: (
-        <svg className="h-8 w-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+      icon: ( // Icon size adjusted below
+        <svg className="h-6 w-6 sm:h-7 md:h-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
           <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.09-.73-1.71-.98l-.37-2.65c-.06-.25-.28-.42-.54-.42h-4c-.26 0-.48.17-.54.42l-.37 2.65c-.62.25-1.19.59-1.71-.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.12.22-.07.49.12.64l2.11 1.65c-.04.32-.07-.64-.07-.98s.03.66.07.98l-2.11 1.65c-.19-.15-.24-.42-.12-.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.09.73 1.71.98l.37 2.65c.06.25.28.42.54.42h4c.26 0 .48-.17.54.42l.37-2.65c.62-.25 1.19-.59 1.71-.98l2.49 1c.22-.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
         </svg>
       ),
