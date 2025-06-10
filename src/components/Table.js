@@ -1,9 +1,9 @@
 import React from 'react';
 
-function Table({ playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame }) {
+function Table({ playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame, handleScoreInputKeyDown }) {
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full max-w-6xl">
-      <table className="min-w-full divide-y divide-gray-200">
+    <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full max-w-6xl"> 
+      <table className="divide-y divide-gray-200"> {/* min-w-full 제거 고려 */}
         <thead className="bg-gray-50">
           <tr>
             <th className="xs:p-px xs:text-2xs px-0.5 py-2 text-center text-xs sm:px-3 sm:py-3 sm:text-sm md:text-base font-medium text-gray-500 uppercase tracking-wider">
@@ -45,13 +45,15 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                 {game.id} {getText('game')}
               </td>
               {playerNames.map((_, playerIndex) => (
-                <td key={playerIndex} className="xs:p-px xs:text-2xs px-3 py-1 whitespace-nowrap text-center text-xs sm:px-4 sm:py-1.5 sm:text-sm md:text-base text-gray-900">
+                <td key={playerIndex} className="xs:p-px xs:text-2xs px-1 py-1 whitespace-nowrap text-center text-xs sm:px-4 sm:py-1.5 sm:text-sm md:text-base text-gray-900">
                   {game.isEditable ? (
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={game.scores[playerIndex]}
                       onChange={(e) => handleScoreChange(game.id, playerIndex, e.target.value)}
-                      className="w-full xs:px-px xs:py-px xs:text-2xs p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:p-2 sm:text-sm md:text-base"
+                      onKeyDown={handleScoreInputKeyDown}
+                      className="w-full xs:px-px xs:py-px xs:text-2xs p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:p-2 sm:text-sm md:text-base score-input-js"
                       aria-label={`${game.id} ${getText('game')} ${playerNames[playerIndex] || (getText('player') + (playerIndex + 1))} ${getText('score')}`}
                     />
                   ) : (
@@ -66,11 +68,11 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                   <div className="flex items-center justify-center space-x-2">
                     <button
                       onClick={() => handleDeleteGame(game.id)}
-                      className="text-red-600 hover:text-red-900 xs:text-2xs xs:py-0 xs:px-px text-xs sm:text-sm md:text-base font-semibold py-0.5 px-1 sm:py-1 sm:px-1 rounded-lg hover:bg-red-100 transition-colors duration-200"
+                      className="text-red-600 hover:text-red-900 xs:text-2xs p-1 xs:py-0 xs:px-px text-xs sm:text-sm md:text-base font-semibold py-0.5 px-1 sm:py-1 sm:px-1 rounded-lg hover:bg-red-100 transition-colors duration-200"
                       aria-label={`${game.id} ${getText('game')} ${getText('delete')}`}
                       title={`${game.id} ${getText('game')} ${getText('delete')}`}
                     >
-                      {getText('delete')}
+                      X
                     </button>
                   </div>
                 )}

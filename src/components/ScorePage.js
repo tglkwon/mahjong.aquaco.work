@@ -85,6 +85,48 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     }));
   }, [currentLanguage, getText, translations]);
 
+  useEffect(() => {
+    const handleViewportResize = () => {
+      const activeElement = document.activeElement;
+      // Check if the active element is one of our score inputs
+      if (activeElement && activeElement.matches('input[type="number"].score-input-js')) {
+        // Delay slightly to allow layout to settle after resize and keyboard animation
+        setTimeout(() => {
+          const inputRect = activeElement.getBoundingClientRect();
+          const visualViewport = window.visualViewport;
+
+          if (visualViewport) {
+            const desiredViewportPadding = 20; // px, minimum space from top/bottom of viewport
+            let scrollOffset = 0;
+
+            // Check if input is obscured at the bottom
+            if (inputRect.bottom > visualViewport.offsetTop + visualViewport.height - desiredViewportPadding) {
+              scrollOffset = inputRect.bottom - (visualViewport.offsetTop + visualViewport.height - desiredViewportPadding);
+            } 
+            // Check if input is obscured at the top (e.g., by a fixed header after a previous scroll)
+            else if (inputRect.top < visualViewport.offsetTop + desiredViewportPadding) {
+              scrollOffset = inputRect.top - (visualViewport.offsetTop + desiredViewportPadding);
+            }
+            
+            if (scrollOffset !== 0) {
+              window.scrollBy({ top: scrollOffset, behavior: 'smooth' });
+            }
+          }
+        }, 100); // Adjust delay if needed
+      }
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+      return () => {
+        // Check if visualViewport still exists before trying to remove listener
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', handleViewportResize);
+        }
+      };
+    }
+  }, []); // Empty dependency array, so this effect runs once on mount and cleans up on unmount.
+
   const currentTotal = useMemo(() => {
     if (games.length === 0) return 0;
     const lastGame = games[games.length - 1];
@@ -166,11 +208,20 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     });
   }, [generateShareableUrl]);
 
+  const handleScoreInputKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault(); // 기본 Enter 동작 방지
+      if (!isAddRecordButtonDisabled) {
+        handleAddGame();
+      }
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-gray-100 flex flex-col items-center font-sans text-gray-800">
       <Header title={getText('scoreTrackerTitle')} currentLanguage={currentLanguage} setCurrentLanguage={setCurrentLanguage} getText={getText} showHomeButton={true} />
       <div className="pt-[calc(48px+0.5rem)] sm:pt-[calc(56px+0.5rem)] w-full max-w-6xl flex flex-col items-center xs:p-0 px-2 py-4 sm:px-4">
-        <Table playerNames={playerNames} games={games} totalScores={totalScores} getText={getText} handlePlayerNameChange={handlePlayerNameChange} handleScoreChange={handleScoreChange} handleDeleteGame={handleDeleteGame} />
+        <Table playerNames={playerNames} games={games} totalScores={totalScores} getText={getText} handlePlayerNameChange={handlePlayerNameChange} handleScoreChange={handleScoreChange} handleDeleteGame={handleDeleteGame} handleScoreInputKeyDown={handleScoreInputKeyDown} />
         <ControlPanel targetSum={targetSum} setTargetSum={setTargetSum} currentTotal={currentTotal} handleAddGame={handleAddGame} isAddRecordButtonDisabled={isAddRecordButtonDisabled} copyToClipboard={copyToClipboard} getText={getText} />
         <MessageDisplay message={getText('copied')} isVisible={showCopyMessage} />
         <div className="mt-6 sm:mt-8 text-xs sm:text-sm md:text-lg text-gray-600">
