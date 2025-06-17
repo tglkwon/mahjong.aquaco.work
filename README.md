@@ -8,4 +8,6 @@
 다만 링크의 주소에 페이지 내용이 저장되므로 링크를 잃어버리면 복구할 수 없습니다.
 
 
-0.91v fix mobile view, reset numbering in table 250612
+### 0.92v
+
+### 0.91v fix mobile view, reset numbering in table 250612

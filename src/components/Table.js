@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Table({ playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame, handleScoreInputKeyDown }) {
+function Table({ playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame, handleScoreInputKeyDown, handlePositionChange }) {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full max-w-6xl"> 
       <table className="divide-y divide-gray-200"> {/* min-w-full 제거 고려 */}
@@ -12,7 +12,7 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
             {playerNames.map((name, index) => (
               <th
                 key={index}
-                className="bmb:p-px bmb:text-xs px-1 py-2 text-center text-xs sm:px-4 sm:py-3 sm:text-sm md:text-base font-medium text-gray-500 uppercase tracking-wider sm:w-auto"
+                className="bmb:p-px bmb:text-xs px-1 py-2 text-center sm:px-4 sm:py-3 sm:text-sm md:text-base font-medium text-gray-500 uppercase tracking-wider sm:w-auto"
               >
                 <input
                   type="text"
@@ -45,22 +45,42 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                 {gameIndex + 1} {/* 표시되는 경기 번호는 gameIndex + 1 사용 */}
               </td>
               {playerNames.map((_, playerIndex) => (
-                <td key={playerIndex} className="bmb:p-px bmb:text-xs px-1 py-1 whitespace-nowrap text-center text-xs sm:px-4 sm:py-1.5 sm:text-sm md:text-base text-gray-900">
-                  {game.isEditable ? (
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      value={game.scores[playerIndex]}
-                      onChange={(e) => handleScoreChange(game.id, playerIndex, e.target.value)}
-                      onKeyDown={handleScoreInputKeyDown}
-                      className="w-full bmb:px-px bmb:py-px bmb:text-xs p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:p-2 sm:text-sm md:text-base score-input-js"
-                      aria-label={`${gameIndex + 1} ${playerNames[playerIndex] || (getText('player') + (playerIndex + 1))} ${getText('score')}`}
-                    />
-                  ) : (
-                    <span className="block w-full bmb:px-px bmb:py-px bmb:text-xs p-1 text-center text-xs sm:p-2 sm:text-sm md:text-base">
-                      {game.scores[playerIndex]}
-                    </span>
-                  )}
+                <td key={playerIndex} className="bmb:p-px bmb:text-xs px-1 py-1 whitespace-nowrap text-xs sm:px-2 sm:py-1.5 sm:text-sm md:text-base text-gray-900">
+                  <div className="flex flex-col items-center">
+                    {game.isEditable ? (
+                      <>
+                        <select
+                          value={game.playerPositions[playerIndex]}
+                          onChange={(e) => handlePositionChange(game.id, playerIndex, e.target.value)}
+                          className="w-full mb-1 p-0.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 text-center bmb:text-xs"
+                          aria-label={`${getText('game')} ${gameIndex + 1} ${playerNames[playerIndex] || (getText('player') + (playerIndex + 1))} ${getText('position')}`}
+                        >
+                          <option value="east">{getText('east')}</option>
+                          <option value="south">{getText('south')}</option>
+                          <option value="west">{getText('west')}</option>
+                          <option value="north">{getText('north')}</option>
+                        </select>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          value={game.scores[playerIndex]}
+                          onChange={(e) => handleScoreChange(game.id, playerIndex, e.target.value)}
+                          onKeyDown={handleScoreInputKeyDown}
+                          className="w-full bmb:px-px bmb:py-px bmb:text-xs p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:p-2 sm:text-sm md:text-base score-input-js"
+                          aria-label={`${getText('game')} ${gameIndex + 1} ${playerNames[playerIndex] || (getText('player') + (playerIndex + 1))} ${getText('score')}`}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <span className="block w-full text-center text-xs sm:text-sm font-medium text-gray-600 bmb:text-xs">
+                          {getText(game.playerPositions[playerIndex])}
+                        </span>
+                        <span className="block w-full bmb:px-px bmb:py-px bmb:text-xs p-1 text-center text-xs sm:p-2 sm:text-sm md:text-base">
+                          {game.scores[playerIndex]}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </td>
               ))}
               <td className="bmb:p-px bmb:text-xs px-0.5 py-3 whitespace-nowrap text-center font-medium">

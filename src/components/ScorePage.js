@@ -6,6 +6,14 @@ import MessageDisplay from '../components/MessageDisplay';
 import useTranslation from '../hooks/useTranslation'; // For direct access to translations if needed
 
 const PLAYER_COUNT = 4;
+const INITIAL_PLAYER_POSITIONS = ['east', 'south', 'west', 'north'];
+
+const getDefaultPlayerPositions = () => {
+  // 매번 새로운 배열 인스턴스를 반환하여 의도치 않은 공유 참조를 방지
+  // 실제로는 ['east', 'south', 'west', 'north'] 와 같은 문자열 키를 저장하고,
+  // 화면에 표시할 때 getText('east') 등으로 변환하는 것이 좋습니다.
+  return [...INITIAL_PLAYER_POSITIONS];
+};
 
 function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parentGetText }) {
   // If ScoreTrackerPage needs its own translation instance or direct access to translations
@@ -40,10 +48,27 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
 
   const [games, setGames] = useState(() => {
     const loadedState = parseStateFromUrl();
-    if (loadedState?.games && Array.isArray(loadedState.games)) {
-      return loadedState.games;
+    const loadedGames = loadedState?.games;
+    if (Array.isArray(loadedGames)) {
+      return loadedGames.map((game, index) => ({
+        ...game,
+        id: game.id || index + 1, // Ensure id exists
+        scores: game.scores && game.scores.length === PLAYER_COUNT ? game.scores : Array(PLAYER_COUNT).fill(''),
+        playerPositions: game.playerPositions && game.playerPositions.length === PLAYER_COUNT ? game.playerPositions : getDefaultPlayerPositions(),
+        umaType: game.umaType !== undefined ? game.umaType : null,
+        // Ensure isEditable is explicitly boolean. Assume loaded games are not editable unless it's the very last one and was intended to be.
+        // For simplicity, let's assume all loaded games from URL are non-editable.
+        // If a more complex "resume editing" feature is needed, this logic would be different.
+        isEditable: game.isEditable !== undefined ? game.isEditable : false,
+      }));
     }
-    return [{ id: 1, scores: Array(PLAYER_COUNT).fill(''), isEditable: true }];
+    return [{
+      id: 1,
+      scores: Array(PLAYER_COUNT).fill(''),
+      isEditable: true,
+      playerPositions: getDefaultPlayerPositions(), // 초기 자리 설정
+      umaType: null
+    }];
   });
 
   const [targetSum, setTargetSum] = useState(() => {
@@ -146,7 +171,13 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
       });
 
       const newGameId = updatedGames.length > 0 ? Math.max(...updatedGames.map(g => g.id)) + 1 : 1;
-      return [...updatedGames, { id: newGameId, scores: Array(PLAYER_COUNT).fill(''), isEditable: true }];
+      return [...updatedGames, {
+        id: newGameId,
+        scores: Array(PLAYER_COUNT).fill(''),
+        isEditable: true,
+        playerPositions: getDefaultPlayerPositions(), // playerPositions 초기화 추가
+        umaType: null // umaType 초기화 추가 (일관성)
+      }];
     });
   };
 

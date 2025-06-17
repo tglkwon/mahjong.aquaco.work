@@ -1,39 +1,112 @@
 import React from 'react';
 
-function ControlPanel({ targetSum, setTargetSum, currentTotal, handleAddGame, isAddRecordButtonDisabled, copyToClipboard, getText }) {
-  return (
-    <div className="mt-6 sm:mt-8 w-full max-w-6xl flex flex-col sm:flex-row justify-center sm:justify-end items-center gap-3 sm:gap-4 p-2 sm:p-0 ">
-      <label className="text-xs sm:text-sm md:text-base font-semibold flex items-center xs:space-x-1 space-x-2 w-full sm:w-auto justify-between sm:justify-start">
-        <span>{getText('targetScoreSum')}:</span>
-        <input
-          type="number"
-          value={targetSum}
-          onChange={(e) => setTargetSum(parseInt(e.target.value) || 0)}
-          className="xs:w-16 xs:p-0.5 xs:text-2xs w-20 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:w-24 sm:p-2 sm:text-sm"
-          aria-label={getText('targetScoreSum')}
-        />
-      </label>
+function ControlPanel({
+  targetSum,
+  setTargetSum,
+  currentTotal,
+  handleAddGame,
+  isAddRecordButtonDisabled,
+  copyToClipboard,
+  getText,
+  handleUmaOkaToggle, // 추가된 prop
+  activeUmaType,      // 추가된 prop: 현재 활성화된 우마/오카 타입 ('1-2', '1-3', 'oka', null)
+  isUmaOkaGlobalDisabled // 추가된 prop: targetSum % 10 !== 0 일 때 true
+}) {
+  const isOkaButtonSpecificDisabled = isUmaOkaGlobalDisabled || (targetSum !== 1000 && targetSum !== 100000);
 
-      <span className="text-xs sm:text-sm md:text-base font-semibold w-full sm:w-auto text-center sm:text-left">
-        {getText('currentGameTotal')}: {currentTotal}
-      </span>
-      <button
-        onClick={handleAddGame}
-        disabled={isAddRecordButtonDisabled}
-        className={`font-semibold py-1.5 px-3 text-xs sm:py-2 sm:px-4 sm:text-sm md:text-base rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-auto
-          ${isAddRecordButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}
-        `}
-        aria-label={getText('addRecord')}
-      >
-        {getText('addRecord')}
-      </button>
-      <button
-        onClick={copyToClipboard}
-        className="font-semibold py-1.5 px-3 text-xs sm:py-2 sm:px-4 sm:text-sm md:text-base rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto"
-        aria-label={getText('share')}
-      >
-        {getText('share')}
-      </button>
+  return (
+    <div className="mt-6 sm:mt-8 w-full max-w-6xl flex flex-col items-center bmb:items-end gap-3 sm:gap-4 p-2 sm:p-0">
+      {/* Group 1: Target Sum, Sum Diff, Uma/Oka buttons */}
+      <div className="w-full flex flex-col lg:flex-row items-stretch gap-3"> {/* Increased gap for clarity between main groups */}
+        {/* Sub-Group A: Target Sum & Sum Difference (takes 50% on lg) */}
+        <div className="flex flex-col sm:flex-row lg:flex-1 items-stretch gap-2">
+          {/* Item 1: Target Sum (takes 50% of Sub-Group A) - Label and input now in a row */}
+          <div className="flex-1 p-1.5 rounded-lg shadow-md border border-gray-300 bg-white flex flex-row items-center justify-center gap-2 text-center text-sm sm:text-base md:text-lg">
+            <label htmlFor="targetSumInputCtrl" className="font-semibold text-sm sm:text-sm whitespace-nowrap md:text-lg">
+              {getText('targetScoreSum')}:
+            </label>
+            <input
+              id="targetSumInputCtrl"
+              type="number"
+              value={targetSum}
+              onChange={(e) => setTargetSum(parseInt(e.target.value) || 0)}
+              className="w-full max-w-[100px] p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-lg"
+              aria-label={getText('targetScoreSum')}
+            />
+          </div>
+
+          {/* Item 2: Sum Difference (takes 50% of Sub-Group A) */}
+          <div className="flex-1 p-2 rounded-lg shadow-md border border-gray-300 bg-white flex items-center justify-center text-center text-sm sm:text-base md:text-lg">
+            <span className="font-semibold whitespace-nowrap">
+              {getText('sumDifference')}: {targetSum - currentTotal}
+            </span>
+          </div>
+        </div>
+
+        {/* Sub-Group B: Uma/Oka Buttons (takes 50% on lg) */}
+        <div className="flex flex-col sm:flex-row lg:flex-1 items-stretch gap-2">
+          {/* Item 3: 1-2 Uma Button (takes 1/3 of Sub-Group B) */}
+          <button
+            type="button"
+            onClick={() => handleUmaOkaToggle('1-2')}
+            disabled={isUmaOkaGlobalDisabled}
+            className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
+              ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
+                activeUmaType === '1-2' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
+                'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
+              }`}
+          >
+            {getText('uma1_2')}
+          </button>
+          {/* Item 4: 1-3 Uma Button (takes 1/3 of Sub-Group B) */}
+          <button
+            type="button"
+            onClick={() => handleUmaOkaToggle('1-3')}
+            disabled={isUmaOkaGlobalDisabled}
+            className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
+              ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
+                activeUmaType === '1-3' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
+                'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
+              }`}
+          >
+            {getText('uma1_3')}
+          </button>
+          {/* Item 5: Oka Button (takes 1/3 of Sub-Group B) */}
+          <button
+            type="button"
+            onClick={() => handleUmaOkaToggle('oka')}
+            disabled={isOkaButtonSpecificDisabled}
+            className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
+              ${isOkaButtonSpecificDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
+                activeUmaType === 'oka' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
+                'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
+              }`}
+          >
+            {getText('oka')}
+          </button>
+        </div>
+      </div>
+
+      {/* Group 2: Add Record, Share buttons */}
+      <div className="w-full flex flex-col bmb:flex-row bmb:justify-end items-center gap-3 sm:gap-4">
+        <button
+          onClick={handleAddGame}
+          disabled={isAddRecordButtonDisabled}
+          className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-5 sm:text-base md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full bmb:w-auto
+            ${isAddRecordButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}
+          `}
+          aria-label={getText('addRecord')}
+        >
+          {getText('addRecord')}
+        </button>
+        <button
+          onClick={copyToClipboard}
+          className="font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-5 sm:text-base md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-500 hover:bg-green-600 text-white w-full bmb:w-auto"
+          aria-label={getText('share')}
+        >
+          {getText('share')}
+        </button>
+      </div>
     </div>
   );
 }

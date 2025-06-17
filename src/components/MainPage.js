@@ -63,9 +63,9 @@ function HomePage({ currentLanguage, setCurrentLanguage, getText }) {
               onClick={card.action}
             >
               <div className="flex-shrink-0 mt-1">
-                {typeof card.icon === 'string' ? (
-                  <span className="text-4xl">{card.icon}</span>
-                ) : (
+                {typeof card.icon === 'string' ? ( // Emoji icon
+                  <span className="text-2xl sm:text-[1.75rem] md:text-[2rem]">{card.icon}</span> // Adjusted to match SVG icon responsive sizes
+                ) : ( // SVG icon
                   card.icon
                 )}
               </div>
