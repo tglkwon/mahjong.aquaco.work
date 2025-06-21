@@ -66,7 +66,8 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                             ))}
                           </select>
                           <input
-                            type="number"
+                            // type="text"와 inputMode="numeric" 조합으로 모바일에서 음수 입력 키보드 문제 해결
+                            type="text"
                             inputMode="numeric"
                             value={game.scores[position] ?? ''}
                             onChange={(e) => handleUmaOkaScoreChange(game.id, position, e.target.value)}
@@ -106,7 +107,8 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                     <div className="flex flex-col items-center">
                       {game.isEditable ? (
                         <input
-                          type="number"
+                          // type="text"와 inputMode="numeric" 조합으로 모바일에서 음수 입력 키보드 문제 해결
+                          type="text"
                           inputMode="numeric"
                           value={game.scores[playerIndex]}
                           onChange={(e) => handleScoreChange(game.id, playerIndex, e.target.value)}

@@ -204,8 +204,14 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
       const updatedGames = prevGames.map((game, index) => {
         if (index === prevGames.length - 1) {
           if (isUmaOkaPage) {
-            // No change needed for object-based scores, just make it non-editable
-            return { ...game, isEditable: false };
+            // 우마/오카 페이지에서 마지막 게임의 빈 점수를 '0'으로 변환
+            const newScores = { ...game.scores };
+            INITIAL_PLAYER_POSITIONS.forEach(position => {
+              if (newScores[position] == null || newScores[position] === '') {
+                newScores[position] = '0';
+              }
+            });
+            return { ...game, scores: newScores, isEditable: false };
           } else {
             // 마지막 게임의 빈 점수를 '0'으로 변환
             const newScores = game.scores.map(score => (score === '' || score === null ? '0' : String(score)));
