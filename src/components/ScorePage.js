@@ -109,7 +109,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
   const [showCopyMessage, setShowCopyMessage] = useState(false);
 
   // 우마/오카 기능 상태
-  const [activeUmaType, setActiveUmaType] = useState(null);
+  const [activeUmaOka, setActiveUmaOka] = useState({ uma: null, oka: false });
 
   // Effect to set the language from the URL hash when the component mounts.
   // This runs once after the initial render because parseStateFromUrl (memoized) 
@@ -321,34 +321,109 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
   };
 
   const totalScores = useMemo(() => {
-    if (isUmaOkaPage) {
-      const scores = Array(playerPool.length).fill(0);
-      games.forEach(game => {
-        if (game.participants && game.scores) {
-          Object.entries(game.participants).forEach(([position, playerIndex]) => {
-            const score = parseInt(game.scores[position], 10) || 0;
-            if (scores[playerIndex] !== undefined) {
-              scores[playerIndex] += score;
-            }
-          });
-        }
-      });
-      return scores;
-    } else {
+    if (!isUmaOkaPage) {
       return Array(PLAYER_COUNT).fill(0).map((_, playerIndex) =>
         games.reduce((sum, game) => sum + (parseInt(game.scores[playerIndex], 10) || 0), 0)
       );
     }
-  }, [games, isUmaOkaPage, playerPool]);
+
+    // --- Logic for Uma/Oka Page ---
+    const finalScores = Array(playerPool.length).fill(0);
+
+    // 점수 정규화 함수: (점수 / 목표 점수 합계) * 100 - 25
+    const normalizeScore = (rawScore) => {
+      if (targetSum === 0) return -25; // 0으로 나누기 방지
+      return (rawScore / targetSum) * 100 - 25;
+    };
+
+    // 각 게임별로 점수를 계산하여 합산합니다.
+    games.forEach(game => {
+      // 편집 중인 게임은 총점에 포함하지 않습니다.
+      if (game.isEditable) {
+        return;
+      }
+
+      // 게임에 4명의 참가자와 점수가 모두 있는지 확인합니다.
+      if (game.participants && game.scores && Object.keys(game.participants).length === 4) {
+        
+        const playerRawScores = {};
+        Object.entries(game.participants).forEach(([position, playerIndex]) => {
+          const score = parseInt(game.scores[position], 10) || 0;
+          playerRawScores[playerIndex] = score;
+        });
+
+        // 게임에 참가한 플레이어가 4명이 아니면 계산을 건너뜁니다.
+        if (Object.keys(playerRawScores).length !== 4) return;
+
+        // 순위 결정을 위한 정렬
+        const positionOrder = { 'east': 1, 'south': 2, 'west': 3, 'north': 4 };
+        const playerIndexToPosition = Object.fromEntries(
+          Object.entries(game.participants).map(([pos, pIdx]) => [pIdx, pos])
+        );
+        const rankedPlayers = Object.keys(playerRawScores)
+          .map(pIndex => ({ playerIndex: parseInt(pIndex, 10), score: playerRawScores[pIndex] }))
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            const posA = playerIndexToPosition[a.playerIndex];
+            const posB = playerIndexToPosition[b.playerIndex];
+            return positionOrder[posA] - positionOrder[posB];
+          });
+
+        const gameFinalScores = {};
+        const { uma, oka } = activeUmaOka;
+
+        // 각 플레이어의 점수를 정규화하고 우마/오카를 적용합니다.
+        rankedPlayers.forEach((playerData, rank) => {
+          const { playerIndex } = playerData;
+          let finalScore = normalizeScore(playerRawScores[playerIndex]);
+
+          // 우마 적용
+          if (uma === '1-2') {
+            if (rank === 0) finalScore += 20; // 1등
+            else if (rank === 1) finalScore += 10; // 2등
+            else if (rank === 2) finalScore -= 10; // 3등
+            else if (rank === 3) finalScore -= 20; // 4등
+          } else if (uma === '1-3') {
+            if (rank === 0) finalScore += 30; // 1등
+            else if (rank === 1) finalScore += 10; // 2등
+            else if (rank === 2) finalScore -= 10; // 3등
+            else if (rank === 3) finalScore -= 30; // 4등
+          }
+
+          // 오카 적용 (1등에게만)
+          if (oka && rank === 0) {
+            finalScore += 20;
+          }
+
+          gameFinalScores[playerIndex] = finalScore;
+        });
+        
+        // 현재 게임의 최종 점수를 전체 합산 점수에 더합니다.
+        for (const playerIndex in gameFinalScores) {
+          if (finalScores[playerIndex] !== undefined) {
+            finalScores[playerIndex] += gameFinalScores[playerIndex];
+          }
+        }
+      }
+    });
+
+    // 최종 점수를 소수점 첫째 자리까지 포맷합니다.
+    return finalScores.map(score => score.toFixed(1));
+  }, [games, isUmaOkaPage, playerPool, activeUmaOka, targetSum]);
+
 
   const handleDeleteGame = (gameIdToDelete) => {
     setGames(prevGames => prevGames.filter(game => game.id !== gameIdToDelete));
   };
 
   const handleUmaOkaToggle = useCallback((type) => {
-    // TODO: 실제 우마/오카 점수 계산 및 적용 로직 구현 필요
-    // 현재는 버튼 활성화 상태만 토글합니다.
-    setActiveUmaType(prev => (prev === type ? null : type));
+    setActiveUmaOka(prev => {
+      if (type === 'oka') {
+        return { ...prev, oka: !prev.oka };
+      } else { // '1-2' or '1-3'
+        return { ...prev, uma: prev.uma === type ? null : type };
+      }
+    });
     console.log(`Uma/Oka type toggled: ${type}`);
   }, []);
 
@@ -437,7 +512,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
           copyToClipboard={copyToClipboard} getText={getText}
           showUmaOkaControls={isUmaOkaPage}
           handleUmaOkaToggle={handleUmaOkaToggle}
-          activeUmaType={activeUmaType}
+          activeUmaOka={activeUmaOka}
           isUmaOkaGlobalDisabled={isUmaOkaGlobalDisabled} />
         <MessageDisplay message={getText('copied')} isVisible={showCopyMessage} />
         <div className="mt-6 sm:mt-8 text-xs sm:text-sm md:text-lg text-gray-600">

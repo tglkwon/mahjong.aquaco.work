@@ -8,9 +8,9 @@ function ControlPanel({
   isAddRecordButtonDisabled,
   copyToClipboard,
   getText,
-  showUmaOkaControls, // 추가된 prop
-  handleUmaOkaToggle, // 추가된 prop
-  activeUmaType,      // 추가된 prop: 현재 활성화된 우마/오카 타입 ('1-2', '1-3', 'oka', null)
+  showUmaOkaControls,
+  handleUmaOkaToggle,
+  activeUmaOka,      // Changed from activeUmaType
   isUmaOkaGlobalDisabled // 추가된 prop: targetSum % 10 !== 0 일 때 true
 }) {
   const isOkaButtonSpecificDisabled = isUmaOkaGlobalDisabled || (targetSum !== 1000 && targetSum !== 100000);
@@ -54,7 +54,7 @@ function ControlPanel({
               disabled={isUmaOkaGlobalDisabled}
               className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
                 ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
-                  activeUmaType === '1-2' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
+                  activeUmaOka.uma === '1-2' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
                   'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
                 }`}
             >
@@ -67,7 +67,7 @@ function ControlPanel({
               disabled={isUmaOkaGlobalDisabled}
               className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
                 ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
-                  activeUmaType === '1-3' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
+                  activeUmaOka.uma === '1-3' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
                   'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
                 }`}
             >
@@ -80,7 +80,7 @@ function ControlPanel({
               disabled={isOkaButtonSpecificDisabled}
               className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
                 ${isOkaButtonSpecificDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
-                  activeUmaType === 'oka' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
+                  activeUmaOka.oka ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
                   'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
                 }`}
             >
