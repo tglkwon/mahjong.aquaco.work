@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Table from '../components/Table';
+import PlayerManagementAndScores from '../components/PlayerManagementAndScores';
 import ControlPanel from '../components/ControlPanel';
 import MessageDisplay from '../components/MessageDisplay';
 import useTranslation from '../hooks/useTranslation'; // For direct access to translations if needed
@@ -15,7 +17,14 @@ const getDefaultPlayerPositions = () => {
   return [...INITIAL_PLAYER_POSITIONS];
 };
 
+const getDefaultUmaOkaParticipants = () => {
+  return { east: 0, south: 1, west: 2, north: 3 };
+};
+
 function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parentGetText }) {
+  const location = useLocation();
+  const isUmaOkaPage = location.pathname === '/set_score_umaoka';
+
   // If ScoreTrackerPage needs its own translation instance or direct access to translations
   // const { translations, getText } = useTranslation(currentLanguage);
   // For now, assume getText is passed down and sufficient.
@@ -46,6 +55,14 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     return Array(PLAYER_COUNT).fill('').map((_, i) => `${translations[currentLanguage]?.player || 'Player'}${i + 1}`);
   });
 
+  const [playerPool, setPlayerPool] = useState(() => {
+    const loadedState = parseStateFromUrl();
+    if (isUmaOkaPage && loadedState?.playerPool && Array.isArray(loadedState.playerPool)) {
+      return loadedState.playerPool;
+    }
+    return Array(PLAYER_COUNT).fill('').map((_, i) => `${translations[currentLanguage]?.player || 'Player'}${i + 1}`);
+  });
+
   const [games, setGames] = useState(() => {
     const loadedState = parseStateFromUrl();
     const loadedGames = loadedState?.games;
@@ -53,22 +70,32 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
       return loadedGames.map((game, index) => ({
         ...game,
         id: game.id || index + 1, // Ensure id exists
-        scores: game.scores && game.scores.length === PLAYER_COUNT ? game.scores : Array(PLAYER_COUNT).fill(''),
-        playerPositions: game.playerPositions && game.playerPositions.length === PLAYER_COUNT ? game.playerPositions : getDefaultPlayerPositions(),
-        umaType: game.umaType !== undefined ? game.umaType : null,
-        // Ensure isEditable is explicitly boolean. Assume loaded games are not editable unless it's the very last one and was intended to be.
-        // For simplicity, let's assume all loaded games from URL are non-editable.
-        // If a more complex "resume editing" feature is needed, this logic would be different.
         isEditable: game.isEditable !== undefined ? game.isEditable : false,
+        // Restore structure based on page type
+        ...(isUmaOkaPage
+          ? {
+              participants: game.participants || {},
+              scores: game.scores || {},
+            }
+          : {
+              scores: game.scores && game.scores.length === PLAYER_COUNT ? game.scores : Array(PLAYER_COUNT).fill(''),
+              playerPositions: game.playerPositions && game.playerPositions.length === PLAYER_COUNT ? game.playerPositions : getDefaultPlayerPositions(),
+            }
+        ),
       }));
     }
-    return [{
-      id: 1,
-      scores: Array(PLAYER_COUNT).fill(''),
-      isEditable: true,
-      playerPositions: getDefaultPlayerPositions(), // 초기 자리 설정
-      umaType: null
-    }];
+    // Initial game state
+    if (isUmaOkaPage) {
+      return [{ id: 1, participants: getDefaultUmaOkaParticipants(), scores: {}, isEditable: true }];
+    } else {
+      return [{
+        id: 1,
+        scores: Array(PLAYER_COUNT).fill(''),
+        isEditable: true,
+        playerPositions: getDefaultPlayerPositions(),
+        umaType: null
+      }];
+    }
   });
 
   const [targetSum, setTargetSum] = useState(() => {
@@ -80,6 +107,9 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
   });
 
   const [showCopyMessage, setShowCopyMessage] = useState(false);
+
+  // 우마/오카 기능 상태
+  const [activeUmaType, setActiveUmaType] = useState(null);
 
   // Effect to set the language from the URL hash when the component mounts.
   // This runs once after the initial render because parseStateFromUrl (memoized) 
@@ -101,13 +131,16 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
 
   useEffect(() => {
     // Update player names if they are default and language changes
-    setPlayerNames(prevNames => prevNames.map((name, index) => {
+    const updateDefaultNames = (prevNames) => prevNames.map((name, index) => {
       const defaultNamePattern = new RegExp(`^(?:${translations.ko.player}|${translations.en.player}|${translations.ja.player})${index + 1}$`);
       if (defaultNamePattern.test(name) || name === `Player${index + 1}` || name === `플레이어${index + 1}` || name === `プレイヤー${index + 1}`) {
         return `${getText('player')}${index + 1}`;
       }
       return name;
-    }));
+    });
+
+    setPlayerNames(updateDefaultNames);
+    setPlayerPool(updateDefaultNames);
   }, [currentLanguage, getText, translations]);
 
   useEffect(() => {
@@ -153,31 +186,48 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
   }, []); // Empty dependency array, so this effect runs once on mount and cleans up on unmount.
 
   const currentTotal = useMemo(() => {
-    if (games.length === 0) return 0;
+    if (!games || games.length === 0) return 0;
     const lastGame = games[games.length - 1];
     if (!lastGame || !lastGame.scores) return 0;
-    return lastGame.scores.reduce((sum, score) => sum + (score === '' || score === null || isNaN(parseInt(score)) ? 0 : parseInt(score)), 0);
-  }, [games]);
 
+    if (isUmaOkaPage) {
+      // For Uma/Oka page, scores is an object {east: score, ...}
+      return Object.values(lastGame.scores).reduce((sum, score) => sum + (parseInt(score, 10) || 0), 0);
+    } else {
+      // For standard page, scores is an array
+      return lastGame.scores.reduce((sum, score) => sum + (parseInt(score, 10) || 0), 0);
+    }
+  }, [games, isUmaOkaPage]);
+  
   const handleAddGame = () => {
     setGames(prevGames => {
       const updatedGames = prevGames.map((game, index) => {
         if (index === prevGames.length - 1) {
-          // 마지막 게임의 빈 점수를 '0'으로 변환
-          const newScores = game.scores.map(score => (score === '' || score === null ? '0' : score));
-          return { ...game, scores: newScores, isEditable: false };
+          if (isUmaOkaPage) {
+            // No change needed for object-based scores, just make it non-editable
+            return { ...game, isEditable: false };
+          } else {
+            // 마지막 게임의 빈 점수를 '0'으로 변환
+            const newScores = game.scores.map(score => (score === '' || score === null ? '0' : String(score)));
+            return { ...game, scores: newScores, isEditable: false };
+          }
         }
         return game;
       });
 
       const newGameId = updatedGames.length > 0 ? Math.max(...updatedGames.map(g => g.id)) + 1 : 1;
-      return [...updatedGames, {
-        id: newGameId,
-        scores: Array(PLAYER_COUNT).fill(''),
-        isEditable: true,
-        playerPositions: getDefaultPlayerPositions(), // playerPositions 초기화 추가
-        umaType: null // umaType 초기화 추가 (일관성)
-      }];
+      
+      const newGame = isUmaOkaPage
+        ? { id: newGameId, participants: getDefaultUmaOkaParticipants(), scores: {}, isEditable: true }
+        : {
+            id: newGameId,
+            scores: Array(PLAYER_COUNT).fill(''),
+            isEditable: true,
+            playerPositions: getDefaultPlayerPositions(),
+            umaType: null
+          };
+
+      return [...updatedGames, newGame];
     });
   };
 
@@ -205,28 +255,126 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     setPlayerNames(prevNames => prevNames.map((name, idx) => (idx === index ? newName : name)));
   };
 
+  const handlePositionChange = (gameId, playerIndex, newPosition) => {
+    setGames(currentGames => currentGames.map(game =>
+      game.id === gameId
+        ? {
+            ...game,
+            playerPositions: game.playerPositions.map((pos, idx) =>
+              idx === playerIndex ? newPosition : pos
+            ),
+          }
+        : game
+    ));
+  };
+
+  // --- Handlers for Player Pool (Uma/Oka Page) ---
+  const handleAddPlayerToPool = (name) => {
+    if (name && !playerPool.includes(name)) {
+      setPlayerPool(prev => [...prev, name]);
+    }
+  };
+
+  const handleRemovePlayerFromPool = (indexToRemove) => {
+    setPlayerPool(prev => prev.filter((_, index) => index !== indexToRemove));
+
+    // Adjust participant indices in games
+    setGames(prevGames => prevGames.map(game => {
+      if (!isUmaOkaPage || !game.participants) return game;
+
+      const newParticipants = {};
+      let changed = false;
+      Object.entries(game.participants).forEach(([position, pIndex]) => {
+        if (pIndex === indexToRemove) {
+          changed = true; // Player removed, so we don't add this entry
+        } else if (pIndex > indexToRemove) {
+          newParticipants[position] = pIndex - 1; // Decrement index
+          changed = true;
+        } else {
+          newParticipants[position] = pIndex; // Index is unchanged
+        }
+      });
+
+      return changed ? { ...game, participants: newParticipants } : game;
+    }));
+  };
+
+  const handleUpdatePlayerInPool = (index, newName) => {
+    setPlayerPool(prev => prev.map((name, i) => (i === index ? newName : name)));
+  };
+
+  // --- Handlers for Game Data (Uma/Oka Page) ---
+  const handleUmaOkaScoreChange = (gameId, position, newScore) => {
+    setGames(currentGames => currentGames.map(game =>
+      game.id === gameId
+        ? { ...game, scores: { ...game.scores, [position]: newScore.replace(/[^0-9-]/g, '') } }
+        : game
+    ));
+  };
+
+  const handlePlayerForPositionChange = (gameId, position, playerIndex) => {
+    setGames(currentGames => currentGames.map(game =>
+      game.id === gameId
+        ? { ...game, participants: { ...game.participants, [position]: parseInt(playerIndex, 10) } }
+        : game
+    ));
+  };
+
   const totalScores = useMemo(() => {
-    return Array(PLAYER_COUNT).fill(0).map((_, playerIndex) =>
-      games.reduce((sum, game) => sum + (game.scores[playerIndex] === '' || game.scores[playerIndex] === null || isNaN(parseInt(game.scores[playerIndex])) ? 0 : parseInt(game.scores[playerIndex])), 0)
-    );
-  }, [games]);
+    if (isUmaOkaPage) {
+      const scores = Array(playerPool.length).fill(0);
+      games.forEach(game => {
+        if (game.participants && game.scores) {
+          Object.entries(game.participants).forEach(([position, playerIndex]) => {
+            const score = parseInt(game.scores[position], 10) || 0;
+            if (scores[playerIndex] !== undefined) {
+              scores[playerIndex] += score;
+            }
+          });
+        }
+      });
+      return scores;
+    } else {
+      return Array(PLAYER_COUNT).fill(0).map((_, playerIndex) =>
+        games.reduce((sum, game) => sum + (parseInt(game.scores[playerIndex], 10) || 0), 0)
+      );
+    }
+  }, [games, isUmaOkaPage, playerPool]);
 
   const handleDeleteGame = (gameIdToDelete) => {
     setGames(prevGames => prevGames.filter(game => game.id !== gameIdToDelete));
   };
+
+  const handleUmaOkaToggle = useCallback((type) => {
+    // TODO: 실제 우마/오카 점수 계산 및 적용 로직 구현 필요
+    // 현재는 버튼 활성화 상태만 토글합니다.
+    setActiveUmaType(prev => (prev === type ? null : type));
+    console.log(`Uma/Oka type toggled: ${type}`);
+  }, []);
+
+  const isUmaOkaGlobalDisabled = useMemo(() => {
+    // 우마/오카는 보통 10점 단위(실제 점수 10000점)이므로,
+    // 목표 점수가 10의 배수가 아니면 비활성화합니다.
+    return targetSum % 10 !== 0;
+  }, [targetSum]);
 
   const isAddRecordButtonDisabled = useMemo(() => {
     return currentTotal !== targetSum;
   }, [currentTotal, targetSum]);
 
   const generateShareableUrl = useCallback(() => {
-    const stateToSave = { playerNames, games, targetSum, language: currentLanguage };
+    const stateToSave = {
+      games,
+      targetSum,
+      language: currentLanguage,
+      ...(isUmaOkaPage ? { playerPool } : { playerNames })
+    };
     const jsonString = JSON.stringify(stateToSave);
     const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
     // HTML5 history API를 사용하고 현재 경로가 /set_score라고 가정합니다.
     // URL은 https://<origin>/<pathname>#data=<encodedData> 형식이 되어야 합니다.
-    return `${window.location.origin}${window.location.pathname}#data=${encodedData}`;
-  }, [playerNames, games, targetSum, currentLanguage]);
+    return `${window.location.origin}${location.pathname}#data=${encodedData}`;
+  }, [playerNames, playerPool, games, targetSum, currentLanguage, isUmaOkaPage, location.pathname]);
 
   const copyToClipboard = useCallback(() => {
     const url = generateShareableUrl();
@@ -250,10 +398,47 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
 
   return (
     <div className="relative min-h-screen bg-gray-100 flex flex-col items-center font-sans text-gray-800">
-      <Header title={getText('scoreTrackerTitle')} currentLanguage={currentLanguage} setCurrentLanguage={setCurrentLanguage} getText={getText} showHomeButton={true} />
+      <Header 
+        title={isUmaOkaPage ? getText('scoreTrackerUmaOkaTitle') : getText('scoreTrackerTitle')} 
+        currentLanguage={currentLanguage} 
+        setCurrentLanguage={setCurrentLanguage} 
+        getText={getText} 
+        showHomeButton={true} 
+      />
       <div className="pt-[calc(48px+0.5rem)] sm:pt-[calc(56px+0.5rem)] w-full max-w-6xl flex flex-col items-center xs:p-0 px-2 py-4 sm:px-4">
-        <Table playerNames={playerNames} games={games} totalScores={totalScores} getText={getText} handlePlayerNameChange={handlePlayerNameChange} handleScoreChange={handleScoreChange} handleDeleteGame={handleDeleteGame} handleScoreInputKeyDown={handleScoreInputKeyDown} />
-        <ControlPanel targetSum={targetSum} setTargetSum={setTargetSum} currentTotal={currentTotal} handleAddGame={handleAddGame} isAddRecordButtonDisabled={isAddRecordButtonDisabled} copyToClipboard={copyToClipboard} getText={getText} />
+        {isUmaOkaPage && (
+          <PlayerManagementAndScores
+            playerPool={playerPool}
+            onAddPlayer={handleAddPlayerToPool}
+            onRemovePlayer={handleRemovePlayerFromPool}
+            onUpdatePlayer={handleUpdatePlayerInPool}
+            totalScores={totalScores}
+            getText={getText}
+          />
+        )}
+        <Table 
+          playerNames={isUmaOkaPage ? playerPool : playerNames} 
+          games={games} 
+          totalScores={totalScores} 
+          getText={getText} 
+          handlePlayerNameChange={handlePlayerNameChange} 
+          handleScoreChange={handleScoreChange} 
+          handleUmaOkaScoreChange={handleUmaOkaScoreChange}
+          handleDeleteGame={handleDeleteGame} 
+          handleScoreInputKeyDown={handleScoreInputKeyDown} 
+          handlePositionChange={handlePositionChange}
+          handlePlayerForPositionChange={handlePlayerForPositionChange}
+          isUmaOkaPage={isUmaOkaPage}
+        />
+        <ControlPanel 
+          targetSum={targetSum} setTargetSum={setTargetSum} 
+          currentTotal={currentTotal} handleAddGame={handleAddGame} 
+          isAddRecordButtonDisabled={isAddRecordButtonDisabled} 
+          copyToClipboard={copyToClipboard} getText={getText}
+          showUmaOkaControls={isUmaOkaPage}
+          handleUmaOkaToggle={handleUmaOkaToggle}
+          activeUmaType={activeUmaType}
+          isUmaOkaGlobalDisabled={isUmaOkaGlobalDisabled} />
         <MessageDisplay message={getText('copied')} isVisible={showCopyMessage} />
         <div className="mt-6 sm:mt-8 text-xs sm:text-sm md:text-lg text-gray-600">
           <p>{getText('totalGames', { count: games.filter(g => !g.isEditable).length })}</p>

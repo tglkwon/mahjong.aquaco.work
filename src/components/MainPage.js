@@ -18,10 +18,15 @@ function HomePage({ currentLanguage, setCurrentLanguage, getText }) {
       path: '/set_score',
     },
     {
-      title: getText('underConstruction'),
-      description: getText('cardManagementDesc'), // Icon size adjusted below
-      icon: '🚧', // Emoji icon
-      action: null,
+      title: getText('scoreTrackerUmaOkaTitle'),
+      description: getText('scoreTrackerUmaOkaDesc'),
+      icon: ( // Icon size adjusted below
+        <svg className="h-6 w-6 sm:h-7 md:h-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 19H10v-1h4v1zm3-3H7V4c0-.55.45-1 1-1h8c.55 0 1 .45 1 1v12zM9 8h6V6H9v2zm0 3h6V9H9v2zm0 3h6v-2H9v2z"/>
+        </svg>
+      ),
+      action: () => navigate('/set_score_umaoka'),
+      path: '/set_score_umaoka',
     },
     {
       title: getText('underConstruction'),

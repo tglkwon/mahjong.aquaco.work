@@ -20,6 +20,10 @@ function App() {
           path="/set_score"
           element={<ScorePage currentLanguage={currentLanguage} setCurrentLanguage={setCurrentLanguage} getText={getText} />} 
         />
+        <Route 
+          path="/set_score_umaoka"
+          element={<ScorePage currentLanguage={currentLanguage} setCurrentLanguage={setCurrentLanguage} getText={getText} />} 
+        />
         {/* Add other routes here */}
       </Routes>
     </Router>

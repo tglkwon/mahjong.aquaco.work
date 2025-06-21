@@ -8,6 +8,7 @@ function ControlPanel({
   isAddRecordButtonDisabled,
   copyToClipboard,
   getText,
+  showUmaOkaControls, // 추가된 prop
   handleUmaOkaToggle, // 추가된 prop
   activeUmaType,      // 추가된 prop: 현재 활성화된 우마/오카 타입 ('1-2', '1-3', 'oka', null)
   isUmaOkaGlobalDisabled // 추가된 prop: targetSum % 10 !== 0 일 때 true
@@ -44,47 +45,49 @@ function ControlPanel({
         </div>
 
         {/* Sub-Group B: Uma/Oka Buttons (takes 50% on lg) */}
-        <div className="flex flex-col sm:flex-row lg:flex-1 items-stretch gap-2">
-          {/* Item 3: 1-2 Uma Button (takes 1/3 of Sub-Group B) */}
-          <button
-            type="button"
-            onClick={() => handleUmaOkaToggle('1-2')}
-            disabled={isUmaOkaGlobalDisabled}
-            className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
-              ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
-                activeUmaType === '1-2' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
-                'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
-              }`}
-          >
-            {getText('uma1_2')}
-          </button>
-          {/* Item 4: 1-3 Uma Button (takes 1/3 of Sub-Group B) */}
-          <button
-            type="button"
-            onClick={() => handleUmaOkaToggle('1-3')}
-            disabled={isUmaOkaGlobalDisabled}
-            className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
-              ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
-                activeUmaType === '1-3' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
-                'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
-              }`}
-          >
-            {getText('uma1_3')}
-          </button>
-          {/* Item 5: Oka Button (takes 1/3 of Sub-Group B) */}
-          <button
-            type="button"
-            onClick={() => handleUmaOkaToggle('oka')}
-            disabled={isOkaButtonSpecificDisabled}
-            className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
-              ${isOkaButtonSpecificDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
-                activeUmaType === 'oka' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
-                'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
-              }`}
-          >
-            {getText('oka')}
-          </button>
-        </div>
+        {showUmaOkaControls && (
+          <div className="flex flex-col sm:flex-row lg:flex-1 items-stretch gap-2">
+            {/* Item 3: 1-2 Uma Button (takes 1/3 of Sub-Group B) */}
+            <button
+              type="button"
+              onClick={() => handleUmaOkaToggle('1-2')}
+              disabled={isUmaOkaGlobalDisabled}
+              className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
+                ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
+                  activeUmaType === '1-2' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
+                  'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
+                }`}
+            >
+              {getText('uma1_2')}
+            </button>
+            {/* Item 4: 1-3 Uma Button (takes 1/3 of Sub-Group B) */}
+            <button
+              type="button"
+              onClick={() => handleUmaOkaToggle('1-3')}
+              disabled={isUmaOkaGlobalDisabled}
+              className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
+                ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
+                  activeUmaType === '1-3' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
+                  'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
+                }`}
+            >
+              {getText('uma1_3')}
+            </button>
+            {/* Item 5: Oka Button (takes 1/3 of Sub-Group B) */}
+            <button
+              type="button"
+              onClick={() => handleUmaOkaToggle('oka')}
+              disabled={isOkaButtonSpecificDisabled}
+              className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
+                ${isOkaButtonSpecificDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
+                  activeUmaType === 'oka' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
+                  'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
+                }`}
+            >
+              {getText('oka')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Group 2: Add Record, Share buttons */}
