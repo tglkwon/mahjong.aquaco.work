@@ -313,7 +313,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
   const handleUmaOkaScoreChange = (gameId, position, newScore) => {
     setGames(currentGames => currentGames.map(game =>
       game.id === gameId
-        ? { ...game, scores: { ...game.scores, [position]: newScore.replace(/[^0-9-]/g, '') } }
+        ? { ...game, scores: { ...game.scores, [position]: newScore.replace(/[^0-9-.]/g, '') } }
         : game
     ));
   };

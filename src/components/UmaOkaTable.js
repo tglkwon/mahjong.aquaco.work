@@ -40,9 +40,8 @@ function UmaOkaTable({ playerNames, games, getText, handleDeleteGame, handleScor
                           ))}
                         </select>
                         <input
-                          // type="text"와 inputMode="numeric" 조합으로 모바일에서 음수 입력 키보드 문제 해결
-                          type="text"
-                          inputMode="numeric"
+                          // type="tel"을 사용하여 모바일에서 숫자 및 마이너스(-) 입력용 키패드를 표시합니다.
+                          type="tel"
                           value={game.scores[position] ?? ''}
                           onChange={(e) => handleUmaOkaScoreChange(game.id, position, e.target.value)}
                           onKeyDown={handleScoreInputKeyDown}
