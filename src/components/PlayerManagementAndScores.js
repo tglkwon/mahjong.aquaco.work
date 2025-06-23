@@ -20,7 +20,7 @@ function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, on
   return (
     <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-4 mb-4">
       {/* Player Pool Management Section */}
-      <h3 className="text-lg font-semibold mb-3 text-gray-800">{getText('playerPoolTitle')}</h3>
+      <h3 className="text-lg sm:text-xl font-semibold mb-3 text-gray-800">{getText('playerPoolTitle')}</h3>
       
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <input
@@ -28,12 +28,12 @@ function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, on
           value={newPlayerName}
           onChange={(e) => setNewPlayerName(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-grow bg-gray-50 border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-grow bg-gray-50 border border-gray-300 rounded-md p-2 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder={getText('addPlayerPlaceholder')}
         />
         <button
           onClick={handleAddClick}
-          className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-base sm:text-lg"
         >
           {getText('addPlayer')}
         </button>
@@ -46,7 +46,7 @@ function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, on
               type="text"
               value={name}
               onChange={(e) => onUpdatePlayer(index, e.target.value)}
-              className="flex-grow bg-white border border-gray-300 rounded p-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="flex-grow bg-white border border-gray-300 rounded p-1 text-sm sm:text-base w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
               aria-label={`${getText('player')} ${index + 1} ${getText('name')}`}
             />
             <button
@@ -62,12 +62,12 @@ function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, on
       </div>
 
       {/* Player Total Scores Section */}
-      <h3 className="text-lg font-semibold mb-3 text-blue-800">{getText('totalScoresTitle')}</h3>
+      <h3 className="text-lg sm:text-xl font-semibold mb-3 text-blue-800">{getText('totalScoresTitle')}</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {playerPool.map((name, index) => (
           <div key={index} className="text-center bg-blue-50 p-2 rounded-md border border-blue-200">
             <div className="font-medium text-gray-700 truncate" title={name}>{name}</div>
-            <div className="font-bold text-lg text-blue-900">{totalScores[index]}</div>
+            <div className="font-bold text-lg sm:text-xl text-blue-900">{totalScores[index]}</div>
           </div>
         ))}
       </div>

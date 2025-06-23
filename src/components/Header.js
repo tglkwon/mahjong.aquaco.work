@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function Header({ title, currentLanguage, setCurrentLanguage, getText, showHomeButton }) {
+function Header({ title, currentLanguage, setCurrentLanguage, getText, showHomeButton, onMenuClick }) {
   const navigate = useNavigate();
 
   const handleGoToHome = () => {
@@ -11,6 +11,7 @@ function Header({ title, currentLanguage, setCurrentLanguage, getText, showHomeB
   return (
     <div className="fixed top-0 left-0 w-full bg-purple-400 h-12 sm:h-14 flex items-center justify-between px-2 sm:px-4 shadow-md z-50">
       <button
+        onClick={onMenuClick}
         className="p-1 sm:p-2 rounded-md text-white hover:bg-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
         aria-label={getText('menu')}
       >

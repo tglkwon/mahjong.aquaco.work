@@ -7,6 +7,7 @@
 기록 다하고 공유 버튼 누르면 자동으로 현재 페이지로 갈 수 있는 링크가 복사됩니다.
 다만 링크의 주소에 페이지 내용이 저장되므로 링크를 잃어버리면 복구할 수 없습니다.
 
+### 0.99v input type reset, make sidebar, make about page, merge Add Record & Share button 250622
 ### 0.98v input type inputmode test 250622
 ### 0.97v /set_score_umaoka 250621
 ### 0.96v make uma, oka function 250621

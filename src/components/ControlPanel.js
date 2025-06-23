@@ -6,7 +6,6 @@ function ControlPanel({
   currentTotal,
   handleAddGame,
   isAddRecordButtonDisabled,
-  copyToClipboard,
   getText,
   showUmaOkaControls,
   handleUmaOkaToggle,
@@ -23,7 +22,7 @@ function ControlPanel({
         <div className="flex flex-col sm:flex-row lg:flex-1 items-stretch gap-2">
           {/* Item 1: Target Sum (takes 50% of Sub-Group A) - Label and input now in a row */}
           <div className="flex-1 p-1.5 rounded-lg shadow-md border border-gray-300 bg-white flex flex-row items-center justify-center gap-2 text-center text-sm sm:text-base md:text-lg">
-            <label htmlFor="targetSumInputCtrl" className="font-semibold text-sm sm:text-sm whitespace-nowrap md:text-lg">
+            <label htmlFor="targetSumInputCtrl" className="font-semibold text-sm md:text-base lg:text-lg whitespace-nowrap">
               {getText('targetScoreSum')}:
             </label>
             <input
@@ -31,13 +30,13 @@ function ControlPanel({
               type="number"
               value={targetSum}
               onChange={(e) => setTargetSum(parseInt(e.target.value) || 0)}
-              className="w-full max-w-[100px] p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-lg"
+              className="w-full max-w-[120px] p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-base sm:text-lg md:text-xl"
               aria-label={getText('targetScoreSum')}
             />
           </div>
 
           {/* Item 2: Sum Difference (takes 50% of Sub-Group A) */}
-          <div className="flex-1 p-2 rounded-lg shadow-md border border-gray-300 bg-white flex items-center justify-center text-center text-sm sm:text-base md:text-lg">
+          <div className="flex-1 p-2 rounded-lg shadow-md border border-gray-300 bg-white flex items-center justify-center text-center text-sm sm:text-base md:text-lg lg:text-xl">
             <span className="font-semibold whitespace-nowrap">
               {getText('sumDifference')}: {targetSum - currentTotal}
             </span>
@@ -52,7 +51,7 @@ function ControlPanel({
               type="button"
               onClick={() => handleUmaOkaToggle('1-2')}
               disabled={isUmaOkaGlobalDisabled}
-              className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
+              className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg lg:text-xl rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
                 ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
                   activeUmaOka.uma === '1-2' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
                   'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
@@ -65,7 +64,7 @@ function ControlPanel({
               type="button"
               onClick={() => handleUmaOkaToggle('1-3')}
               disabled={isUmaOkaGlobalDisabled}
-              className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
+              className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg lg:text-xl rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
                 ${isUmaOkaGlobalDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
                   activeUmaOka.uma === '1-3' ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
                   'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
@@ -78,7 +77,7 @@ function ControlPanel({
               type="button"
               onClick={() => handleUmaOkaToggle('oka')}
               disabled={isOkaButtonSpecificDisabled}
-              className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
+              className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg lg:text-xl rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center 
                 ${isOkaButtonSpecificDisabled ? 'bg-gray-400 cursor-not-allowed text-gray-700' :
                   activeUmaOka.oka ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400' :
                   'bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400'
@@ -95,20 +94,14 @@ function ControlPanel({
         <button
           onClick={handleAddGame}
           disabled={isAddRecordButtonDisabled}
-          className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-5 sm:text-base md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full bmb:w-auto
+          className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-5 sm:text-base md:text-lg lg:text-xl rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full bmb:w-auto
             ${isAddRecordButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}
           `}
           aria-label={getText('addRecord')}
         >
           {getText('addRecord')}
         </button>
-        <button
-          onClick={copyToClipboard}
-          className="font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-5 sm:text-base md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-500 hover:bg-green-600 text-white w-full bmb:w-auto"
-          aria-label={getText('share')}
-        >
-          {getText('share')}
-        </button>
+        {/* Share button removed */}
       </div>
     </div>
   );

@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
 
-function HomePage({ currentLanguage, setCurrentLanguage, getText }) {
+function HomePage({ currentLanguage, setCurrentLanguage, getText }) { // Component name is HomePage, but file is MainPage.js. Let's stick with HomePage.
   const navigate = useNavigate();
+  // isSidebarOpen 상태는 Layout 컴포넌트에서 관리합니다.
 
   const cards = [
     {
@@ -29,34 +29,23 @@ function HomePage({ currentLanguage, setCurrentLanguage, getText }) {
       path: '/set_score_umaoka',
     },
     {
-      title: getText('underConstruction'),
-      description: getText('scoreCalculatorDesc'), // Icon size adjusted below
-      icon: '🚧', // Emoji icon
-      action: null,
-    },
-    {
-      title: getText('settings'),
-      description: getText('settingsDesc'),
+      title: getText('about'),
+      description: getText('aboutCardDesc'),
       icon: ( // Icon size adjusted below
         <svg className="h-6 w-6 sm:h-7 md:h-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.09-.73-1.71-.98l-.37-2.65c-.06-.25-.28-.42-.54-.42h-4c-.26 0-.48.17-.54.42l-.37 2.65c-.62.25-1.19.59-1.71-.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.12.22-.07.49.12.64l2.11 1.65c-.04.32-.07-.64-.07-.98s.03.66.07.98l-2.11 1.65c-.19-.15-.24-.42-.12-.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.09.73 1.71.98l.37 2.65c.06.25.28.42.54.42h4c.26 0 .48-.17.54.42l.37-2.65c.62-.25 1.19-.59 1.71-.98l2.49 1c.22-.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
+          <path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
         </svg>
       ),
-      action: null,
+      action: () => navigate('/about'),
+      path: '/about',
     },
   ];
 
   return (
-    <div className="relative min-h-screen bg-gray-100 flex flex-col items-center font-sans text-gray-800">
-      <Header
-        title={getText('mahjongWorldTitle')}
-        currentLanguage={currentLanguage}
-        setCurrentLanguage={setCurrentLanguage}
-        getText={getText}
-        showHomeButton={false}
-      />
-
-      <div className="pt-[78.4px] w-full max-w-6xl flex flex-col items-center p-4">
+    // Layout 컴포넌트가 이미 최상위 div와 패딩을 제공하므로, 여기서는 콘텐츠만 렌더링합니다.
+    // 기존의 "relative min-h-screen bg-gray-100 flex flex-col items-center font-sans text-gray-800"
+    // 및 "pt-[78.4px]" 클래스는 Layout 컴포넌트로 이동했습니다.
+    <div className="w-full max-w-6xl flex flex-col items-center p-4">
         <div className="w-full text-left text-3xl font-bold text-gray-800 mb-8">
         </div>
 
@@ -88,7 +77,6 @@ function HomePage({ currentLanguage, setCurrentLanguage, getText }) {
             </div>
           ))}
         </div>
-      </div>
     </div>
   );
 }

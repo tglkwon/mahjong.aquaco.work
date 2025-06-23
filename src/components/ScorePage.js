@@ -1,11 +1,9 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import Header from '../components/Header';
-import Table from '../components/Table';
-import PlayerManagementAndScores from '../components/PlayerManagementAndScores';
-import ControlPanel from '../components/ControlPanel';
-import MessageDisplay from '../components/MessageDisplay';
-import useTranslation from '../hooks/useTranslation'; // For direct access to translations if needed
+import Table from './Table'; // 상대 경로 수정
+import PlayerManagementAndScores from './PlayerManagementAndScores'; // 상대 경로 수정
+import ControlPanel from './ControlPanel'; // 상대 경로 수정 
+import MessageDisplay from './MessageDisplay'; // 상대 경로 수정
 
 const PLAYER_COUNT = 4;
 const INITIAL_PLAYER_POSITIONS = ['east', 'south', 'west', 'north'];
@@ -21,16 +19,12 @@ const getDefaultUmaOkaParticipants = () => {
   return { east: 0, south: 1, west: 2, north: 3 };
 };
 
-function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parentGetText }) {
+function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, translations }) {
   const location = useLocation();
   const isUmaOkaPage = location.pathname === '/set_score_umaoka';
 
-  // If ScoreTrackerPage needs its own translation instance or direct access to translations
-  // const { translations, getText } = useTranslation(currentLanguage);
-  // For now, assume getText is passed down and sufficient.
-  // However, the original code uses `translations` directly for default player names.
-  const { translations } = useTranslation(currentLanguage); // To get the translations object
-  const getText = parentGetText; // Use the getText passed from App to ensure consistency
+  // useTranslation 훅은 상위 컴포넌트(App.js)에서 한 번만 호출하고,
+  // 필요한 값들(getText, translations)을 props로 전달받아 일관성을 유지합니다.
 
   const parseStateFromUrl = useCallback(() => {
     const hash = window.location.hash;
@@ -51,8 +45,9 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     if (loadedState?.playerNames && Array.isArray(loadedState.playerNames)) {
       return loadedState.playerNames;
     }
-    // Use translations from the hook for initial default names
-    return Array(PLAYER_COUNT).fill('').map((_, i) => `${translations[currentLanguage]?.player || 'Player'}${i + 1}`);
+    // translations 객체는 초기 렌더링 시점에 아직 사용 불가능할 수 있으므로,
+    // 안전한 기본값으로 설정하고 useEffect 훅에서 언어에 맞는 이름으로 업데이트합니다.
+    return Array(PLAYER_COUNT).fill('').map((_, i) => `Player${i + 1}`);
   });
 
   const [playerPool, setPlayerPool] = useState(() => {
@@ -60,7 +55,9 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     if (isUmaOkaPage && loadedState?.playerPool && Array.isArray(loadedState.playerPool)) {
       return loadedState.playerPool;
     }
-    return Array(PLAYER_COUNT).fill('').map((_, i) => `${translations[currentLanguage]?.player || 'Player'}${i + 1}`);
+    // translations 객체는 초기 렌더링 시점에 아직 사용 불가능할 수 있으므로,
+    // 안전한 기본값으로 설정하고 useEffect 훅에서 언어에 맞는 이름으로 업데이트합니다.
+    return Array(PLAYER_COUNT).fill('').map((_, i) => `Player${i + 1}`);
   });
 
   const [games, setGames] = useState(() => {
@@ -106,10 +103,12 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     return 1000;
   });
 
-  const [showCopyMessage, setShowCopyMessage] = useState(false);
-
-  // 우마/오카 기능 상태
   const [activeUmaOka, setActiveUmaOka] = useState({ uma: null, oka: false });
+
+  const [showCopyMessage, setShowCopyMessage] = useState(false);
+ 
+  // '기록 추가' 시 공유(저장)를 트리거하기 위한 상태
+  const [shouldSaveOnUpdate, setShouldSaveOnUpdate] = useState(false);
 
   // Effect to set the language from the URL hash when the component mounts.
   // This runs once after the initial render because parseStateFromUrl (memoized) 
@@ -126,11 +125,17 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     // currentLanguage is intentionally omitted from the dependency array.
     // This ensures the effect only uses the initial currentLanguage implicitly (if needed for comparison, though removed for simplicity)
     // and does not re-run to revert language if the user changes it later via UI.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps 
   }, [parseStateFromUrl, setCurrentLanguage]); 
 
   useEffect(() => {
     // Update player names if they are default and language changes
+    // translations 객체가 완전히 로드되었는지 확인하여 런타임 에러를 방지합니다.
+    if (!translations || !translations.ko || !translations.en || !translations.ja) {
+      // 데이터가 준비되지 않았으면, 이 효과의 실행을 다음 렌더링으로 연기합니다.
+      return;
+    }
+
     const updateDefaultNames = (prevNames) => prevNames.map((name, index) => {
       const defaultNamePattern = new RegExp(`^(?:${translations.ko.player}|${translations.en.player}|${translations.ja.player})${index + 1}$`);
       if (defaultNamePattern.test(name) || name === `Player${index + 1}` || name === `플레이어${index + 1}` || name === `プレイヤー${index + 1}`) {
@@ -185,6 +190,43 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     }
   }, []); // Empty dependency array, so this effect runs once on mount and cleans up on unmount.
 
+  const generateShareableUrl = useCallback(() => {
+    const stateToSave = {
+      games,
+      targetSum,
+      language: currentLanguage,
+      ...(isUmaOkaPage ? { playerPool } : { playerNames })
+    };
+    const jsonString = JSON.stringify(stateToSave);
+    const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
+    // HTML5 history API를 사용하고 현재 경로가 /set_score라고 가정합니다.
+    // URL은 https://<origin>/<pathname>#data=<encodedData> 형식이 되어야 합니다.
+    return `${window.location.origin}${location.pathname}#data=${encodedData}`;
+  }, [playerNames, playerPool, games, targetSum, currentLanguage, isUmaOkaPage, location.pathname]);
+
+  const copyToClipboard = useCallback(() => {
+    const url = generateShareableUrl();
+    navigator.clipboard.writeText(url).then(() => {
+      setShowCopyMessage(true);
+      window.history.replaceState(null, '', url); // 주소창의 URL을 업데이트합니다.
+      setTimeout(() => setShowCopyMessage(false), 2000);
+    }).catch(err => {
+      console.error('URL을 클립보드에 복사하는데 실패했습니다.', err);
+    });
+  }, [generateShareableUrl]);
+
+  // '기록 추가' 버튼 클릭 후 URL을 복사하는 부수 효과
+  useEffect(() => {
+    // shouldSaveOnUpdate는 handleAddGame에서 true로 설정됩니다.
+    // 이 효과는 게임이 추가되어 상태가 업데이트된 후에 실행됩니다.
+    if (shouldSaveOnUpdate) {
+      copyToClipboard();
+      // 다른 리렌더링 시에 다시 저장되는 것을 방지하기 위해 트리거를 리셋합니다.
+      setShouldSaveOnUpdate(false);
+    }
+    // 의존성 배열은 shouldSaveOnUpdate가 true가 될 때 이 효과가 실행되도록 보장하며, copyToClipboard의 의존성을 통해 최신 'games' 상태에 접근할 수 있습니다.
+  }, [shouldSaveOnUpdate, copyToClipboard]);
+
   const currentTotal = useMemo(() => {
     if (!games || games.length === 0) return 0;
     const lastGame = games[games.length - 1];
@@ -211,6 +253,11 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
                 newScores[position] = '0';
               }
             });
+            // 우마/오카 점수는 소수점을 사용하지 않으므로, 소수점 이하를 버리고 정수로 변환
+            Object.keys(newScores).forEach(position => {
+              newScores[position] = parseInt(newScores[position], 10);
+            });
+
             return { ...game, scores: newScores, isEditable: false };
           } else {
             // 마지막 게임의 빈 점수를 '0'으로 변환
@@ -235,6 +282,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
 
       return [...updatedGames, newGame];
     });
+    setShouldSaveOnUpdate(true);
   };
 
   const handleScoreChange = (gameId, playerIndex, newScore) => {
@@ -244,7 +292,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
             ...game,
             scores: game.scores.map((score, idx) => {
               if (idx === playerIndex) {
-                const filteredScore = newScore.replace(/[^0-9-]/g, '');
+                const filteredScore = newScore.replace(/[^0-9-.]/g, '');
                 // Allow empty string, or valid number.
                 if (filteredScore === '' || filteredScore === '-') return filteredScore;
                 const num = parseInt(filteredScore, 10);
@@ -361,7 +409,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
         // 게임에 참가한 플레이어가 4명이 아니면 계산을 건너뜁니다.
         if (Object.keys(playerRawScores).length !== 4) return;
 
-        // 순위 결정을 위한 정렬
+        // 순위 결정을 위한 정렬 (동점 시 자리 순서 우선)
         const positionOrder = { 'east': 1, 'south': 2, 'west': 3, 'north': 4 };
         const playerIndexToPosition = Object.fromEntries(
           Object.entries(game.participants).map(([pos, pIdx]) => [pIdx, pos])
@@ -376,7 +424,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
           });
 
         const gameFinalScores = {};
-        const { uma, oka } = activeUmaOka;
+        const { uma, oka } = activeUmaOka; // activeUmaOka는 이제 props로 받지 않고 ScorePage 내부에서 관리
 
         // 각 플레이어의 점수를 정규화하고 우마/오카를 적용합니다.
         rankedPlayers.forEach((playerData, rank) => {
@@ -404,12 +452,13 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
           gameFinalScores[playerIndex] = finalScore;
         });
         
-        // 현재 게임의 최종 점수를 전체 합산 점수에 더합니다.
-        for (const playerIndex in gameFinalScores) {
+        // 현재 게임의 최종 점수를 전체 합산 점수에 더합니다. (for...in 대신 forEach 사용으로 명확성 개선)
+        Object.entries(gameFinalScores).forEach(([playerIndexStr, score]) => {
+          const playerIndex = parseInt(playerIndexStr, 10);
           if (finalScores[playerIndex] !== undefined) {
-            finalScores[playerIndex] += gameFinalScores[playerIndex];
+            finalScores[playerIndex] += score;
           }
-        }
+        });
       }
     });
 
@@ -443,31 +492,6 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
     return currentTotal !== targetSum;
   }, [currentTotal, targetSum]);
 
-  const generateShareableUrl = useCallback(() => {
-    const stateToSave = {
-      games,
-      targetSum,
-      language: currentLanguage,
-      ...(isUmaOkaPage ? { playerPool } : { playerNames })
-    };
-    const jsonString = JSON.stringify(stateToSave);
-    const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
-    // HTML5 history API를 사용하고 현재 경로가 /set_score라고 가정합니다.
-    // URL은 https://<origin>/<pathname>#data=<encodedData> 형식이 되어야 합니다.
-    return `${window.location.origin}${location.pathname}#data=${encodedData}`;
-  }, [playerNames, playerPool, games, targetSum, currentLanguage, isUmaOkaPage, location.pathname]);
-
-  const copyToClipboard = useCallback(() => {
-    const url = generateShareableUrl();
-    navigator.clipboard.writeText(url).then(() => {
-      setShowCopyMessage(true);
-      window.history.replaceState(null, '', url); // 주소창의 URL을 업데이트합니다.
-      setTimeout(() => setShowCopyMessage(false), 2000);
-    }).catch(err => {
-      console.error('URL을 클립보드에 복사하는데 실패했습니다.', err);
-    });
-  }, [generateShareableUrl]);
-
   const handleScoreInputKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault(); // 기본 Enter 동작 방지
@@ -478,15 +502,8 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-100 flex flex-col items-center font-sans text-gray-800">
-      <Header 
-        title={isUmaOkaPage ? getText('scoreTrackerUmaOkaTitle') : getText('scoreTrackerTitle')} 
-        currentLanguage={currentLanguage} 
-        setCurrentLanguage={setCurrentLanguage} 
-        getText={getText} 
-        showHomeButton={true} 
-      />
-      <div className="pt-[calc(48px+0.5rem)] sm:pt-[calc(56px+0.5rem)] w-full max-w-6xl flex flex-col items-center xs:p-0 px-2 py-4 sm:px-4">
+    // Layout 컴포넌트가 이미 최상위 div와 패딩을 제공하므로, 여기서는 콘텐츠만 렌더링합니다.
+    <div className="w-full max-w-6xl flex flex-col items-center xs:p-0 px-2 py-4 sm:px-4">
         {isUmaOkaPage && (
           <PlayerManagementAndScores
             playerPool={playerPool}
@@ -525,7 +542,6 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText: parent
           <p>{getText('totalGames', { count: games.filter(g => !g.isEditable).length })}</p>
         </div>
       </div>
-    </div>
   );
 }
 
