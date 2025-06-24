@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainPage from './components/MainPage';
 import ScorePage from './components/ScorePage';
+import ScorePhotoInputPage from './components/ScorePhotoInputPage';
 import AboutPage from './components/AboutPage';
 import Layout from './components/Layout'; // Layout 컴포넌트 임포트
 import useTranslation from './hooks/useTranslation'; // 다국어 상태 관리를 위해 훅을 임포트합니다.
@@ -65,6 +66,25 @@ function App() {
               getText={getText}
             >
               <ScorePage 
+                currentLanguage={currentLanguage}
+                setCurrentLanguage={setCurrentLanguage}
+                getText={getText}
+                translations={translations}
+              />
+            </Layout>
+          }
+        />
+        <Route 
+          path="/set_score_photo"
+          element={
+            <Layout 
+              title={getText('scorePhotoInputTitle')} 
+              showHomeButton={true}
+              currentLanguage={currentLanguage}
+              setCurrentLanguage={setCurrentLanguage}
+              getText={getText}
+            >
+              <ScorePhotoInputPage 
                 currentLanguage={currentLanguage}
                 setCurrentLanguage={setCurrentLanguage}
                 getText={getText}

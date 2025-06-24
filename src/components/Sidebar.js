@@ -14,6 +14,7 @@ function Sidebar({ isOpen, onClose, getText }) {
     { path: '/', text: getText('home'), icon: '🏠' },
     { path: '/set_score', text: getText('scoreTrackerTitle'), icon: '📊' },
     { path: '/set_score_umaoka', text: getText('scoreTrackerUmaOkaTitle'), icon: '🎲' },
+    { path: '/set_score_photo', text: getText('scorePhotoInputTitle'), icon: '📷' },
     { path: '/about', text: getText('about'), icon: 'ℹ️' },
     // { path: '/settings', text: getText('settings'), icon: '⚙️' }, // 다른 페이지 예시
   ];

@@ -58,7 +58,6 @@ function AboutPage({ currentLanguage, setCurrentLanguage, getText }) {
   }, [getText]); // 언어 변경 시 에러 메시지 재번역을 위해 getText를 의존성 배열에 추가
 
   return (
-    // Layout 컴포넌트가 이미 최상위 div와 메인 태그, 패딩을 제공하므로, 여기서는 콘텐츠만 렌더링합니다.
     <div className="w-full max-w-4xl flex flex-col items-center p-4">
         <div className="w-full bg-white rounded-xl shadow-lg overflow-hidden">
           {/* 서비스 소개 */}

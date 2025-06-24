@@ -526,6 +526,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
           handleScoreInputKeyDown={handleScoreInputKeyDown} 
           handlePositionChange={handlePositionChange}
           handlePlayerForPositionChange={handlePlayerForPositionChange}
+          // ScorePhotoInputPage와 동일하게 isUmaOkaPage prop을 전달
           isUmaOkaPage={isUmaOkaPage}
         />
         <ControlPanel 

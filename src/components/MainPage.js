@@ -9,9 +9,9 @@ function HomePage({ currentLanguage, setCurrentLanguage, getText }) { // Compone
     {
       title: getText('scoreTrackerTitle'),
       description: getText('unitFormationDesc'),
-      icon: ( // Icon size adjusted below
+      icon: ( // List icon for general score tracker
         <svg className="h-6 w-6 sm:h-7 md:h-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 19H10v-1h4v1zm3-3H7V4c0-.55.45-1 1-1h8c.55 0 1 .45 1 1v12zM9 8h6V6H9v2zm0 3h6V9H9v2zm0 3h6v-2H9v2z"/>
+          <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-8h14V7H7v2z"/>
         </svg>
       ),
       action: () => navigate('/set_score'),
@@ -19,14 +19,26 @@ function HomePage({ currentLanguage, setCurrentLanguage, getText }) { // Compone
     },
     {
       title: getText('scoreTrackerUmaOkaTitle'),
-      description: getText('scoreTrackerUmaOkaDesc'),
-      icon: ( // Icon size adjusted below
+      description: getText('unitFormationDesc'), // Reuse existing description
+      icon: ( // Trophy icon for Uma/Oka
         <svg className="h-6 w-6 sm:h-7 md:h-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 19H10v-1h4v1zm3-3H7V4c0-.55.45-1 1-1h8c.55 0 1 .45 1 1v12zM9 8h6V6H9v2zm0 3h6V9H9v2zm0 3h6v-2H9v2z"/>
+          <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 3.22V19H7v2h10v-2h-6v-2.64c1.62-.58 2.97-1.72 3.61-3.22C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zm-2 3c0 2.21-1.79 4-4 4s-4-1.79-4-4V7h8v1z"/>
         </svg>
       ),
       action: () => navigate('/set_score_umaoka'),
       path: '/set_score_umaoka',
+    },
+    {
+      title: getText('scorePhotoInputTitle'),
+      description: getText('scorePhotoInputDesc'),
+      icon: (
+        <svg className="h-6 w-6 sm:h-7 md:h-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3.2"/>
+          <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+        </svg>
+      ),
+      action: () => navigate('/set_score_photo'),
+      path: '/set_score_photo',
     },
     {
       title: getText('about'),
