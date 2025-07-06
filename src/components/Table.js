@@ -1,9 +1,9 @@
 import React from 'react';
 
-function Table({ playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame, handleScoreInputKeyDown, handlePositionChange, isUmaOkaPage, handleUmaOkaScoreChange, handlePlayerForPositionChange }) {
+function Table({ playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame, handleScoreInputKeyDown, handlePositionChange, isUmaOkaPage, handleUmaOkaScoreChange, handlePlayerForPositionChange, handleScoreButtonClick }) {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full max-w-6xl"> 
-      <table className="divide-y divide-gray-200"> {/* min-w-full 제거 고려 */}
+      <table className="divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
             <th className="bmb:p-px bmb:text-xs px-0.5 py-2 text-center text-xs sm:px-3 sm:py-3 sm:text-sm md:text-base font-medium text-gray-500 uppercase tracking-wider">
@@ -20,7 +20,7 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                     <input
                       type="text"
                       value={name}
-                      onChange={(e) => handlePlayerNameChange(index, e.target.value)} // Adjusted min-width for xl
+                      onChange={(e) => handlePlayerNameChange(index, e.target.value)}
                       className="w-full bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 text-center bmb:text-xs bmb:p-0 text-xs min-w-[60px] sm:text-sm sm:min-w-[80px] md:text-base md:min-w-[100px] lg:text-lg lg:min-w-[120px] xl:text-xl xl:min-w-[140px] font-medium text-gray-700"
                       aria-label={`${getText('player')} ${index + 1} ${getText('name')}`}
                       placeholder={`${getText('player')} ${index + 1}`}
@@ -44,78 +44,43 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
               <td className="bmb:p-px bmb:text-xs px-1 py-3 whitespace-nowrap text-center font-medium"></td>
             </tr>
           )}
-          {games.map((game, gameIndex) => ( // gameIndex 추가
-            <tr key={game.id}> {/* key는 고유한 game.id 사용 */}
+          {games.map((game, gameIndex) => (
+            <tr key={game.id}>
               <td className="bmb:p-px bmb:text-xs px-1 py-3 whitespace-nowrap text-center text-xs sm:px-3 sm:py-3 sm:text-sm md:text-base lg:text-lg xl:text-xl font-medium text-gray-900">
-                {gameIndex + 1} {/* 표시되는 경기 번호는 gameIndex + 1 사용 */}
+                {gameIndex + 1}
               </td>
               {isUmaOkaPage ? (
-                game.isEditable ? (
-                  <td colSpan={4} className="p-2">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
-                      {['east', 'south', 'west', 'north'].map(position => (
-                        <div key={position} className="flex flex-col gap-2">
-                          <select
-                            value={game.participants[position] ?? ''}
-                            onChange={(e) => handlePlayerForPositionChange(game.id, position, e.target.value)}
-                            className="w-full p-1 border border-gray-300 rounded-md text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl focus:outline-none focus:ring-1 focus:ring-blue-400 text-center bmb:text-xs"
-                          >
-                            <option value=""></option>
-                            {playerNames.map((pName, pIdx) => (
-                              <option key={pIdx} value={pIdx}>{pName}</option>
-                            ))}
-                          </select>
-                          <input
-                            // type="text"와 inputMode="numeric" 조합으로 모바일에서 음수 입력 키보드 문제 해결
-                            type="number"
-                            // inputMode="numeric"
-                            value={game.scores[position] ?? ''}
-                            onChange={(e) => handleUmaOkaScoreChange(game.id, position, e.target.value)}
-                            onKeyDown={handleScoreInputKeyDown}
-                            className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl score-input-js"
-                            placeholder={getText('score')}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                ) : (
-                  ['east', 'south', 'west', 'north'].map(position => {
-                    const playerIndex = game.participants ? game.participants[position] : undefined;
-                    const score = game.scores ? game.scores[position] : undefined;
-                    const playerName = (playerIndex !== undefined && playerNames[playerIndex]) ? playerNames[playerIndex] : '';
-
-                    return (
-                      <td key={position} className="bmb:p-px bmb:text-xs px-1 py-3 whitespace-nowrap text-center text-xs sm:px-2 sm:py-3 sm:text-sm md:text-base text-gray-900">
-                        {(playerIndex !== undefined && score !== undefined) ? (
-                          <div className="flex flex-col items-center justify-center h-full">
-                            <span className="block w-full text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-medium text-gray-600 bmb:text-xs truncate" title={playerName}>
-                              {playerName}
-                            </span>
-                            <span className="block w-full bmb:px-px bmb:py-px bmb:text-xs p-1 text-xs sm:p-2 sm:text-sm md:text-base lg:text-lg xl:text-xl">
-                              {score}
-                            </span>
-                          </div>
-                        ) : (<span className="text-gray-400">-</span>)}
-                      </td>
-                    );
-                  })
-                )
+                // UmaOkaTable.js로 분리되었으므로 이 부분은 비워둡니다.
+                <></>
               ) : (
                 playerNames.map((_, playerIndex) => (
                   <td key={playerIndex} className="bmb:p-px bmb:text-xs px-1 py-3 whitespace-nowrap text-xs sm:px-2 sm:py-3 sm:text-sm md:text-base text-gray-900">
                     <div className="flex flex-col items-center">
                       {game.isEditable ? (
-                        <input
-                          // type="number"로 변경하여 숫자 증감 버튼(Stepper)을 표시합니다.
-                          // 이 변경으로 일부 모바일 환경에서는 키보드 종류가 달라질 수 있습니다.
-                          type="number"
-                          value={game.scores[playerIndex]}
-                          onChange={(e) => handleScoreChange(game.id, playerIndex, e.target.value)}
-                          onKeyDown={handleScoreInputKeyDown}
-                          className="w-full bmb:px-px bmb:py-px bmb:text-xs p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:p-2 sm:text-sm md:text-base lg:text-lg xl:text-xl score-input-js"
-                          aria-label={`${getText('game')} ${gameIndex + 1} ${playerNames[playerIndex] || (getText('player') + (playerIndex + 1))} ${getText('score')}`}
-                        />
+                        <div className="relative w-full">
+                          <input
+                            type="number"
+                            value={game.scores[playerIndex]}
+                            onChange={(e) => handleScoreChange(game.id, playerIndex, e.target.value)}
+                            onKeyDown={handleScoreInputKeyDown}
+                            className="w-full bmb:px-px bmb:py-px bmb:text-xs p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:p-2 sm:text-sm md:text-base lg:text-lg xl:text-xl score-input-js"
+                            aria-label={`${getText('game')} ${gameIndex + 1} ${playerNames[playerIndex] || (getText('player') + (playerIndex + 1))} ${getText('score')}`}
+                          />
+                          <button
+                            onClick={() => handleScoreButtonClick(game.id, playerIndex, 'decrement')}
+                            className="absolute left-0 top-0 h-full px-2 text-lg text-gray-600 hover:text-red-500"
+                            aria-label="Decrement score"
+                          >
+                            -
+                          </button>
+                          <button
+                            onClick={() => handleScoreButtonClick(game.id, playerIndex, 'increment')}
+                            className="absolute right-0 top-0 h-full px-2 text-lg text-gray-600 hover:text-green-500"
+                            aria-label="Increment score"
+                          >
+                            +
+                          </button>
+                        </div>
                       ) : (
                         <span className="block w-full bmb:px-px bmb:py-px bmb:text-xs p-1 text-center text-xs sm:p-2 sm:text-sm md:text-base lg:text-lg xl:text-xl">
                           {game.scores[playerIndex]}
@@ -125,8 +90,8 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                   </td>
                 ))
               )}
-              <td className="bmb:p-px bmb:text-xs px-0.5 py-3 sm:py-3 whitespace-nowrap text-center font-medium"> {/* No xl:text-lg here, as it's just 'X' */}
-                {!game.isEditable && games.length > 1 && ( /* Show delete only if not editable and more than one game */
+              <td className="bmb:p-px bmb:text-xs px-0.5 py-3 sm:py-3 whitespace-nowrap text-center font-medium">
+                {!game.isEditable && games.length > 1 && (
                   <div className="flex items-center justify-center space-x-2">
                     <button
                       onClick={() => handleDeleteGame(game.id)}

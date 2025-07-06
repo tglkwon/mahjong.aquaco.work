@@ -1,6 +1,6 @@
 import React from 'react';
 
-function UmaOkaTable({ playerNames, games, getText, handleDeleteGame, handleScoreInputKeyDown, handleUmaOkaScoreChange, handlePlayerForPositionChange }) {
+function UmaOkaTable({ playerNames, games, getText, handleDeleteGame, handleScoreInputKeyDown, handleUmaOkaScoreChange, handlePlayerForPositionChange, handleUmaOkaScoreButtonClick }) {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full max-w-6xl">
       <table className="divide-y divide-gray-200">
@@ -39,16 +39,31 @@ function UmaOkaTable({ playerNames, games, getText, handleDeleteGame, handleScor
                             <option key={pIdx} value={pIdx}>{pName}</option>
                           ))}
                         </select>
-                        <input
-                          // 숫자 입력을 위해 type을 "number"로 변경합니다.
-                          type="number"
-                          value={game.scores[position] ?? ''}
-                          onChange={(e) => handleUmaOkaScoreChange(game.id, position, e.target.value)}
-                          onKeyDown={handleScoreInputKeyDown}
-                          className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:text-sm xl:text-lg score-input-js"
-                          placeholder={getText('score')}
-                          aria-label={`${getText('game')} ${gameIndex + 1} ${getText(position)} ${getText('score')}`}
-                        />
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={game.scores[position] ?? ''}
+                            onChange={(e) => handleUmaOkaScoreChange(game.id, position, e.target.value)}
+                            onKeyDown={handleScoreInputKeyDown}
+                            className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:text-sm xl:text-lg score-input-js"
+                            placeholder={getText('score')}
+                            aria-label={`${getText('game')} ${gameIndex + 1} ${getText(position)} ${getText('score')}`}
+                          />
+                          <button
+                            onClick={() => handleUmaOkaScoreButtonClick(game.id, position, 'decrement')}
+                            className="absolute left-0 top-0 h-full px-2 text-lg text-gray-600 hover:text-red-500"
+                            aria-label="Decrement score"
+                          >
+                            -
+                          </button>
+                          <button
+                            onClick={() => handleUmaOkaScoreButtonClick(game.id, position, 'increment')}
+                            className="absolute right-0 top-0 h-full px-2 text-lg text-gray-600 hover:text-green-500"
+                            aria-label="Increment score"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -75,7 +90,7 @@ function UmaOkaTable({ playerNames, games, getText, handleDeleteGame, handleScor
                   );
                 })
               )}
-              <td className="bmb:p-px bmb:text-xs px-0.5 py-3 sm:py-3 whitespace-nowrap text-center font-medium"> {/* No xl:text-lg here, as it's just 'X' */}
+              <td className="bmb:p-px bmb:text-xs px-0.5 py-3 sm:py-3 whitespace-nowrap text-center font-medium">
                 {!game.isEditable && games.length > 1 && (
                   <div className="flex items-center justify-center space-x-2">
                     <button
