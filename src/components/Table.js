@@ -67,8 +67,8 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                           </select>
                           <input
                             // type="text"와 inputMode="numeric" 조합으로 모바일에서 음수 입력 키보드 문제 해결
-                            type="text"
-                            inputMode="numeric"
+                            type="number"
+                            // inputMode="numeric"
                             value={game.scores[position] ?? ''}
                             onChange={(e) => handleUmaOkaScoreChange(game.id, position, e.target.value)}
                             onKeyDown={handleScoreInputKeyDown}
@@ -107,9 +107,9 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                     <div className="flex flex-col items-center">
                       {game.isEditable ? (
                         <input
-                          // type="text"와 inputMode="numeric" 조합으로 모바일에서 음수 입력 키보드 문제 해결
-                          type="text"
-                          inputMode="numeric"
+                          // type="number"로 변경하여 숫자 증감 버튼(Stepper)을 표시합니다.
+                          // 이 변경으로 일부 모바일 환경에서는 키보드 종류가 달라질 수 있습니다.
+                          type="number"
                           value={game.scores[playerIndex]}
                           onChange={(e) => handleScoreChange(game.id, playerIndex, e.target.value)}
                           onKeyDown={handleScoreInputKeyDown}
