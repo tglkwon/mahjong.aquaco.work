@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
+import pako from 'pako';
 import Table from './Table';
 import PlayerManagementAndScores from './PlayerManagementAndScores';
 import ControlPanel from './ControlPanel';
@@ -8,6 +9,7 @@ import UmaOkaTable from './UmaOkaTable';
 
 const PLAYER_COUNT = 4;
 const INITIAL_PLAYER_POSITIONS = ['east', 'south', 'west', 'north'];
+const DATA_STRUCTURE_VERSION = 2; // v1: pako on JSON, v2: pako on optimized array
 
 const getDefaultPlayerPositions = () => {
   return [...INITIAL_PLAYER_POSITIONS];
@@ -22,26 +24,98 @@ const getIncrementAmount = (targetSum) => {
   return 10 ** (digits - 2);
 };
 
+// Helper to convert binary string to Uint8Array
+const binaryStringToBytes = (binaryString) => {
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+};
+
+// Helper to convert Uint8Array to binary string
+const bytesToBinaryString = (bytes) => {
+  let binaryString = '';
+  bytes.forEach((byte) => {
+    binaryString += String.fromCharCode(byte);
+  });
+  return binaryString;
+};
+
+
 function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, translations }) {
   const location = useLocation();
   const isUmaOkaPage = location.pathname === '/set_score_umaoka';
 
-  const parseStateFromUrl = useCallback(() => {
+  const parseStateFromUrl = useCallback((isUmaOka) => {
     const hash = window.location.hash;
-    if (hash.startsWith('#data=')) {
-      try {
-        const encodedData = hash.substring(hash.indexOf('=') + 1);
+    if (!hash.startsWith('#data=')) return null;
+
+    const encodedData = hash.substring(hash.indexOf('=') + 1);
+
+    try {
+      const binaryString = atob(encodedData);
+      const bytes = binaryStringToBytes(binaryString);
+      const inflatedData = pako.inflate(bytes, { to: 'string' });
+      const parsedData = JSON.parse(inflatedData);
+
+      if (Array.isArray(parsedData)) { // New optimized array format
+        const version = parsedData[0];
+        if (version === DATA_STRUCTURE_VERSION) {
+          const restoredGames = parsedData[3].map((gameData, index) => {
+            if (isUmaOka) {
+              return {
+                id: index + 1,
+                participants: { east: gameData[0], south: gameData[1], west: gameData[2], north: gameData[3] },
+                scores: { east: gameData[4], south: gameData[5], west: gameData[6], north: gameData[7] },
+                isEditable: false,
+              };
+            } else {
+              return {
+                id: index + 1,
+                scores: gameData,
+                isEditable: false,
+                playerPositions: getDefaultPlayerPositions(),
+                umaType: null
+              };
+            }
+          });
+
+          const result = {
+            targetSum: parsedData[1],
+            games: restoredGames,
+            language: parsedData[4],
+            activeUmaOka: isUmaOka && parsedData[5] ? { uma: parsedData[5][0], oka: parsedData[5][1] } : { uma: null, oka: false },
+          };
+
+          if (isUmaOka) {
+            result.playerPool = parsedData[2];
+          } else {
+            result.playerNames = parsedData[2];
+          }
+          return result;
+        } else {
+          throw new Error(`Unsupported data version: ${version}`);
+        }
+      } else if (typeof parsedData === 'object' && parsedData !== null) { // Old pako-on-json format
+        return parsedData;
+      } else {
+        throw new Error('Invalid parsed data type');
+      }
+    } catch (pakoError) {
+      try { // Fallback to legacy uncompressed format
         const decodedJsonString = decodeURIComponent(escape(atob(encodedData)));
         return JSON.parse(decodedJsonString);
-      } catch (error) {
-        console.error('URL 해시에서 상태를 파싱하는데 오류가 발생했습니다:', error);
+      } catch (legacyError) {
+        console.error('URL 해시에서 상태를 파싱하는데 오류가 발생했습니다 (모든 방식 실패):', pakoError, legacyError);
+        return null;
       }
     }
-    return null;
   }, []);
 
+  const loadedState = useMemo(() => parseStateFromUrl(isUmaOkaPage), [parseStateFromUrl, isUmaOkaPage]);
+
   const [playerNames, setPlayerNames] = useState(() => {
-    const loadedState = parseStateFromUrl();
     if (loadedState?.playerNames && Array.isArray(loadedState.playerNames)) {
       return loadedState.playerNames;
     }
@@ -49,7 +123,6 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   });
 
   const [playerPool, setPlayerPool] = useState(() => {
-    const loadedState = parseStateFromUrl();
     if (isUmaOkaPage && loadedState?.playerPool && Array.isArray(loadedState.playerPool)) {
       return loadedState.playerPool;
     }
@@ -57,25 +130,15 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   });
 
   const [games, setGames] = useState(() => {
-    const loadedState = parseStateFromUrl();
     const loadedGames = loadedState?.games;
-    if (Array.isArray(loadedGames)) {
-      return loadedGames.map((game, index) => ({
-        ...game,
-        id: game.id || index + 1,
-        isEditable: game.isEditable !== undefined ? game.isEditable : false,
-        ...(isUmaOkaPage
-          ? {
-              participants: game.participants || {},
-              scores: game.scores || {},
-            }
-          : {
-              scores: game.scores && game.scores.length === PLAYER_COUNT ? game.scores : Array(PLAYER_COUNT).fill(''),
-              playerPositions: game.playerPositions && game.playerPositions.length === PLAYER_COUNT ? game.playerPositions : getDefaultPlayerPositions(),
-            }
-        ),
-      }));
+    if (Array.isArray(loadedGames) && loadedGames.length > 0) {
+      const newGameId = loadedGames.length > 0 ? Math.max(...loadedGames.map(g => g.id)) + 1 : 1;
+      const newGame = isUmaOkaPage
+        ? { id: newGameId, participants: getDefaultUmaOkaParticipants(), scores: {}, isEditable: true }
+        : { id: newGameId, scores: Array(PLAYER_COUNT).fill(''), isEditable: true, playerPositions: getDefaultPlayerPositions(), umaType: null };
+      return [...loadedGames, newGame];
     }
+    // Default initial state if no data is loaded
     if (isUmaOkaPage) {
       return [{ id: 1, participants: getDefaultUmaOkaParticipants(), scores: {}, isEditable: true }];
     } else {
@@ -90,24 +153,22 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   });
 
   const [targetSum, setTargetSum] = useState(() => {
-    const loadedState = parseStateFromUrl();
-    if (typeof loadedState?.targetSum === 'number') {
-      return loadedState.targetSum;
-    }
-    return 1000;
+    return typeof loadedState?.targetSum === 'number' ? loadedState.targetSum : 1000;
   });
 
-  const [activeUmaOka, setActiveUmaOka] = useState({ uma: null, oka: false });
+  const [activeUmaOka, setActiveUmaOka] = useState(() => {
+    return loadedState?.activeUmaOka || { uma: null, oka: false };
+  });
+
   const [showCopyMessage, setShowCopyMessage] = useState(false);
   const [shouldSaveOnUpdate, setShouldSaveOnUpdate] = useState(false);
+  const [popupMessage, setPopupMessage] = useState({ show: false, text: '' });
 
   useEffect(() => {
-    const loadedState = parseStateFromUrl();
     if (loadedState?.language) {
       setCurrentLanguage(loadedState.language);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parseStateFromUrl, setCurrentLanguage]);
+  }, [loadedState, setCurrentLanguage]);
 
   useEffect(() => {
     if (!translations || !translations.ko || !translations.en || !translations.ja) {
@@ -124,50 +185,40 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     setPlayerPool(updateDefaultNames);
   }, [currentLanguage, getText, translations]);
 
-  useEffect(() => {
-    const handleViewportResize = () => {
-      const activeElement = document.activeElement;
-      if (activeElement && activeElement.matches('input[type="number"].score-input-js')) {
-        setTimeout(() => {
-          const inputRect = activeElement.getBoundingClientRect();
-          const visualViewport = window.visualViewport;
-          if (visualViewport) {
-            const desiredViewportPadding = 20;
-            let scrollOffset = 0;
-            if (inputRect.bottom > visualViewport.offsetTop + visualViewport.height - desiredViewportPadding) {
-              scrollOffset = inputRect.bottom - (visualViewport.offsetTop + visualViewport.height - desiredViewportPadding);
-            }
-            else if (inputRect.top < visualViewport.offsetTop + desiredViewportPadding) {
-              scrollOffset = inputRect.top - (visualViewport.offsetTop + desiredViewportPadding);
-            }
-            if (scrollOffset !== 0) {
-              window.scrollBy({ top: scrollOffset, behavior: 'smooth' });
-            }
-          }
-        }, 100);
-      }
-    };
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportResize);
-      return () => {
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', handleViewportResize);
-        }
-      };
-    }
-  }, []);
-
   const generateShareableUrl = useCallback(() => {
     const stateToSave = {
-      games,
+      games: games.filter(g => !g.isEditable), // Only save completed games
       targetSum,
       language: currentLanguage,
-      ...(isUmaOkaPage ? { playerPool } : { playerNames })
+      ...(isUmaOkaPage ? { playerPool, activeUmaOka } : { playerNames })
     };
-    const jsonString = JSON.stringify(stateToSave);
-    const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
+
+    // New optimized array format
+    const optimizedGames = stateToSave.games.map(game => {
+      if (isUmaOkaPage) {
+        return [
+          game.participants.east, game.participants.south, game.participants.west, game.participants.north,
+          game.scores.east, game.scores.south, game.scores.west, game.scores.north
+        ];
+      }
+      return game.scores;
+    });
+
+    const optimizedData = [
+      DATA_STRUCTURE_VERSION,
+      targetSum,
+      isUmaOkaPage ? playerPool : playerNames,
+      optimizedGames,
+      currentLanguage,
+      isUmaOkaPage ? [activeUmaOka.uma, activeUmaOka.oka] : null
+    ];
+
+    const jsonString = JSON.stringify(optimizedData);
+    const compressedData = pako.deflate(jsonString);
+    const binaryString = bytesToBinaryString(compressedData);
+    const encodedData = btoa(binaryString);
     return `${window.location.origin}${location.pathname}#data=${encodedData}`;
-  }, [playerNames, playerPool, games, targetSum, currentLanguage, isUmaOkaPage, location.pathname]);
+  }, [games, targetSum, currentLanguage, isUmaOkaPage, playerPool, playerNames, activeUmaOka, location.pathname]);
 
   const copyToClipboard = useCallback(() => {
     const url = generateShareableUrl();
@@ -200,8 +251,8 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
 
   const handleAddGame = () => {
     setGames(prevGames => {
-      const updatedGames = prevGames.map((game, index) => {
-        if (index === prevGames.length - 1) {
+      const updatedGames = prevGames.map((game) => {
+        if (game.isEditable) {
           if (isUmaOkaPage) {
             const newScores = { ...game.scores };
             INITIAL_PLAYER_POSITIONS.forEach(position => {
@@ -235,6 +286,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     setShouldSaveOnUpdate(true);
   };
 
+  // ... (The rest of the handler functions remain the same)
   const handleScoreChange = (gameId, playerIndex, newScore) => {
     setGames(currentGames => currentGames.map(game =>
       game.id === gameId
@@ -429,23 +481,55 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
         return { ...prev, uma: prev.uma === type ? null : type };
       }
     });
-    console.log(`Uma/Oka type toggled: ${type}`);
   }, []);
 
   const isUmaOkaGlobalDisabled = useMemo(() => {
     return targetSum % 10 !== 0;
   }, [targetSum]);
 
-  const isAddRecordButtonDisabled = useMemo(() => {
-    return currentTotal !== targetSum;
-  }, [currentTotal, targetSum]);
+  const addRecordButtonStatus = useMemo(() => {
+    if (isUmaOkaPage) {
+      const lastGame = games[games.length - 1];
+      if (!lastGame || !lastGame.participants) return 'no_participants';
+
+      const participantIndices = Object.values(lastGame.participants);
+      if (participantIndices.length !== 4) return 'not_enough_players';
+
+      const uniqueParticipantIndices = new Set(participantIndices);
+      if (uniqueParticipantIndices.size !== 4) return 'duplicate_players';
+    }
+    if (currentTotal !== targetSum) return 'total_mismatch';
+    return null; // All conditions met
+  }, [currentTotal, targetSum, games, isUmaOkaPage]);
+
+  const handleRecordButtonPress = () => {
+    const status = addRecordButtonStatus;
+    if (status === null) {
+      handleAddGame();
+    } else {
+      let messageKey = '';
+      switch (status) {
+        case 'total_mismatch':
+          messageKey = 'popup_total_mismatch';
+          break;
+        case 'not_enough_players':
+          messageKey = 'popup_not_enough_players';
+          break;
+        case 'duplicate_players':
+          messageKey = 'popup_duplicate_players';
+          break;
+        default:
+          messageKey = 'popup_generic_error';
+      }
+      setPopupMessage({ show: true, text: getText(messageKey) });
+      setTimeout(() => setPopupMessage({ show: false, text: '' }), 2000);
+    }
+  };
 
   const handleScoreInputKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      if (!isAddRecordButtonDisabled) {
-        handleAddGame();
-      }
+      handleRecordButtonPress();
     }
   };
 
@@ -489,8 +573,8 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       )}
       <ControlPanel
         targetSum={targetSum} setTargetSum={setTargetSum}
-        currentTotal={currentTotal} handleAddGame={handleAddGame}
-        isAddRecordButtonDisabled={isAddRecordButtonDisabled}
+        currentTotal={currentTotal} onRecordButtonPress={handleRecordButtonPress}
+        isAddRecordButtonDisabled={addRecordButtonStatus !== null}
         copyToClipboard={copyToClipboard} getText={getText}
         showUmaOkaControls={isUmaOkaPage}
         handleUmaOkaToggle={handleUmaOkaToggle}
@@ -498,6 +582,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
         isUmaOkaGlobalDisabled={isUmaOkaGlobalDisabled}
       />
       <MessageDisplay message={getText('copied')} isVisible={showCopyMessage} />
+      <MessageDisplay message={popupMessage.text} isVisible={popupMessage.show} />
       <div className="mt-6 sm:mt-8 text-xs sm:text-sm md:text-lg text-gray-600">
         <p>{getText('totalGames', { count: games.filter(g => !g.isEditable).length })}</p>
       </div>

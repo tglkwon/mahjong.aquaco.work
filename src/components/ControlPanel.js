@@ -4,13 +4,13 @@ function ControlPanel({
   targetSum,
   setTargetSum,
   currentTotal,
-  handleAddGame,
+  onRecordButtonPress, // Changed from handleAddGame
   isAddRecordButtonDisabled,
   getText,
   showUmaOkaControls,
   handleUmaOkaToggle,
-  activeUmaOka,      // Changed from activeUmaType
-  isUmaOkaGlobalDisabled // 추가된 prop: targetSum % 10 !== 0 일 때 true
+  activeUmaOka,
+  isUmaOkaGlobalDisabled
 }) {
   const isOkaButtonSpecificDisabled = isUmaOkaGlobalDisabled || (targetSum !== 1000 && targetSum !== 100000);
 
@@ -92,8 +92,7 @@ function ControlPanel({
       {/* Group 2: Add Record, Share buttons */}
       <div className="w-full flex flex-col bmb:flex-row bmb:justify-end items-center gap-3 sm:gap-4">
         <button
-          onClick={handleAddGame}
-          disabled={isAddRecordButtonDisabled}
+          onClick={onRecordButtonPress} // Changed from handleAddGame
           className={`font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-5 sm:text-base md:text-lg lg:text-xl rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full bmb:w-auto
             ${isAddRecordButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}
           `}

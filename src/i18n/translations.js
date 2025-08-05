@@ -60,6 +60,10 @@ export const translations = {
     scorePhotoInputDesc: '동가가 점수표시 작탁의 사진을 찍어 올리시면 점수가 자동입력 됩니다.',
     loading: '로딩 중',
     versionHistoryError: '버전 정보를 불러오는 데 실패했습니다.',
+    popup_total_mismatch: '점수 합계가 목표 점수와 일치하지 않습니다.',
+    popup_not_enough_players: '4명의 플레이어를 모두 선택해야 합니다.',
+    popup_duplicate_players: '중복된 플레이어가 있습니다. 각기 다른 플레이어를 선택해주세요.',
+    popup_generic_error: '알 수 없는 오류로 기록할 수 없습니다.',
   },
   en: {
     language: 'Language',
@@ -123,6 +127,10 @@ export const translations = {
     scorePhotoInputDesc: 'If the East player uploads a photo of the mahjong table with score display, scores will be entered automatically.',
     loading: 'Loading',
     versionHistoryError: 'Failed to load version history.',
+    popup_total_mismatch: 'The total score does not match the target sum.',
+    popup_not_enough_players: 'All 4 players must be selected.',
+    popup_duplicate_players: 'There are duplicate players. Please select different players.',
+    popup_generic_error: 'Cannot record due to an unknown error.',
   },
   ja: {
     language: '言語',
@@ -186,5 +194,9 @@ export const translations = {
     scorePhotoInputDesc: '東家が点数表示卓の写真を撮ってアップロードすると、点数が自動で入力されます。',
     loading: '読み込み中',
     versionHistoryError: 'バージョン情報の読み込みに失敗しました。',
-  },
+    popup_total_mismatch: '点数合計が目標点数と一致しません。',
+    popup_not_enough_players: '4人のプレイヤーをすべて選択する必要があります。',
+    popup_duplicate_players: '重複したプレイヤーがいます。それぞれ異なるプレイヤーを選択してください。',
+    popup_generic_error: '不明なエラーのため記録できません。',
+  }
 };
