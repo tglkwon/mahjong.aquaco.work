@@ -208,7 +208,17 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     setPlayerPool(updateDefaultNames);
   }, [currentLanguage, getText, translations]);
 
-  const targetSum = useMemo(() => startingScore * 4, [startingScore]);
+  const scoreMultiplier = useMemo(() => {
+    const len = String(startingScore).length;
+    if (len >= 5) return 1;
+    if (len <= 0) return 1;
+    return 10 ** (5 - len);
+  }, [startingScore]);
+
+  const scaledStartingScore = useMemo(() => startingScore * scoreMultiplier, [startingScore, scoreMultiplier]);
+  const scaledReturnScore = useMemo(() => returnScore * scoreMultiplier, [returnScore, scoreMultiplier]);
+
+  const totalTargetScore = useMemo(() => scaledStartingScore * 4, [scaledStartingScore]);
 
   const generateShareableUrl = useCallback(() => {
     const stateToSave = {
@@ -269,12 +279,10 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     if (!games || games.length === 0) return 0;
     const lastGame = games[games.length - 1];
     if (!lastGame || !lastGame.scores) return 0;
-    if (isUmaOkaPage) {
-      return Object.values(lastGame.scores).reduce((sum, score) => sum + (parseInt(score, 10) || 0), 0);
-    } else {
-      return lastGame.scores.reduce((sum, score) => sum + (parseInt(score, 10) || 0), 0);
-    }
-  }, [games, isUmaOkaPage]);
+
+    const lastGameScores = isUmaOkaPage ? Object.values(lastGame.scores) : lastGame.scores;
+    return lastGameScores.reduce((sum, score) => sum + ((parseInt(score, 10) || 0) * scoreMultiplier), 0);
+  }, [games, isUmaOkaPage, scoreMultiplier]);
 
   const handleAddGame = () => {
     setGames(prevGames => {
@@ -433,11 +441,14 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   const totalScores = useMemo(() => {
     if (!isUmaOkaPage) {
       return Array(PLAYER_COUNT).fill(0).map((_, playerIndex) =>
-        games.reduce((sum, game) => sum + (parseInt(game.scores[playerIndex], 10) || 0), 0)
+        games.reduce((sum, game) => {
+          const score = (parseInt(game.scores[playerIndex], 10) || 0) * scoreMultiplier;
+          return sum + score;
+        }, 0)
       );
     }
     const finalScores = Array(playerPool.length).fill(0);
-    const okaAmount = isOkaEnabled ? (returnScore - startingScore) * 4 / 1000 : 0;
+    const okaAmount = isOkaEnabled ? (scaledReturnScore - scaledStartingScore) * 4 / 1000 : 0;
 
     games.forEach(game => {
       if (game.isEditable) {
@@ -446,7 +457,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       if (game.participants && game.scores && Object.keys(game.participants).length === 4) {
         const playerRawScores = {};
         Object.entries(game.participants).forEach(([position, playerIndex]) => {
-          const score = parseInt(game.scores[position], 10) || 0;
+          const score = (parseInt(game.scores[position], 10) || 0) * scoreMultiplier;
           playerRawScores[playerIndex] = score;
         });
         if (Object.keys(playerRawScores).length !== 4) return;
@@ -466,7 +477,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
         const { uma } = activeUmaOka;
         rankedPlayers.forEach((playerData, rank) => {
           const { playerIndex } = playerData;
-          let finalScore = (playerRawScores[playerIndex] - returnScore) / 1000;
+          let finalScore = (playerRawScores[playerIndex] - scaledReturnScore) / 1000;
 
           if (uma === '1-2') {
             if (rank === 0) finalScore += 20;
@@ -493,7 +504,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       }
     });
     return finalScores.map(score => score.toFixed(1));
-  }, [games, isUmaOkaPage, playerPool, activeUmaOka, startingScore, returnScore, isOkaEnabled]);
+  }, [games, isUmaOkaPage, playerPool, activeUmaOka, isOkaEnabled, scoreMultiplier, scaledStartingScore, scaledReturnScore]);
 
   const handleDeleteGame = (gameIdToDelete) => {
     setGames(prevGames => prevGames.filter(game => game.id !== gameIdToDelete));
@@ -515,7 +526,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   }, []);
 
   const isUmaOkaGlobalDisabled = useMemo(() => {
-    return startingScore % 100 !== 0 || (isOkaEnabled && returnScore % 100 !== 0);
+    return startingScore % 10 !== 0 || (isOkaEnabled && returnScore % 10 !== 0);
   }, [startingScore, returnScore, isOkaEnabled]);
 
   const addRecordButtonStatus = useMemo(() => {
@@ -529,9 +540,9 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       const uniqueParticipantIndices = new Set(participantIndices);
       if (uniqueParticipantIndices.size !== 4) return 'duplicate_players';
     }
-    if (currentTotal !== targetSum) return 'total_mismatch';
+    if (currentTotal !== totalTargetScore) return 'total_mismatch';
     return null; // All conditions met
-  }, [currentTotal, targetSum, games, isUmaOkaPage]);
+  }, [currentTotal, totalTargetScore, games, isUmaOkaPage]);
 
   const handleRecordButtonPress = () => {
     const status = addRecordButtonStatus;
@@ -609,7 +620,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
         setReturnScore={setReturnScore}
         isOkaEnabled={isOkaEnabled}
         onOkaToggle={onOkaToggle}
-        targetSum={targetSum}
+        totalTargetScore={totalTargetScore}
         currentTotal={currentTotal} 
         onRecordButtonPress={handleRecordButtonPress}
         isAddRecordButtonDisabled={addRecordButtonStatus !== null}

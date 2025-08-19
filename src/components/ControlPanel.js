@@ -7,7 +7,7 @@ function ControlPanel({
   setReturnScore,
   isOkaEnabled,
   onOkaToggle,
-  targetSum,
+  totalTargetScore,
   currentTotal,
   onRecordButtonPress,
   isAddRecordButtonDisabled,
@@ -27,7 +27,7 @@ function ControlPanel({
           {/* Item 1: Starting Score Input */}
           <div className="flex-1 p-1.5 rounded-lg shadow-md border border-gray-300 bg-white flex flex-row items-center justify-center gap-2 text-center text-sm sm:text-base md:text-lg">
             <label htmlFor="startingScoreInputCtrl" className="font-semibold text-sm md:text-base lg:text-lg whitespace-nowrap">
-              {getText('targetScoreSum')}:
+              {getText('startingScore')}:
             </label>
             <input
               id="startingScoreInputCtrl"
@@ -35,14 +35,14 @@ function ControlPanel({
               value={startingScore}
               onChange={(e) => setStartingScore(parseInt(e.target.value) || 0)}
               className="w-full max-w-[120px] p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-base sm:text-lg md:text-xl"
-              aria-label={getText('targetScoreSum')}
+              aria-label={getText('startingScore')}
             />
           </div>
 
           {/* Item 2: Sum Difference */}
           <div className="flex-1 p-2 rounded-lg shadow-md border border-gray-300 bg-white flex items-center justify-center text-center text-sm sm:text-base md:text-lg lg:text-xl">
             <span className="font-semibold whitespace-nowrap">
-              {getText('sumDifference')}: {targetSum - currentTotal}
+              {getText('sumDifference')}: {totalTargetScore - currentTotal}
             </span>
           </div>
         </div>
