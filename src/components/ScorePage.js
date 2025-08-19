@@ -9,7 +9,7 @@ import UmaOkaTable from './UmaOkaTable';
 
 const PLAYER_COUNT = 4;
 const INITIAL_PLAYER_POSITIONS = ['east', 'south', 'west', 'north'];
-const DATA_STRUCTURE_VERSION = 2; // v1: pako on JSON, v2: pako on optimized array
+const DATA_STRUCTURE_VERSION = 3; // v2: pako on optimized array, v3: added returnScore, isOkaEnabled
 
 const getDefaultPlayerPositions = () => {
   return [...INITIAL_PLAYER_POSITIONS];
@@ -19,8 +19,8 @@ const getDefaultUmaOkaParticipants = () => {
   return { east: 0, south: 1, west: 2, north: 3 };
 };
 
-const getIncrementAmount = (targetSum) => {
-  const digits = String(targetSum).length;
+const getIncrementAmount = (score) => {
+  const digits = String(score).length;
   return 10 ** (digits - 2);
 };
 
@@ -61,7 +61,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
 
       if (Array.isArray(parsedData)) { // New optimized array format
         const version = parsedData[0];
-        if (version === DATA_STRUCTURE_VERSION) {
+        if (version >= 2) { // Handle v2 and later
           const restoredGames = parsedData[3].map((gameData, index) => {
             if (isUmaOka) {
               return {
@@ -82,11 +82,16 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
           });
 
           const result = {
-            targetSum: parsedData[1],
+            startingScore: parsedData[1],
             games: restoredGames,
             language: parsedData[4],
             activeUmaOka: isUmaOka && parsedData[5] ? { uma: parsedData[5][0], oka: parsedData[5][1] } : { uma: null, oka: false },
           };
+          
+          if (version === 3) {
+            result.returnScore = parsedData[6];
+            result.isOkaEnabled = parsedData[7];
+          }
 
           if (isUmaOka) {
             result.playerPool = parsedData[2];
@@ -107,7 +112,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
         const decodedJsonString = decodeURIComponent(escape(atob(encodedData)));
         return JSON.parse(decodedJsonString);
       } catch (legacyError) {
-        console.error('URL 해시에서 상태를 파싱하는데 오류가 발생했습니다 (모든 방식 실패):', pakoError, legacyError);
+        console.error('URL 해시에서 상태를 파싱하는데 오류가 발생했습니다 (모든 방식 실패): ', pakoError, legacyError);
         return null;
       }
     }
@@ -152,8 +157,20 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     }
   });
 
-  const [targetSum, setTargetSum] = useState(() => {
-    return typeof loadedState?.targetSum === 'number' ? loadedState.targetSum : 1000;
+  const [startingScore, setStartingScore] = useState(() => {
+    if (typeof loadedState?.startingScore === 'number') {
+      return loadedState.startingScore;
+    }
+    return 25000;
+  });
+
+  const [isOkaEnabled, setIsOkaEnabled] = useState(loadedState?.isOkaEnabled || false);
+
+  const [returnScore, setReturnScore] = useState(() => {
+    if (typeof loadedState?.returnScore === 'number') {
+      return loadedState.returnScore;
+    }
+    return isOkaEnabled ? 30000 : startingScore;
   });
 
   const [activeUmaOka, setActiveUmaOka] = useState(() => {
@@ -171,6 +188,12 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   }, [loadedState, setCurrentLanguage]);
 
   useEffect(() => {
+    if (!isOkaEnabled) {
+      setReturnScore(startingScore);
+    }
+  }, [isOkaEnabled, startingScore]);
+
+  useEffect(() => {
     if (!translations || !translations.ko || !translations.en || !translations.ja) {
       return;
     }
@@ -185,12 +208,14 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     setPlayerPool(updateDefaultNames);
   }, [currentLanguage, getText, translations]);
 
+  const targetSum = useMemo(() => startingScore * 4, [startingScore]);
+
   const generateShareableUrl = useCallback(() => {
     const stateToSave = {
       games: games.filter(g => !g.isEditable), // Only save completed games
-      targetSum,
+      startingScore,
       language: currentLanguage,
-      ...(isUmaOkaPage ? { playerPool, activeUmaOka } : { playerNames })
+      ...(isUmaOkaPage ? { playerPool, activeUmaOka, returnScore, isOkaEnabled } : { playerNames })
     };
 
     // New optimized array format
@@ -206,11 +231,13 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
 
     const optimizedData = [
       DATA_STRUCTURE_VERSION,
-      targetSum,
+      startingScore,
       isUmaOkaPage ? playerPool : playerNames,
       optimizedGames,
       currentLanguage,
-      isUmaOkaPage ? [activeUmaOka.uma, activeUmaOka.oka] : null
+      isUmaOkaPage ? [activeUmaOka.uma, activeUmaOka.oka] : null,
+      isUmaOkaPage ? returnScore : null,
+      isUmaOkaPage ? isOkaEnabled : null,
     ];
 
     const jsonString = JSON.stringify(optimizedData);
@@ -218,7 +245,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     const binaryString = bytesToBinaryString(compressedData);
     const encodedData = btoa(binaryString);
     return `${window.location.origin}${location.pathname}#data=${encodedData}`;
-  }, [games, targetSum, currentLanguage, isUmaOkaPage, playerPool, playerNames, activeUmaOka, location.pathname]);
+  }, [games, startingScore, currentLanguage, isUmaOkaPage, playerPool, playerNames, activeUmaOka, location.pathname, returnScore, isOkaEnabled]);
 
   const copyToClipboard = useCallback(() => {
     const url = generateShareableUrl();
@@ -307,7 +334,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   };
 
   const handleScoreButtonClick = (gameId, playerIndex, operation) => {
-    const amount = getIncrementAmount(targetSum);
+    const amount = getIncrementAmount(startingScore);
     setGames(currentGames =>
         currentGames.map(game => {
             if (game.id === gameId) {
@@ -379,7 +406,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   };
 
   const handleUmaOkaScoreButtonClick = (gameId, position, operation) => {
-    const amount = getIncrementAmount(targetSum);
+    const amount = getIncrementAmount(startingScore);
     setGames(currentGames =>
         currentGames.map(game => {
             if (game.id === gameId) {
@@ -410,10 +437,8 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       );
     }
     const finalScores = Array(playerPool.length).fill(0);
-    const normalizeScore = (rawScore) => {
-      if (targetSum === 0) return -25;
-      return (rawScore / targetSum) * 100 - 25;
-    };
+    const okaAmount = isOkaEnabled ? (returnScore - startingScore) * 4 / 1000 : 0;
+
     games.forEach(game => {
       if (game.isEditable) {
         return;
@@ -438,10 +463,11 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
             return positionOrder[posA] - positionOrder[posB];
           });
         const gameFinalScores = {};
-        const { uma, oka } = activeUmaOka;
+        const { uma } = activeUmaOka;
         rankedPlayers.forEach((playerData, rank) => {
           const { playerIndex } = playerData;
-          let finalScore = normalizeScore(playerRawScores[playerIndex]);
+          let finalScore = (playerRawScores[playerIndex] - returnScore) / 1000;
+
           if (uma === '1-2') {
             if (rank === 0) finalScore += 20;
             else if (rank === 1) finalScore += 10;
@@ -453,8 +479,8 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
             else if (rank === 2) finalScore -= 10;
             else if (rank === 3) finalScore -= 30;
           }
-          if (oka && rank === 0) {
-            finalScore += 20;
+          if (isOkaEnabled && rank === 0) {
+            finalScore += okaAmount;
           }
           gameFinalScores[playerIndex] = finalScore;
         });
@@ -467,7 +493,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       }
     });
     return finalScores.map(score => score.toFixed(1));
-  }, [games, isUmaOkaPage, playerPool, activeUmaOka, targetSum]);
+  }, [games, isUmaOkaPage, playerPool, activeUmaOka, startingScore, returnScore, isOkaEnabled]);
 
   const handleDeleteGame = (gameIdToDelete) => {
     setGames(prevGames => prevGames.filter(game => game.id !== gameIdToDelete));
@@ -476,16 +502,21 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   const handleUmaOkaToggle = useCallback((type) => {
     setActiveUmaOka(prev => {
       if (type === 'oka') {
-        return { ...prev, oka: !prev.oka };
+        // This button is now a display element, logic is handled by onOkaToggle
+        return prev;
       } else {
         return { ...prev, uma: prev.uma === type ? null : type };
       }
     });
   }, []);
 
+  const onOkaToggle = useCallback(() => {
+    setIsOkaEnabled(prev => !prev);
+  }, []);
+
   const isUmaOkaGlobalDisabled = useMemo(() => {
-    return targetSum % 10 !== 0;
-  }, [targetSum]);
+    return startingScore % 100 !== 0 || (isOkaEnabled && returnScore % 100 !== 0);
+  }, [startingScore, returnScore, isOkaEnabled]);
 
   const addRecordButtonStatus = useMemo(() => {
     if (isUmaOkaPage) {
@@ -572,10 +603,18 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
           />
       )}
       <ControlPanel
-        targetSum={targetSum} setTargetSum={setTargetSum}
-        currentTotal={currentTotal} onRecordButtonPress={handleRecordButtonPress}
+        startingScore={startingScore} 
+        setStartingScore={setStartingScore}
+        returnScore={returnScore}
+        setReturnScore={setReturnScore}
+        isOkaEnabled={isOkaEnabled}
+        onOkaToggle={onOkaToggle}
+        targetSum={targetSum}
+        currentTotal={currentTotal} 
+        onRecordButtonPress={handleRecordButtonPress}
         isAddRecordButtonDisabled={addRecordButtonStatus !== null}
-        copyToClipboard={copyToClipboard} getText={getText}
+        copyToClipboard={copyToClipboard} 
+        getText={getText}
         showUmaOkaControls={isUmaOkaPage}
         handleUmaOkaToggle={handleUmaOkaToggle}
         activeUmaOka={activeUmaOka}
