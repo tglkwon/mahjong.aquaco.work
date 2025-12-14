@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
+import { Translation } from '../i18n/translations';
 
-function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, onUpdatePlayer, totalScores, getText }) {
+type TranslationKey = keyof Translation;
+
+interface PlayerManagementAndScoresProps {
+  playerPool: string[];
+  onAddPlayer: (name: string) => void;
+  onRemovePlayer: (index: number) => void;
+  onUpdatePlayer: (index: number, name: string) => void;
+  totalScores: (string | number)[];
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+}
+
+function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, onUpdatePlayer, totalScores, getText }: PlayerManagementAndScoresProps) {
   const [newPlayerName, setNewPlayerName] = useState('');
 
   const handleAddClick = () => {
@@ -10,7 +22,7 @@ function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, on
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddClick();
@@ -21,7 +33,7 @@ function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, on
     <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-4 mb-4">
       {/* Player Pool Management Section */}
       <h3 className="text-lg sm:text-xl font-semibold mb-3 text-gray-800">{getText('playerPoolTitle')}</h3>
-      
+
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <input
           type="text"

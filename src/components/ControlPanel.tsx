@@ -1,4 +1,26 @@
 import React from 'react';
+import { Translation } from '../i18n/translations';
+
+type TranslationKey = keyof Translation;
+
+interface ControlPanelProps {
+  startingScore: number;
+  setStartingScore: (score: number) => void;
+  returnScore: number;
+  setReturnScore: (score: number) => void;
+  isOkaEnabled: boolean;
+  onOkaToggle: () => void;
+  totalTargetScore: number;
+  currentTotal: number;
+  onRecordButtonPress: () => void;
+  isAddRecordButtonDisabled: boolean;
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  showUmaOkaControls?: boolean;
+  handleUmaOkaToggle?: (type: string) => void;
+  activeUmaOka?: { uma: string | null; oka: boolean };
+  isUmaOkaGlobalDisabled?: boolean;
+  copyToClipboard: () => void;
+}
 
 function ControlPanel({
   startingScore,
@@ -16,7 +38,7 @@ function ControlPanel({
   handleUmaOkaToggle,
   activeUmaOka,
   isUmaOkaGlobalDisabled
-}) {
+}: ControlPanelProps) {
 
   return (
     <div className="mt-6 sm:mt-8 w-full max-w-6xl flex flex-col items-center bmb:items-end gap-3 sm:gap-4 p-2 sm:p-0">
@@ -54,16 +76,16 @@ function ControlPanel({
             {(() => {
               const commonButtonClasses = "font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg lg:text-xl rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center";
               const disabledClasses = "bg-gray-400 cursor-not-allowed text-gray-700";
-              const activeButtonClasses = (isActive) => isActive ? "bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400" : "bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400";
+              const activeButtonClasses = (isActive: boolean) => isActive ? "bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400" : "bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400";
 
               return (
                 <>
                   {/* Uma 1-2 Button */}
                   <button
                     type="button"
-                    onClick={() => handleUmaOkaToggle('1-2')}
+                    onClick={() => handleUmaOkaToggle && handleUmaOkaToggle('1-2')}
                     disabled={isUmaOkaGlobalDisabled}
-                    className={`${commonButtonClasses} ${isUmaOkaGlobalDisabled ? disabledClasses : activeButtonClasses(activeUmaOka.uma === '1-2')}`}
+                    className={`${commonButtonClasses} ${isUmaOkaGlobalDisabled ? disabledClasses : activeButtonClasses(activeUmaOka?.uma === '1-2')}`}
                   >
                     {getText('uma1_2')}
                   </button>
@@ -71,9 +93,9 @@ function ControlPanel({
                   {/* Uma 1-3 Button */}
                   <button
                     type="button"
-                    onClick={() => handleUmaOkaToggle('1-3')}
+                    onClick={() => handleUmaOkaToggle && handleUmaOkaToggle('1-3')}
                     disabled={isUmaOkaGlobalDisabled}
-                    className={`${commonButtonClasses} ${isUmaOkaGlobalDisabled ? disabledClasses : activeButtonClasses(activeUmaOka.uma === '1-3')}`}
+                    className={`${commonButtonClasses} ${isUmaOkaGlobalDisabled ? disabledClasses : activeButtonClasses(activeUmaOka?.uma === '1-3')}`}
                   >
                     {getText('uma1_3')}
                   </button>

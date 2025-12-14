@@ -16,19 +16,19 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             // Layout에 titleKey를 전달하여 Layout 내부에서 getText로 제목을 가져오도록 합니다.
             // 이제 App에서 직접 제목을 생성하고, 필요한 모든 props를 Layout과 MainPage에 전달합니다.
-            <Layout 
-              title={getText('mahjongWorldTitle')} 
+            <Layout
+              title={getText('mahjongWorldTitle')}
               showHomeButton={false}
               currentLanguage={currentLanguage}
               setCurrentLanguage={setCurrentLanguage}
               getText={getText}
             >
-              <MainPage 
+              <MainPage
                 currentLanguage={currentLanguage}
                 setCurrentLanguage={setCurrentLanguage}
                 getText={getText}
@@ -36,17 +36,17 @@ function App() {
             </Layout>
           }
         />
-        <Route 
+        <Route
           path="/set_score"
           element={
-            <Layout 
-              title={getText('scoreTrackerTitle')} 
+            <Layout
+              title={getText('scoreTrackerTitle')}
               showHomeButton={true}
               currentLanguage={currentLanguage}
               setCurrentLanguage={setCurrentLanguage}
               getText={getText}
             >
-              <ScorePage 
+              <ScorePage
                 currentLanguage={currentLanguage}
                 setCurrentLanguage={setCurrentLanguage}
                 getText={getText}
@@ -55,17 +55,17 @@ function App() {
             </Layout>
           }
         />
-        <Route 
+        <Route
           path="/set_score_umaoka"
           element={
-            <Layout 
-              title={getText('scoreTrackerUmaOkaTitle')} 
+            <Layout
+              title={getText('scoreTrackerUmaOkaTitle')}
               showHomeButton={true}
               currentLanguage={currentLanguage}
               setCurrentLanguage={setCurrentLanguage}
               getText={getText}
             >
-              <ScorePage 
+              <ScorePage
                 currentLanguage={currentLanguage}
                 setCurrentLanguage={setCurrentLanguage}
                 getText={getText}
@@ -74,17 +74,17 @@ function App() {
             </Layout>
           }
         />
-        <Route 
+        <Route
           path="/set_score_photo"
           element={
-            <Layout 
-              title={getText('scorePhotoInputTitle')} 
+            <Layout
+              title={getText('scorePhotoInputTitle')}
               showHomeButton={true}
               currentLanguage={currentLanguage}
               setCurrentLanguage={setCurrentLanguage}
               getText={getText}
             >
-              <ScorePhotoInputPage 
+              <ScorePhotoInputPage
                 currentLanguage={currentLanguage}
                 setCurrentLanguage={setCurrentLanguage}
                 getText={getText}
@@ -94,17 +94,17 @@ function App() {
           }
         />
         {/* 서비스 정보 페이지 라우트 추가 */}
-        <Route 
+        <Route
           path="/about"
           element={
-            <Layout 
-              title={getText('aboutServiceTitle')} 
+            <Layout
+              title={getText('aboutServiceTitle')}
               showHomeButton={true}
               currentLanguage={currentLanguage}
               setCurrentLanguage={setCurrentLanguage}
               getText={getText}
             >
-              <AboutPage 
+              <AboutPage
                 getText={getText}
               />
             </Layout>

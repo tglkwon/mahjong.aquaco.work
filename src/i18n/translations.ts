@@ -1,4 +1,87 @@
-export const translations = {
+export interface Translation {
+  language: string;
+  korean: string;
+  english: string;
+  japanese: string;
+  home: string;
+  menu: string;
+  underConstruction: string;
+  sumDifference: string;
+  startingScore: string;
+  returnScore: string;
+  mahjongWorldTitle: string;
+  share: string;
+  copied: string;
+  scoreTrackerTitle: string;
+  addRecord: string;
+  total: string;
+  game: string;
+  totalGames: string;
+  player: string;
+  name: string;
+  score: string;
+  unitFormationMachine: string;
+  unitFormationDesc: string;
+  scoreTrackerUmaOkaTitle: string;
+  scoreTrackerUmaOkaDesc: string;
+  cardManagement: string;
+  cardManagementDesc: string;
+  scoreCalculator: string;
+  scoreCalculatorDesc: string;
+  settings: string;
+  settingsDesc: string;
+  goToScoreTracker: string;
+  east: string;
+  south: string;
+  west: string;
+  north: string;
+  position: string;
+  uma1_2: string;
+  uma1_3: string;
+  oka: string;
+  playerPoolTitle: string;
+  addPlayer: string;
+  addPlayerPlaceholder: string;
+  remove: string;
+  totalScoresTitle: string;
+  closeMenu: string;
+  about: string;
+  aboutServiceTitle: string;
+  aboutServiceDesc: string;
+  contactTitle: string;
+  contactDesc: string;
+  privacyPolicyTitle: string;
+  privacyPolicyDesc: string;
+  termsOfServiceTitle: string;
+  termsOfServiceDesc: string;
+  versionHistoryTitle: string;
+  aboutCardDesc: string;
+  scorePhotoInputTitle: string;
+  scorePhotoInputDesc: string;
+  loading: string;
+  versionHistoryError: string;
+  popup_total_mismatch: string;
+  popup_not_enough_players: string;
+  popup_duplicate_players: string;
+  popup_generic_error: string;
+  delete: string;
+  currentGameTotal?: string; // Optional because only en/ja have it in snippet? Checked below.
+  // Actually looking at 'ko' there is NO currentGameTotal.
+  // We should make interfaces consistent or optional.
+}
+
+// Checking consistency:
+// 'ko' misses: currentGameTotal
+// 'en' has: currentGameTotal
+// 'ja' has: currentGameTotal
+
+export interface Translations {
+  ko: Translation;
+  en: Translation;
+  ja: Translation;
+}
+
+export const translations: Translations = {
   ko: {
     language: '언어',
     korean: '한국어',
@@ -65,6 +148,8 @@ export const translations = {
     popup_not_enough_players: '4명의 플레이어를 모두 선택해야 합니다.',
     popup_duplicate_players: '중복된 플레이어가 있습니다. 각기 다른 플레이어를 선택해주세요.',
     popup_generic_error: '알 수 없는 오류로 기록할 수 없습니다.',
+    delete: '삭제', // Added missing key
+    currentGameTotal: '현재 점수 합계', // Added missing key for consistency
   },
   en: {
     language: 'Language',
@@ -133,6 +218,7 @@ export const translations = {
     popup_not_enough_players: 'All 4 players must be selected.',
     popup_duplicate_players: 'There are duplicate players. Please select different players.',
     popup_generic_error: 'Cannot record due to an unknown error.',
+    delete: 'Delete',
   },
   ja: {
     language: '言語',
@@ -201,5 +287,6 @@ export const translations = {
     popup_not_enough_players: '4人のプレイヤーをすべて選択する必要があります。',
     popup_duplicate_players: '重複したプレイヤーがいます。それぞれ異なるプレイヤーを選択してください。',
     popup_generic_error: '不明なエラーのため記録できません。',
+    delete: '削除',
   }
 };

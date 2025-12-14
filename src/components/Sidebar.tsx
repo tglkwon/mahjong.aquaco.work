@@ -1,11 +1,20 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Translation } from '../i18n/translations';
 
-function Sidebar({ isOpen, onClose, getText }) {
+type TranslationKey = keyof Translation;
+
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+}
+
+function Sidebar({ isOpen, onClose, getText }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleNavigate = (path) => {
+  const handleNavigate = (path: string) => {
     navigate(path);
     onClose(); // 네비게이션 후 사이드바 닫기
   };
@@ -23,18 +32,16 @@ function Sidebar({ isOpen, onClose, getText }) {
     <>
       {/* 오버레이 */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-[55] transition-opacity duration-300 ease-in-out ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-black bg-opacity-50 z-[55] transition-opacity duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={onClose}
         aria-hidden="true"
       ></div>
 
       {/* 사이드바 패널 */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 sm:w-72 bg-white shadow-xl z-[60] transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed top-0 left-0 h-full w-64 sm:w-72 bg-white shadow-xl z-[60] transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="sidebar-title"

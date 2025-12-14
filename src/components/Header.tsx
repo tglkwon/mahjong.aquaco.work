@@ -1,7 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Translations, Translation } from '../i18n/translations';
 
-function Header({ title, currentLanguage, setCurrentLanguage, getText, showHomeButton, onMenuClick }) {
+type Language = keyof Translations;
+type TranslationKey = keyof Translation;
+
+interface HeaderProps {
+  title: string;
+  currentLanguage: string; // or Language if strictly limited
+  setCurrentLanguage: (lang: Language) => void;
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  showHomeButton?: boolean;
+  onMenuClick: () => void;
+}
+
+function Header({ title, currentLanguage, setCurrentLanguage, getText, showHomeButton, onMenuClick }: HeaderProps) {
   const navigate = useNavigate();
 
   const handleGoToHome = () => {
@@ -28,7 +41,7 @@ function Header({ title, currentLanguage, setCurrentLanguage, getText, showHomeB
         <div className="relative">
           <select
             value={currentLanguage}
-            onChange={(e) => setCurrentLanguage(e.target.value)}
+            onChange={(e) => setCurrentLanguage(e.target.value as Language)}
             className="appearance-none bg-white border border-gray-300 text-gray-700 py-0.5 px-2 pr-3 sm:py-1 sm:px-3 sm:pr-4 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer text-xs sm:text-sm"
             aria-label={getText('language')}
           >
@@ -37,7 +50,7 @@ function Header({ title, currentLanguage, setCurrentLanguage, getText, showHomeB
             <option value="ja">{getText('japanese')}</option>
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-0.5 sm:px-1 text-gray-700">
-            <svg className="fill-current h-2.5 w-2.5 sm:h-3 sm:w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            <svg className="fill-current h-2.5 w-2.5 sm:h-3 sm:w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
           </div>
         </div>
         {showHomeButton && (
@@ -47,7 +60,7 @@ function Header({ title, currentLanguage, setCurrentLanguage, getText, showHomeB
             aria-label={getText('home')}
           >
             <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
             </svg>
           </button>
         )}

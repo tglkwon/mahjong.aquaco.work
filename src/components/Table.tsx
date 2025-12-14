@@ -1,8 +1,28 @@
 import React from 'react';
+import { Translation } from '../i18n/translations';
+import { Game } from '../types';
 
-function Table({ playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame, handleScoreInputKeyDown, handlePositionChange, isUmaOkaPage, handleUmaOkaScoreChange, handlePlayerForPositionChange, handleScoreButtonClick }) {
+type TranslationKey = keyof Translation;
+
+interface TableProps {
+  playerNames: string[];
+  games: Game[];
+  totalScores: (string | number)[];
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  handlePlayerNameChange: (index: number, name: string) => void;
+  handleScoreChange: (gameId: number, playerIndex: number, newScore: string) => void;
+  handleDeleteGame: (gameId: number) => void;
+  handleScoreInputKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  handlePositionChange?: (gameId: number, playerIndex: number, newPosition: string) => void;
+  isUmaOkaPage?: boolean;
+  handleUmaOkaScoreChange?: (gameId: number, position: string, newScore: string) => void;
+  handlePlayerForPositionChange?: (gameId: number, position: string, playerIndex: string) => void;
+  handleScoreButtonClick: (gameId: number, playerIndex: number, operation: 'increment' | 'decrement') => void;
+}
+
+function Table({ playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame, handleScoreInputKeyDown, handlePositionChange, isUmaOkaPage, handleUmaOkaScoreChange, handlePlayerForPositionChange, handleScoreButtonClick }: TableProps) {
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full max-w-6xl"> 
+    <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full max-w-6xl">
       <table className="divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
@@ -11,22 +31,22 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
             </th>
             {isUmaOkaPage
               ? ['east', 'south', 'west', 'north'].map(position => (
-                  <th key={position} className="bmb:p-px bmb:text-xs px-1 py-2 text-center sm:px-4 sm:py-3 sm:text-sm md:text-base lg:text-lg xl:text-xl font-medium text-gray-500 uppercase tracking-wider sm:w-auto">
-                    {getText(position)}
-                  </th>
-                ))
+                <th key={position} className="bmb:p-px bmb:text-xs px-1 py-2 text-center sm:px-4 sm:py-3 sm:text-sm md:text-base lg:text-lg xl:text-xl font-medium text-gray-500 uppercase tracking-wider sm:w-auto">
+                  {getText(position as TranslationKey)}
+                </th>
+              ))
               : playerNames.map((name, index) => (
-                  <th key={index} className="bmb:p-px bmb:text-xs px-1 py-2 text-center sm:px-4 sm:py-3 sm:text-sm md:text-base lg:text-lg xl:text-xl font-medium text-gray-500 uppercase tracking-wider sm:w-auto">
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => handlePlayerNameChange(index, e.target.value)}
-                      className="w-full bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 text-center bmb:text-xs bmb:p-0 text-xs min-w-[60px] sm:text-sm sm:min-w-[80px] md:text-base md:min-w-[100px] lg:text-lg lg:min-w-[120px] xl:text-xl xl:min-w-[140px] font-medium text-gray-700"
-                      aria-label={`${getText('player')} ${index + 1} ${getText('name')}`}
-                      placeholder={`${getText('player')} ${index + 1}`}
-                    />
-                  </th>
-                ))}
+                <th key={index} className="bmb:p-px bmb:text-xs px-1 py-2 text-center sm:px-4 sm:py-3 sm:text-sm md:text-base lg:text-lg xl:text-xl font-medium text-gray-500 uppercase tracking-wider sm:w-auto">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => handlePlayerNameChange(index, e.target.value)}
+                    className="w-full bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 text-center bmb:text-xs bmb:p-0 text-xs min-w-[60px] sm:text-sm sm:min-w-[80px] md:text-base md:min-w-[100px] lg:text-lg lg:min-w-[120px] xl:text-xl xl:min-w-[140px] font-medium text-gray-700"
+                    aria-label={`${getText('player')} ${index + 1} ${getText('name')}`}
+                    placeholder={`${getText('player')} ${index + 1}`}
+                  />
+                </th>
+              ))}
             <th className="bmb:p-px bmb:text-xs px-0.5 py-3 text-center text-sm sm:text-base md:text-lg xl:text-xl font-medium text-gray-500 uppercase tracking-wider"></th>
           </tr>
         </thead>
@@ -60,7 +80,7 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                         <div className="relative w-full">
                           <input
                             type="number"
-                            value={game.scores[playerIndex]}
+                            value={(game.scores as string[])[playerIndex]}
                             onChange={(e) => handleScoreChange(game.id, playerIndex, e.target.value)}
                             onKeyDown={handleScoreInputKeyDown}
                             className="w-full bmb:px-px bmb:py-px bmb:text-xs p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:p-2 sm:text-sm md:text-base lg:text-lg xl:text-xl score-input-js"
@@ -83,7 +103,7 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                         </div>
                       ) : (
                         <span className="block w-full bmb:px-px bmb:py-px bmb:text-xs p-1 text-center text-xs sm:p-2 sm:text-sm md:text-base lg:text-lg xl:text-xl">
-                          {game.scores[playerIndex]}
+                          {(game.scores as string[])[playerIndex]}
                         </span>
                       )}
                     </div>

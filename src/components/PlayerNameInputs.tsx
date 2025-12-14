@@ -1,6 +1,16 @@
 import React from 'react';
+import { Translation, Translations } from '../i18n/translations';
 
-function PlayerNameInputs({ playerNames, handlePlayerNameChange, getText, totalScores }) {
+type TranslationKey = keyof Translation;
+
+interface PlayerNameInputsProps {
+  playerNames: string[];
+  handlePlayerNameChange: (index: number, name: string) => void;
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  totalScores: (string | number)[]; // Could be formatted strings or numbers
+}
+
+function PlayerNameInputs({ playerNames, handlePlayerNameChange, getText, totalScores }: PlayerNameInputsProps) {
   return (
     <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-4 mb-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">

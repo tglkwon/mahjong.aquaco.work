@@ -1,6 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
+import { Translation, Translations } from '../i18n/translations';
 
-const AccordionItem = ({ title, children }) => {
+type Language = keyof Translations;
+type TranslationKey = keyof Translation;
+
+interface AboutPageProps {
+  currentLanguage?: string; // Not used in component but passed down
+  setCurrentLanguage?: (lang: Language) => void;
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+}
+
+interface AccordionItemProps {
+  title: string;
+  children: ReactNode;
+}
+
+const AccordionItem = ({ title, children }: AccordionItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -29,7 +44,7 @@ const AccordionItem = ({ title, children }) => {
   );
 };
 
-function AboutPage({ currentLanguage, setCurrentLanguage, getText }) {
+function AboutPage({ getText }: AboutPageProps) {
   // isSidebarOpen 상태 및 Header/Sidebar 임포트는 Layout 컴포넌트에서 관리합니다.
   const [versionHistory, setVersionHistory] = useState('');
 
@@ -59,40 +74,40 @@ function AboutPage({ currentLanguage, setCurrentLanguage, getText }) {
 
   return (
     <div className="w-full max-w-4xl flex flex-col items-center p-4">
-        <div className="w-full bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* 서비스 소개 */}
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-bold text-purple-700 mb-3">{getText('aboutServiceTitle')}</h2>
-            <p className="text-gray-600">
-              {getText('aboutServiceDesc')}
-            </p>
-          </div>
-
-          {/* 개발자 정보 */}
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-bold text-purple-700 mb-3">{getText('contactTitle')}</h2>
-            <p className="text-gray-600">
-              {getText('contactDesc')} <a href="mailto:tglkwon@gmail.com" className="text-blue-600 hover:underline">tglkwon@gmail.com</a>
-            </p>
-          </div>
-
-          {/* 정책 및 약관 (아코디언) */}
-          <AccordionItem title={getText('privacyPolicyTitle')}>
-            <p>{getText('privacyPolicyDesc')}</p>
-          </AccordionItem>
-
-          <AccordionItem title={getText('termsOfServiceTitle')}>
-            <p>{getText('termsOfServiceDesc')}</p>
-          </AccordionItem>
-
-          {/* 버전 정보 */}
-          <AccordionItem title={getText('versionHistoryTitle')}>
-            <pre className="whitespace-pre-wrap font-mono text-sm">
-              {versionHistory || `${getText('loading')}...`}
-            </pre>
-          </AccordionItem>
+      <div className="w-full bg-white rounded-xl shadow-lg overflow-hidden">
+        {/* 서비스 소개 */}
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-bold text-purple-700 mb-3">{getText('aboutServiceTitle')}</h2>
+          <p className="text-gray-600">
+            {getText('aboutServiceDesc')}
+          </p>
         </div>
+
+        {/* 개발자 정보 */}
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-bold text-purple-700 mb-3">{getText('contactTitle')}</h2>
+          <p className="text-gray-600">
+            {getText('contactDesc')} <a href="mailto:tglkwon@gmail.com" className="text-blue-600 hover:underline">tglkwon@gmail.com</a>
+          </p>
+        </div>
+
+        {/* 정책 및 약관 (아코디언) */}
+        <AccordionItem title={getText('privacyPolicyTitle')}>
+          <p>{getText('privacyPolicyDesc')}</p>
+        </AccordionItem>
+
+        <AccordionItem title={getText('termsOfServiceTitle')}>
+          <p>{getText('termsOfServiceDesc')}</p>
+        </AccordionItem>
+
+        {/* 버전 정보 */}
+        <AccordionItem title={getText('versionHistoryTitle')}>
+          <pre className="whitespace-pre-wrap font-mono text-sm">
+            {versionHistory || `${getText('loading')}...`}
+          </pre>
+        </AccordionItem>
       </div>
+    </div>
   );
 }
 

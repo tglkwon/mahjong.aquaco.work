@@ -1,19 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, ReactNode } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import { Translations, Translation } from '../i18n/translations';
+
+type Language = keyof Translations;
+type TranslationKey = keyof Translation;
+
+interface LayoutProps {
+  children: ReactNode;
+  title: string;
+  showHomeButton?: boolean;
+  currentLanguage: string;
+  setCurrentLanguage: (lang: Language) => void;
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+}
 
 /**
  * 모든 페이지에 공통적으로 적용되는 레이아웃 컴포넌트입니다.
  * Header와 Sidebar를 포함하며, 페이지 콘텐츠를 children으로 렌더링합니다.
- * @param {object} props
- * @param {React.ReactNode} props.children - 현재 라우트에 해당하는 페이지 컴포넌트
- * @param {string} props.title - Header에 표시될 페이지 제목
- * @param {boolean} props.showHomeButton - Header에 홈 버튼을 표시할지 여부
- * @param {string} props.currentLanguage - 현재 선택된 언어
- * @param {function} props.setCurrentLanguage - 언어 변경 함수
- * @param {function} props.getText - 다국어 텍스트를 가져오는 함수
  */
-function Layout({ children, title, showHomeButton, currentLanguage, setCurrentLanguage, getText }) {
+function Layout({ children, title, showHomeButton, currentLanguage, setCurrentLanguage, getText }: LayoutProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   return (

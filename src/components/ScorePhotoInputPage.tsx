@@ -2,6 +2,18 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import PlayerManagementAndScores from './PlayerManagementAndScores';
 import Table from './Table';
 import PhotoUploadPanel from './PhotoUploadPanel';
+import { Translation, Translations } from '../i18n/translations';
+import { Game } from '../types';
+
+type Language = keyof Translations;
+type TranslationKey = keyof Translation;
+
+interface ScorePhotoInputPageProps {
+  currentLanguage: string;
+  setCurrentLanguage: (lang: Language) => void;
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  translations: Translations;
+}
 
 const PLAYER_COUNT = 4;
 
@@ -10,9 +22,9 @@ const PLAYER_COUNT = 4;
  * 이 페이지는 '대탁 기록표 (우마/오카)'와 유사한 구조를 가지며,
  * 플레이어 관리, 점수 총계 표시, 그리고 향후 추가될 사진 입력 기능을 위한 UI를 포함합니다.
  */
-function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, translations }) {
+function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, translations }: ScorePhotoInputPageProps) {
   // URL에서 상태를 파싱하는 로직 (ScoreTrackerPage와 공유)
-  const parseStateFromUrl = useCallback(() => {
+  const parseStateFromUrl = useCallback((): any => { // Type as any for now as return logic is complex
     const hash = window.location.hash;
     if (hash.startsWith('#data=')) {
       try {
@@ -27,7 +39,7 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
   }, []);
 
   // 플레이어 목록 상태
-  const [playerPool, setPlayerPool] = useState(() => {
+  const [playerPool, setPlayerPool] = useState<string[]>(() => {
     const loadedState = parseStateFromUrl();
     if (loadedState?.playerPool && Array.isArray(loadedState.playerPool)) {
       return loadedState.playerPool;
@@ -36,7 +48,7 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
   });
 
   // 사진으로 인식된 게임 기록을 저장할 상태
-  const [games, setGames] = useState(() => {
+  const [games, setGames] = useState<Game[]>(() => {
     const loadedState = parseStateFromUrl();
     return loadedState?.games || [];
   });
@@ -45,7 +57,7 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
   useEffect(() => {
     const loadedState = parseStateFromUrl();
     if (loadedState?.language) {
-      setCurrentLanguage(loadedState.language);
+      setCurrentLanguage(loadedState.language as Language);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parseStateFromUrl, setCurrentLanguage]);
@@ -53,7 +65,7 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
   // 언어 변경 시 기본 플레이어 이름 업데이트
   useEffect(() => {
     if (!translations || !translations.ko || !translations.en || !translations.ja) return;
-    const updateDefaultNames = (prevNames) => prevNames.map((name, index) => {
+    const updateDefaultNames = (prevNames: string[]) => prevNames.map((name, index) => {
       const defaultNamePattern = new RegExp(`^(?:${translations.ko.player}|${translations.en.player}|${translations.ja.player})${index + 1}$`);
       if (defaultNamePattern.test(name) || name === `Player${index + 1}` || name === `플레이어${index + 1}` || name === `プレイヤー${index + 1}`) {
         return `${getText('player')}${index + 1}`;
@@ -69,8 +81,9 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
     return playerPool.map((_, playerIndex) =>
       games.reduce((sum, game) => {
         // 편집이 완료된 게임의 점수만 합산합니다.
-        if (!game.isEditable && game.scores && game.scores[playerIndex]) {
-          return sum + (parseInt(game.scores[playerIndex], 10) || 0);
+        // Assuming game.scores is string[] for this page based on logic below (Table usage)
+        if (!game.isEditable && Array.isArray(game.scores) && game.scores[playerIndex]) {
+          return sum + (parseInt(game.scores[playerIndex] as string, 10) || 0);
         }
         return sum;
       }, 0)
@@ -78,46 +91,46 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
   }, [playerPool, games]);
 
   // 플레이어 관리 핸들러
-  const handleAddPlayerToPool = (name) => {
+  const handleAddPlayerToPool = (name: string) => {
     if (name && !playerPool.includes(name)) {
       setPlayerPool(prev => [...prev, name]);
     }
   };
 
-  const handleRemovePlayerFromPool = (indexToRemove) => {
+  const handleRemovePlayerFromPool = (indexToRemove: number) => {
     setPlayerPool(prev => prev.filter((_, index) => index !== indexToRemove));
     // TODO: 게임 기록에서 해당 플레이어 인덱스 조정 로직 추가
   };
 
-  const handleUpdatePlayerInPool = (index, newName) => {
+  const handleUpdatePlayerInPool = (index: number, newName: string) => {
     setPlayerPool(prev => prev.map((name, i) => (i === index ? newName : name)));
   };
 
-  const handleScoreChange = (gameId, playerIndex, newScore) => {
+  const handleScoreChange = (gameId: number, playerIndex: number, newScore: string) => {
     setGames(currentGames => currentGames.map(game =>
       game.id === gameId
         ? {
-            ...game,
-            scores: game.scores.map((score, idx) => {
-              if (idx === playerIndex) {
-                const filteredScore = String(newScore).replace(/[^0-9-.]/g, '');
-                if (filteredScore === '' || filteredScore === '-') return filteredScore;
-                const num = parseInt(filteredScore, 10);
-                return isNaN(num) ? '' : num;
-              }
-              return score;
-            }),
-          }
+          ...game,
+          scores: (game.scores as string[]).map((score, idx) => {
+            if (idx === playerIndex) {
+              const filteredScore = String(newScore).replace(/[^0-9-.]/g, '');
+              if (filteredScore === '' || filteredScore === '-') return filteredScore;
+              const num = parseInt(filteredScore, 10);
+              return isNaN(num) ? '' : String(num);
+            }
+            return score;
+          }),
+        }
         : game
     ));
   };
 
-  const handleDeleteGame = (gameIdToDelete) => {
+  const handleDeleteGame = (gameIdToDelete: number) => {
     setGames(prevGames => prevGames.filter(game => game.id !== gameIdToDelete));
   };
 
   // PhotoUploadPanel에서 호출될 함수 (향후 사진 인식 결과 처리)
-  const handlePhotoUpload = useCallback((recognizedGames) => {
+  const handlePhotoUpload = useCallback((recognizedGames: Game[]) => {
     // 기존 게임에 새로운 게임 기록을 추가합니다.
     setGames(prevGames => [...prevGames, ...recognizedGames]);
   }, []);
@@ -145,9 +158,10 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
         handlePlayerNameChange={handleUpdatePlayerInPool} // 플레이어 이름 변경 핸들러 전달
         handleScoreChange={handleScoreChange} // 점수 변경 핸들러 전달
         handleDeleteGame={handleDeleteGame}
-        handleScoreInputKeyDown={() => {}} // Enter 키 이벤트 핸들러 (여기서는 비활성화)
+        handleScoreInputKeyDown={() => { }} // Enter 키 이벤트 핸들러 (여기서는 비활성화)
         getText={getText}
         isUmaOkaPage={false} // ScorePhotoInputPage는 우마/오카 페이지가 아님
+        handleScoreButtonClick={() => { }} // Dummy handler if needed or make optional
       />
     </div>
   );

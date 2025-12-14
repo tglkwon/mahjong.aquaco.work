@@ -1,6 +1,11 @@
 import React from 'react';
 
-function MessageDisplay({ message, isVisible }) {
+interface MessageDisplayProps {
+  message: string;
+  isVisible: boolean;
+}
+
+function MessageDisplay({ message, isVisible }: MessageDisplayProps) {
   if (!isVisible) return null;
 
   return (

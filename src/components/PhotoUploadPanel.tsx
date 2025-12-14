@@ -1,14 +1,24 @@
 import React from 'react';
+import { Translation } from '../i18n/translations';
+import { Game } from '../types';
 
-function PhotoUploadPanel({ getText, onPhotoUpload }) {
+type TranslationKey = keyof Translation;
+
+interface PhotoUploadPanelProps {
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  onPhotoUpload?: (recognizedGames: Game[]) => void;
+}
+
+function PhotoUploadPanel({ getText, onPhotoUpload }: PhotoUploadPanelProps) {
   // 나중에 여기에 사진 업로드 및 처리 로직을 추가합니다.
   const handleUploadClick = () => {
-    document.getElementById('photo-upload-input').click();
+    const fileInput = document.getElementById('photo-upload-input');
+    if (fileInput) fileInput.click();
   };
 
   // Placeholder for actual photo processing
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file && onPhotoUpload) {
       // Simulate recognition and update games state
       // In a real scenario, this would involve an API call or client-side OCR

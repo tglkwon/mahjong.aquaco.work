@@ -1,0 +1,137 @@
+import React from 'react';
+import { Translation } from '../i18n/translations';
+import { Game, UmaOkaParticipants, UmaOkaScores } from '../types';
+
+type TranslationKey = keyof Translation;
+
+interface UmaOkaTableProps {
+  playerNames: string[];
+  games: Game[];
+  getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  handleDeleteGame: (gameId: number) => void;
+  handleScoreInputKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  handleUmaOkaScoreChange: (gameId: number, position: string, newScore: string) => void;
+  handlePlayerForPositionChange: (gameId: number, position: string, playerIndex: string) => void;
+  handleUmaOkaScoreButtonClick: (gameId: number, position: string, operation: 'increment' | 'decrement') => void;
+}
+
+function UmaOkaTable({ playerNames, games, getText, handleDeleteGame, handleScoreInputKeyDown, handleUmaOkaScoreChange, handlePlayerForPositionChange, handleUmaOkaScoreButtonClick }: UmaOkaTableProps) {
+  return (
+    <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full max-w-6xl">
+      <table className="divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="bmb:p-px bmb:text-xs px-0.5 py-2 text-center text-xs sm:px-3 sm:py-3 sm:text-sm md:text-base font-medium text-gray-500 uppercase tracking-wider">
+              <span className="flex items-center justify-center"></span>
+            </th>
+            {['east', 'south', 'west', 'north'].map(p => {
+              const position = p as keyof UmaOkaParticipants;
+              return (
+                <th key={position} className="bmb:p-px bmb:text-xs px-1 py-2 text-center sm:px-4 sm:py-3 sm:text-sm md:text-base xl:text-lg font-medium text-gray-500 uppercase tracking-wider sm:w-auto">
+                  {getText(position as TranslationKey)}
+                </th>
+              )
+            })}
+            <th className="bmb:p-px bmb:text-xs px-0.5 py-3 text-center text-sm sm:text-base md:text-lg font-medium text-gray-500 uppercase tracking-wider"></th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {games.map((game, gameIndex) => (
+            <tr key={game.id}>
+              <td className="bmb:p-px bmb:text-xs px-1 py-3 whitespace-nowrap text-center text-xs sm:px-3 sm:py-3 sm:text-sm md:text-base xl:text-lg font-medium text-gray-900">
+                {gameIndex + 1}
+              </td>
+              {game.isEditable ? (
+                <td colSpan={4} className="p-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
+                    {['east', 'south', 'west', 'north'].map(p => {
+                      const position = p as keyof UmaOkaParticipants;
+                      return (
+                        <div key={position} className="flex flex-col gap-2">
+                          <select
+                            value={game.participants ? game.participants[position] ?? '' : ''}
+                            onChange={(e) => handlePlayerForPositionChange(game.id, position, e.target.value)}
+                            className="w-full p-1 border border-gray-300 rounded-md text-xs sm:text-sm xl:text-base focus:outline-none focus:ring-1 focus:ring-blue-400 text-center bmb:text-xs"
+                            aria-label={`${getText('game')} ${gameIndex + 1} ${getText(position as TranslationKey)} ${getText('player')}`}
+                          >
+                            <option value="" disabled>{getText('player')}</option>
+                            {playerNames.map((pName, pIdx) => (
+                              <option key={pIdx} value={pIdx}>{pName}</option>
+                            ))}
+                          </select>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              value={(game.scores as UmaOkaScores)[position] ?? ''}
+                              onChange={(e) => handleUmaOkaScoreChange(game.id, position, e.target.value)}
+                              onKeyDown={handleScoreInputKeyDown}
+                              className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-xs sm:text-sm xl:text-lg score-input-js"
+                              placeholder={getText('score')}
+                              aria-label={`${getText('game')} ${gameIndex + 1} ${getText(position as TranslationKey)} ${getText('score')}`}
+                            />
+                            <button
+                              onClick={() => handleUmaOkaScoreButtonClick(game.id, position, 'decrement')}
+                              className="absolute left-0 top-0 h-full px-2 text-lg text-gray-600 hover:text-red-500"
+                              aria-label="Decrement score"
+                            >
+                              -
+                            </button>
+                            <button
+                              onClick={() => handleUmaOkaScoreButtonClick(game.id, position, 'increment')}
+                              className="absolute right-0 top-0 h-full px-2 text-lg text-gray-600 hover:text-green-500"
+                              aria-label="Increment score"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </td>
+              ) : (
+                ['east', 'south', 'west', 'north'].map(p => {
+                  const position = p as keyof UmaOkaParticipants;
+                  const playerIndex = game.participants ? game.participants[position] : undefined;
+                  const score = game.scores ? (game.scores as UmaOkaScores)[position] : undefined;
+                  const playerName = (playerIndex !== undefined && playerNames[playerIndex]) ? playerNames[playerIndex] : '';
+
+                  return (
+                    <td key={position} className="bmb:p-px bmb:text-xs px-1 py-3 whitespace-nowrap text-center text-xs sm:px-2 sm:py-3 sm:text-sm md:text-base text-gray-900">
+                      {(playerIndex !== undefined && score !== undefined) ? (
+                        <div className="flex flex-col items-center justify-center h-full">
+                          <span className="block w-full text-xs sm:text-sm xl:text-base font-medium text-gray-600 bmb:text-xs truncate" title={playerName}>
+                            {playerName}
+                          </span>
+                          <span className="block w-full bmb:px-px bmb:py-px bmb:text-xs p-1 text-xs sm:p-2 sm:text-sm md:text-base xl:text-lg">
+                            {score}
+                          </span>
+                        </div>
+                      ) : (<span className="text-gray-400">-</span>)}
+                    </td>
+                  );
+                })
+              )}
+              <td className="bmb:p-px bmb:text-xs px-0.5 py-3 sm:py-3 whitespace-nowrap text-center font-medium">
+                {!game.isEditable && games.length > 1 && (
+                  <div className="flex items-center justify-center space-x-2">
+                    <button
+                      onClick={() => handleDeleteGame(game.id)}
+                      className="text-red-600 hover:text-red-900 bmb:text-xs bmb:p-1 text-xs sm:text-sm md:text-base xl:text-lg font-semibold sm:py-1 sm:px-1 rounded-lg hover:bg-red-100 transition-colors duration-200"
+                      aria-label={`${getText('game')} ${gameIndex + 1} ${getText('delete')}`}
+                      title={`${getText('game')} ${gameIndex + 1} ${getText('delete')}`}
+                    >
+                      X
+                    </button>
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default UmaOkaTable;
