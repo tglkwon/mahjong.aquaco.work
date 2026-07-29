@@ -2,6 +2,7 @@ import React from 'react';
 import { Translation } from '../i18n/translations';
 
 type TranslationKey = keyof Translation;
+type TieHandlingMode = 'split' | 'seatOrder';
 
 interface ControlPanelProps {
   startingScore: number;
@@ -18,6 +19,8 @@ interface ControlPanelProps {
   showUmaOkaControls?: boolean;
   handleUmaOkaToggle?: (type: string) => void;
   activeUmaOka?: { uma: string | null; oka: boolean };
+  tieHandlingMode?: TieHandlingMode;
+  setTieHandlingMode?: (mode: TieHandlingMode) => void;
   isUmaOkaGlobalDisabled?: boolean;
   copyToClipboard: () => void;
 }
@@ -37,6 +40,8 @@ function ControlPanel({
   showUmaOkaControls,
   handleUmaOkaToggle,
   activeUmaOka,
+  tieHandlingMode = 'split',
+  setTieHandlingMode,
   isUmaOkaGlobalDisabled
 }: ControlPanelProps) {
 
@@ -98,6 +103,14 @@ function ControlPanel({
                     className={`${commonButtonClasses} ${isUmaOkaGlobalDisabled ? disabledClasses : activeButtonClasses(activeUmaOka?.uma === '1-3')}`}
                   >
                     {getText('uma1_3')}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTieHandlingMode && setTieHandlingMode(tieHandlingMode === 'seatOrder' ? 'split' : 'seatOrder')}
+                    className={commonButtonClasses + ' ' + activeButtonClasses(tieHandlingMode === 'seatOrder')}
+                  >
+                    {getText(tieHandlingMode === 'seatOrder' ? 'tieSeatOrder' : 'tieHandling')}
                   </button>
 
                   {/* Oka Control Group */}

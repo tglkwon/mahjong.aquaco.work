@@ -11,6 +11,7 @@ import { Game, UmaOkaParticipants, UmaOkaScores } from '../types';
 
 type Language = keyof Translations;
 type TranslationKey = keyof Translation;
+export type TieHandlingMode = 'split' | 'seatOrder';
 
 interface ScoreTrackerPageProps {
   currentLanguage: string;
@@ -21,7 +22,7 @@ interface ScoreTrackerPageProps {
 
 const PLAYER_COUNT = 4;
 const INITIAL_PLAYER_POSITIONS = ['east', 'south', 'west', 'north'];
-const DATA_STRUCTURE_VERSION = 3; // v2: pako on optimized array, v3: added returnScore, isOkaEnabled
+const DATA_STRUCTURE_VERSION = 4; // v2: pako on optimized array, v3: added returnScore, isOkaEnabled, v4: added tie handling
 
 const getDefaultPlayerPositions = (): string[] => {
   return [...INITIAL_PLAYER_POSITIONS];
@@ -57,6 +58,31 @@ const bytesToBinaryString = (bytes: Uint8Array) => {
 };
 
 
+const UMA_VALUES: Record<string, number[]> = {
+  '1-2': [20, 10, -10, -20],
+  '1-3': [30, 10, -10, -30],
+};
+
+export const calculateTieAwards = (rawScores: Record<number, number>, uma: string | null, okaAmount: number, tieHandlingMode: TieHandlingMode, positionByPlayer: Record<number, string> = {}): Record<number, number> => {
+  const positionOrder: Record<string, number> = { east: 1, south: 2, west: 3, north: 4 };
+  const players = Object.entries(rawScores).map(([playerIndex, score]) => ({ playerIndex: Number(playerIndex), score })).sort((x, y) => y.score - x.score || (positionOrder[positionByPlayer[x.playerIndex]] || 0) - (positionOrder[positionByPlayer[y.playerIndex]] || 0));
+  const umaValues = UMA_VALUES[uma || ''] || [0, 0, 0, 0];
+  const awards: Record<number, number> = {};
+  if (tieHandlingMode === 'seatOrder') { players.forEach((player, rank) => { awards[player.playerIndex] = umaValues[rank] + (rank === 0 ? okaAmount : 0); }); return awards; }
+  let groupStart = 0;
+  while (groupStart < players.length) {
+    let groupEnd = groupStart + 1;
+    while (groupEnd < players.length && players[groupEnd].score === players[groupStart].score) groupEnd += 1;
+    const groupSize = groupEnd - groupStart;
+    let groupAward = 0;
+    for (let rank = groupStart; rank < groupEnd; rank += 1) groupAward += umaValues[rank] || 0;
+    if (groupStart === 0) groupAward += okaAmount;
+    for (let index = groupStart; index < groupEnd; index += 1) awards[players[index].playerIndex] = groupAward / groupSize;
+    groupStart = groupEnd;
+  }
+  return awards;
+};
+
 type SavedGameData =
   | string[] // Normal mode: scores only
   | [number, number, number, number, string, string, string, string]; // UmaOka mode: participants + scores
@@ -69,7 +95,8 @@ type OptimizedStateArray = [
   string, // language
   [string | null, boolean] | null, // activeUmaOka
   number | null, // returnScore
-  boolean | null // isOkaEnabled
+  boolean | null, // isOkaEnabled
+  TieHandlingMode? // tie handling mode
 ];
 
 interface ParsedState {
@@ -79,6 +106,7 @@ interface ParsedState {
   activeUmaOka: { uma: string | null; oka: boolean };
   returnScore?: number;
   isOkaEnabled?: boolean;
+  tieHandlingMode?: TieHandlingMode;
   playerPool?: string[];
   playerNames?: string[];
 }
@@ -129,9 +157,10 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
             games: restoredGames,
             language: data[4],
             activeUmaOka: isUmaOka && data[5] ? { uma: data[5][0], oka: data[5][1] } : { uma: null, oka: false },
+            tieHandlingMode: data[8] === 'seatOrder' ? 'seatOrder' : 'split',
           };
 
-          if (version === 3) {
+          if (version >= 3) {
             result.returnScore = data[6] ?? undefined;
             result.isOkaEnabled = data[7] ?? undefined;
           }
@@ -219,12 +248,13 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   });
 
   const [isOkaEnabled, setIsOkaEnabled] = useState<boolean>(loadedState?.isOkaEnabled || false);
+  const [tieHandlingMode, setTieHandlingMode] = useState<TieHandlingMode>(loadedState?.tieHandlingMode || 'split');
 
   const [returnScore, setReturnScore] = useState<number>(() => {
     if (typeof loadedState?.returnScore === 'number') {
       return loadedState.returnScore;
     }
-    return isOkaEnabled ? 30000 : startingScore;
+    return isOkaEnabled ? startingScore + 5000 : startingScore;
   });
 
   const [activeUmaOka, setActiveUmaOka] = useState<{ uma: string | null; oka: boolean }>(() => {
@@ -279,7 +309,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       games: games.filter(g => !g.isEditable), // Only save completed games
       startingScore,
       language: currentLanguage,
-      ...(isUmaOkaPage ? { playerPool, activeUmaOka, returnScore, isOkaEnabled } : { playerNames })
+      ...(isUmaOkaPage ? { playerPool, activeUmaOka, returnScore, isOkaEnabled, tieHandlingMode } : { playerNames })
     };
 
     // New optimized array format
@@ -311,6 +341,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       isUmaOkaPage ? [activeUmaOka.uma, activeUmaOka.oka] : null,
       isUmaOkaPage ? returnScore : null,
       isUmaOkaPage ? isOkaEnabled : null,
+      isUmaOkaPage ? tieHandlingMode : undefined,
     ];
 
     const jsonString = JSON.stringify(optimizedData);
@@ -318,7 +349,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     const binaryString = bytesToBinaryString(compressedData);
     const encodedData = btoa(binaryString);
     return `${window.location.origin}${location.pathname}#data=${encodedData}`;
-  }, [games, startingScore, currentLanguage, isUmaOkaPage, playerPool, playerNames, activeUmaOka, location.pathname, returnScore, isOkaEnabled]);
+  }, [games, startingScore, currentLanguage, isUmaOkaPage, playerPool, playerNames, activeUmaOka, location.pathname, returnScore, isOkaEnabled, tieHandlingMode]);
 
   const copyToClipboard = useCallback(() => {
     const url = generateShareableUrl();
@@ -537,40 +568,13 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
           playerRawScores[playerIndex] = score;
         });
         if (Object.keys(playerRawScores).length !== 4) return;
-        const positionOrder: Record<string, number> = { 'east': 1, 'south': 2, 'west': 3, 'north': 4 };
-        const playerIndexToPosition = Object.fromEntries(
-          Object.entries(game.participants).map(([pos, pIdx]) => [pIdx, pos])
-        ) as Record<string, string>;
 
-        const rankedPlayers = Object.keys(playerRawScores)
-          .map(pIndex => ({ playerIndex: parseInt(pIndex, 10), score: playerRawScores[parseInt(pIndex, 10)] }))
-          .sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            const posA = playerIndexToPosition[String(a.playerIndex)];
-            const posB = playerIndexToPosition[String(b.playerIndex)];
-            return positionOrder[posA] - positionOrder[posB];
-          });
         const gameFinalScores: Record<number, number> = {};
         const { uma } = activeUmaOka;
-        rankedPlayers.forEach((playerData, rank) => {
-          const { playerIndex } = playerData;
-          let finalScore = (playerRawScores[playerIndex] - scaledReturnScore) / 1000;
-
-          if (uma === '1-2') {
-            if (rank === 0) finalScore += 20;
-            else if (rank === 1) finalScore += 10;
-            else if (rank === 2) finalScore -= 10;
-            else if (rank === 3) finalScore -= 20;
-          } else if (uma === '1-3') {
-            if (rank === 0) finalScore += 30;
-            else if (rank === 1) finalScore += 10;
-            else if (rank === 2) finalScore -= 10;
-            else if (rank === 3) finalScore -= 30;
-          }
-          if (isOkaEnabled && rank === 0) {
-            finalScore += okaAmount;
-          }
-          gameFinalScores[playerIndex] = finalScore;
+        const tieAwards = calculateTieAwards(playerRawScores, uma, isOkaEnabled ? okaAmount : 0, tieHandlingMode, Object.fromEntries(Object.entries(game.participants).map(([pos, pIdx]) => [pIdx, pos])));
+        Object.keys(playerRawScores).forEach(playerIndexStr => {
+          const playerIndex = Number(playerIndexStr);
+          gameFinalScores[playerIndex] = (playerRawScores[playerIndex] - scaledReturnScore) / 1000 + tieAwards[playerIndex];
         });
         Object.entries(gameFinalScores).forEach(([playerIndexStr, score]) => {
           const playerIndex = parseInt(playerIndexStr, 10);
@@ -581,7 +585,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       }
     });
     return finalScores.map(score => score.toFixed(1));
-  }, [games, isUmaOkaPage, playerPool, activeUmaOka, isOkaEnabled, scoreMultiplier, scaledStartingScore, scaledReturnScore]);
+  }, [games, isUmaOkaPage, playerPool, activeUmaOka, isOkaEnabled, scoreMultiplier, scaledStartingScore, scaledReturnScore, tieHandlingMode]);
 
   const handleDeleteGame = (gameIdToDelete: number) => {
     setGames(prevGames => prevGames.filter(game => game.id !== gameIdToDelete));
@@ -599,8 +603,13 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   }, []);
 
   const onOkaToggle = useCallback(() => {
+    if (!isOkaEnabled) {
+      // Oka is 5,000 actual points above the starting score.
+      // Convert that offset back to the user's input unit (e.g. 250 -> 300).
+      setReturnScore(startingScore + 5000 / scoreMultiplier);
+    }
     setIsOkaEnabled(prev => !prev);
-  }, []);
+  }, [isOkaEnabled, setReturnScore, startingScore, scoreMultiplier]);
 
   const isUmaOkaGlobalDisabled = useMemo(() => {
     return startingScore % 10 !== 0 || (isOkaEnabled && returnScore % 10 !== 0);
@@ -706,6 +715,8 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
         showUmaOkaControls={isUmaOkaPage}
         handleUmaOkaToggle={handleUmaOkaToggle}
         activeUmaOka={activeUmaOka}
+        tieHandlingMode={tieHandlingMode}
+        setTieHandlingMode={setTieHandlingMode}
         isUmaOkaGlobalDisabled={isUmaOkaGlobalDisabled}
       />
       <MessageDisplay message={getText('copied')} isVisible={showCopyMessage} />

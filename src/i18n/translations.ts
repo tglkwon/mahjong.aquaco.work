@@ -39,6 +39,9 @@ export interface Translation {
   uma1_2: string;
   uma1_3: string;
   oka: string;
+  tieSplit: string;
+  tieSeatOrder: string;
+  tieHandling: string;
   playerPoolTitle: string;
   addPlayer: string;
   addPlayerPlaceholder: string;
@@ -123,6 +126,9 @@ export const translations: Translations = {
     uma1_2: '1-2 우마',
     uma1_3: '1-3 우마',
     oka: '오카',
+    tieSplit: '동점 균등 분배',
+    tieSeatOrder: '자리순',
+    tieHandling: '동점 처리',
     playerPoolTitle: '플레이어 목록',
     addPlayer: '플레이어 추가',
     addPlayerPlaceholder: '새 플레이어 이름 입력',
@@ -193,6 +199,9 @@ export const translations: Translations = {
     uma1_2: '1-2 Uma',
     uma1_3: '1-3 Uma',
     oka: 'Oka',
+    tieSplit: 'Split Ties',
+    tieSeatOrder: 'Seat Order',
+    tieHandling: 'Tie Handling',
     playerPoolTitle: 'Player List',
     addPlayer: 'Add Player',
     addPlayerPlaceholder: 'Enter new player name',
@@ -262,6 +271,9 @@ export const translations: Translations = {
     uma1_2: '1-2 ウマ',
     uma1_3: '1-3 ウマ',
     oka: 'オカ',
+    tieSplit: '同点均等分配',
+    tieSeatOrder: '席順',
+    tieHandling: '同点処理',
     playerPoolTitle: 'プレイヤーリスト',
     addPlayer: 'プレイヤー追加',
     addPlayerPlaceholder: '新しいプレイヤー名を入力',
