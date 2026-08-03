@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Translation } from '../i18n/translations';
 
 type TranslationKey = keyof Translation;
@@ -8,12 +8,67 @@ interface PlayerManagementAndScoresProps {
   onAddPlayer: (name: string) => void;
   onRemovePlayer: (index: number) => void;
   onUpdatePlayer: (index: number, name: string) => void;
-  totalScores: (string | number)[];
   getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  chomboCounts?: number[];
+  onAddChombo?: (index: number) => void;
+  onUndoChombo?: (index: number) => void;
 }
 
-function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, onUpdatePlayer, totalScores, getText }: PlayerManagementAndScoresProps) {
+function PlayerManagementAndScores({
+  playerPool,
+  onAddPlayer,
+  onRemovePlayer,
+  onUpdatePlayer,
+  getText,
+  chomboCounts = [],
+  onAddChombo,
+  onUndoChombo,
+}: PlayerManagementAndScoresProps) {
   const [newPlayerName, setNewPlayerName] = useState('');
+  const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null);
+  const menuHistoryPushed = useRef(false);
+
+  const closeMenu = () => {
+    setOpenPlayerIndex(null);
+    if (menuHistoryPushed.current) {
+      menuHistoryPushed.current = false;
+      window.history.back();
+    }
+  };
+
+  const openMenu = (index: number) => {
+    if (!menuHistoryPushed.current) {
+      window.history.pushState({ ...(window.history.state || {}), playerManagementMenu: true }, '');
+      menuHistoryPushed.current = true;
+    }
+    setOpenPlayerIndex(index);
+  };
+
+  useEffect(() => {
+    if (openPlayerIndex === null) return undefined;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu();
+    };
+    const handlePopState = () => {
+      menuHistoryPushed.current = false;
+      setOpenPlayerIndex(null);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [openPlayerIndex]);
+
+  useEffect(() => () => {
+    if (menuHistoryPushed.current) {
+      menuHistoryPushed.current = false;
+      window.history.back();
+    }
+  }, []);
 
   const handleAddClick = () => {
     if (newPlayerName.trim()) {
@@ -29,9 +84,11 @@ function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, on
     }
   };
 
+  const selectedPlayerName = openPlayerIndex === null ? '' : playerPool[openPlayerIndex];
+  const selectedChomboCount = openPlayerIndex === null ? 0 : (chomboCounts[openPlayerIndex] || 0);
+
   return (
     <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-4 mb-4">
-      {/* Player Pool Management Section */}
       <h3 className="text-lg sm:text-xl font-semibold mb-3 text-gray-800">{getText('playerPoolTitle')}</h3>
 
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -62,27 +119,72 @@ function PlayerManagementAndScores({ playerPool, onAddPlayer, onRemovePlayer, on
               aria-label={`${getText('player')} ${index + 1} ${getText('name')}`}
             />
             <button
-              onClick={() => onRemovePlayer(index)}
-              className="text-red-500 hover:text-red-700 font-bold p-1 rounded-full hover:bg-red-100 transition-colors flex-shrink-0"
-              title={`${getText('remove')} ${name}`}
-              aria-label={`${getText('remove')} ${name}`}
+              onClick={() => openMenu(index)}
+              className="text-gray-600 hover:text-gray-900 font-bold p-1 rounded-md hover:bg-gray-200 transition-colors flex-shrink-0"
+              title={getText('playerActions')}
+              aria-label={`${getText('playerActions')}: ${name}`}
+              aria-haspopup="dialog"
+              aria-expanded={openPlayerIndex === index}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              <span aria-hidden="true" className="text-lg leading-none">⋮</span>
             </button>
           </div>
         ))}
       </div>
 
-      {/* Player Total Scores Section */}
-      <h3 className="text-lg sm:text-xl font-semibold mb-3 text-blue-800">{getText('totalScoresTitle')}</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {playerPool.map((name, index) => (
-          <div key={index} className="text-center bg-blue-50 p-2 rounded-md border border-blue-200">
-            <div className="font-medium text-gray-700 truncate" title={name}>{name}</div>
-            <div className="font-bold text-lg sm:text-xl text-blue-900">{totalScores[index]}</div>
+      {openPlayerIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 sm:items-center"
+          role="presentation"
+          onClick={closeMenu}
+        >
+          <div
+            className="w-full max-w-sm rounded-xl bg-white p-4 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="player-actions-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h4 id="player-actions-title" className="text-lg font-semibold text-gray-800">{selectedPlayerName}</h4>
+              <button
+                type="button"
+                onClick={closeMenu}
+                className="rounded-md p-1 text-xl leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                aria-label={getText('closeMenu')}
+              >
+                ×
+              </button>
+            </div>
+            {onAddChombo && (
+              <button
+                type="button"
+                onClick={() => onAddChombo(openPlayerIndex)}
+                className="mb-2 w-full rounded-md bg-amber-500 px-3 py-2 text-left font-semibold text-white hover:bg-amber-600"
+              >
+                {getText('addChombo')}
+              </button>
+            )}
+            {onUndoChombo && (
+              <button
+                type="button"
+                onClick={() => onUndoChombo(openPlayerIndex)}
+                disabled={selectedChomboCount === 0}
+                className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {getText('undoChombo', { count: selectedChomboCount })}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => { closeMenu(); onRemovePlayer(openPlayerIndex); }}
+              className="w-full rounded-md px-3 py-2 text-left font-semibold text-red-600 hover:bg-red-50"
+            >
+              {getText('remove')}
+            </button>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

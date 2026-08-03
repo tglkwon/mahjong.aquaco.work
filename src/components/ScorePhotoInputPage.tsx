@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import PlayerManagementAndScores from './PlayerManagementAndScores';
+import PlayerTotals from './PlayerTotals';
 import Table from './Table';
 import PhotoUploadPanel from './PhotoUploadPanel';
 import { Translation, Translations } from '../i18n/translations';
@@ -137,13 +138,14 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
 
   return (
     <div className="w-full max-w-6xl flex flex-col items-center xs:p-0 px-2 py-4 sm:px-4">
-      {/* 플레이어 관리 및 총점 표시 UI (우마/오카 페이지와 공유) */}
+      <PlayerTotals playerPool={playerPool} totalScores={totalScores} getText={getText} />
+
+      {/* 플레이어 관리 UI */}
       <PlayerManagementAndScores
         playerPool={playerPool}
         onAddPlayer={handleAddPlayerToPool}
         onRemovePlayer={handleRemovePlayerFromPool}
         onUpdatePlayer={handleUpdatePlayerInPool}
-        totalScores={totalScores}
         getText={getText}
       />
 

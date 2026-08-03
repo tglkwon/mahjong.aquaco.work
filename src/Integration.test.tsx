@@ -12,8 +12,8 @@ const enterScoresAndAddRecord = async () => {
     userEvent.clear(inputs[i]);
     userEvent.type(inputs[i], scores[i]);
   }
-  const buttons = screen.getAllByRole('button');
-  fireEvent.click(buttons[buttons.length - 1]);
+  const recordButton = screen.getByRole('button', { name: /기록 추가하고 공유하기|Add Record/i });
+  fireEvent.click(recordButton);
 };
 
 describe('Integration Tests', () => {

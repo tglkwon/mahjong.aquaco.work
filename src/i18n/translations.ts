@@ -47,7 +47,12 @@ export interface Translation {
   addPlayerPlaceholder: string;
   remove: string;
   totalScoresTitle: string;
+  recordedScoresTitle: string;
+  scoreInputTitle: string;
   closeMenu: string;
+  playerActions: string;
+  addChombo: string;
+  undoChombo: string;
   about: string;
   aboutServiceTitle: string;
   aboutServiceDesc: string;
@@ -134,7 +139,12 @@ export const translations: Translations = {
     addPlayerPlaceholder: '새 플레이어 이름 입력',
     remove: '삭제',
     totalScoresTitle: '플레이어별 총점',
+    recordedScoresTitle: '기록된 점수',
+    scoreInputTitle: '점수 기록',
     closeMenu: '메뉴 닫기',
+    playerActions: '플레이어 관리',
+    addChombo: '촌보 추가',
+    undoChombo: '촌보 취소 가능: {count}회',
     about: '서비스 정보',
     aboutServiceTitle: '서비스에 대하여',
     aboutServiceDesc: '아쿠아컴퍼니의 마작 월드는 친구들과의 마작 게임 결과를 간편하게 기록하고 공유하기 위해 만들어진 개인 프로젝트입니다. 모든 데이터는 URL에 저장되어 서버에 남지 않으므로 안심하고 사용하세요.',
@@ -207,7 +217,12 @@ export const translations: Translations = {
     addPlayerPlaceholder: 'Enter new player name',
     remove: 'Remove',
     totalScoresTitle: 'Total Scores by Player',
+    recordedScoresTitle: 'Recorded Scores',
+    scoreInputTitle: 'Score Entry',
     closeMenu: 'Close Menu',
+    playerActions: 'Player Actions',
+    addChombo: 'Add Chombo',
+    undoChombo: 'Chombo available to undo: {count}',
     about: 'About',
     aboutServiceTitle: 'About This Service',
     aboutServiceDesc: "Aquaco's Mahjong World is a personal project created to easily record and share mahjong game results with friends. All data is stored in the URL and not on any server, so feel free to use it without worry.",
@@ -279,7 +294,12 @@ export const translations: Translations = {
     addPlayerPlaceholder: '新しいプレイヤー名を入力',
     remove: '削除',
     totalScoresTitle: 'プレイヤー別合計点',
+    recordedScoresTitle: '記録済み点数',
+    scoreInputTitle: '点数記録',
     closeMenu: 'メニューを閉じる',
+    playerActions: 'プレイヤー管理',
+    addChombo: 'チョンボ追加',
+    undoChombo: '取り消し可能なチョンボ: {count}回',
     about: 'サービス情報',
     aboutServiceTitle: 'サービスについて',
     aboutServiceDesc: 'アクアカンパニーの麻雀ワールドは、友達との麻雀ゲームの結果を簡単に記録し、共有するために作られた個人プロジェクトです。すべてのデータはURLに保存され、サーバーには残らないので、安心してご利用ください。',

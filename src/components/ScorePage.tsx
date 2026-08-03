@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { deflate, inflate } from 'pako';
 import Table from './Table';
 import PlayerManagementAndScores from './PlayerManagementAndScores';
+import PlayerTotals from './PlayerTotals';
 import ControlPanel from './ControlPanel';
 import MessageDisplay from './MessageDisplay';
 import UmaOkaTable from './UmaOkaTable';
@@ -22,7 +23,7 @@ interface ScoreTrackerPageProps {
 
 const PLAYER_COUNT = 4;
 const INITIAL_PLAYER_POSITIONS = ['east', 'south', 'west', 'north'];
-const DATA_STRUCTURE_VERSION = 4; // v2: pako on optimized array, v3: added returnScore, isOkaEnabled, v4: added tie handling
+const DATA_STRUCTURE_VERSION = 5; // v2: pako on optimized array, v3: added returnScore, isOkaEnabled, v4: added tie handling
 
 const getDefaultPlayerPositions = (): string[] => {
   return [...INITIAL_PLAYER_POSITIONS];
@@ -96,7 +97,8 @@ type OptimizedStateArray = [
   [string | null, boolean] | null, // activeUmaOka
   number | null, // returnScore
   boolean | null, // isOkaEnabled
-  TieHandlingMode? // tie handling mode
+  TieHandlingMode?, // tie handling mode
+  number[]? // per-player chombo counts
 ];
 
 interface ParsedState {
@@ -109,6 +111,7 @@ interface ParsedState {
   tieHandlingMode?: TieHandlingMode;
   playerPool?: string[];
   playerNames?: string[];
+  chomboCounts?: number[];
 }
 
 function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, translations }: ScoreTrackerPageProps) {
@@ -158,6 +161,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
             language: data[4],
             activeUmaOka: isUmaOka && data[5] ? { uma: data[5][0], oka: data[5][1] } : { uma: null, oka: false },
             tieHandlingMode: data[8] === 'seatOrder' ? 'seatOrder' : 'split',
+            chomboCounts: Array.isArray(data[9]) ? data[9] : undefined,
           };
 
           if (version >= 3) {
@@ -204,6 +208,13 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       return loadedState.playerPool;
     }
     return Array(PLAYER_COUNT).fill('').map((_, i) => `Player${i + 1}`);
+  });
+
+  const [chomboCounts, setChomboCounts] = useState<number[]>(() => {
+    if (isUmaOkaPage && loadedState?.chomboCounts && Array.isArray(loadedState.chomboCounts)) {
+      return loadedState.chomboCounts;
+    }
+    return Array(PLAYER_COUNT).fill(0);
   });
 
   const getInitialGames = useCallback((isUmaOka: boolean, state: ParsedState | null): Game[] => {
@@ -342,6 +353,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       isUmaOkaPage ? returnScore : null,
       isUmaOkaPage ? isOkaEnabled : null,
       isUmaOkaPage ? tieHandlingMode : undefined,
+      isUmaOkaPage ? chomboCounts : undefined,
     ];
 
     const jsonString = JSON.stringify(optimizedData);
@@ -349,7 +361,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     const binaryString = bytesToBinaryString(compressedData);
     const encodedData = btoa(binaryString);
     return `${window.location.origin}${location.pathname}#data=${encodedData}`;
-  }, [games, startingScore, currentLanguage, isUmaOkaPage, playerPool, playerNames, activeUmaOka, location.pathname, returnScore, isOkaEnabled, tieHandlingMode]);
+  }, [games, startingScore, currentLanguage, isUmaOkaPage, playerPool, playerNames, activeUmaOka, location.pathname, returnScore, isOkaEnabled, tieHandlingMode, chomboCounts]);
 
   const copyToClipboard = useCallback(() => {
     const url = generateShareableUrl();
@@ -478,11 +490,21 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   const handleAddPlayerToPool = (name: string) => {
     if (name && !playerPool.includes(name)) {
       setPlayerPool(prev => [...prev, name]);
+      setChomboCounts(prev => [...prev, 0]);
     }
+  };
+
+  const handleAddChombo = (index: number) => {
+    setChomboCounts(prev => prev.map((count, playerIndex) => playerIndex === index ? count + 1 : count));
+  };
+
+  const handleUndoChombo = (index: number) => {
+    setChomboCounts(prev => prev.map((count, playerIndex) => playerIndex === index ? Math.max(0, count - 1) : count));
   };
 
   const handleRemovePlayerFromPool = (indexToRemove: number) => {
     setPlayerPool(prev => prev.filter((_, index) => index !== indexToRemove));
+    setChomboCounts(prev => prev.filter((_, index) => index !== indexToRemove));
     setGames(prevGames => prevGames.map(game => {
       if (!isUmaOkaPage || !game.participants) return game;
       const newParticipants: UmaOkaParticipants = { ...game.participants! }; // Use non-null assertion as checked above
@@ -584,8 +606,8 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
         });
       }
     });
-    return finalScores.map(score => score.toFixed(1));
-  }, [games, isUmaOkaPage, playerPool, activeUmaOka, isOkaEnabled, scoreMultiplier, scaledStartingScore, scaledReturnScore, tieHandlingMode]);
+    return finalScores.map((score, index) => (score - (chomboCounts[index] || 0) * 20).toFixed(1));
+  }, [games, isUmaOkaPage, playerPool, activeUmaOka, isOkaEnabled, scoreMultiplier, scaledStartingScore, scaledReturnScore, tieHandlingMode, chomboCounts]);
 
   const handleDeleteGame = (gameIdToDelete: number) => {
     setGames(prevGames => prevGames.filter(game => game.id !== gameIdToDelete));
@@ -663,16 +685,9 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
 
   return (
     <div className="w-full max-w-6xl flex flex-col items-center xs:p-0 px-2 py-4 sm:px-4">
-      {isUmaOkaPage && (
-        <PlayerManagementAndScores
-          playerPool={playerPool}
-          onAddPlayer={handleAddPlayerToPool}
-          onRemovePlayer={handleRemovePlayerFromPool}
-          onUpdatePlayer={handleUpdatePlayerInPool}
-          totalScores={totalScores}
-          getText={getText}
-        />
-      )}
+      {isUmaOkaPage && (<PlayerTotals playerPool={playerPool} totalScores={totalScores} getText={getText} />)}
+
+
       {isUmaOkaPage ? (
         <UmaOkaTable
           playerNames={playerPool}
@@ -723,7 +738,18 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       <MessageDisplay message={popupMessage.text} isVisible={popupMessage.show} />
       <div className="mt-6 sm:mt-8 text-xs sm:text-sm md:text-lg text-gray-600">
         <p>{getText('totalGames', { count: games.filter(g => !g.isEditable).length })}</p>
-      </div>
+      </div>      {isUmaOkaPage && (
+        <PlayerManagementAndScores
+          playerPool={playerPool}
+          onAddPlayer={handleAddPlayerToPool}
+          onRemovePlayer={handleRemovePlayerFromPool}
+          onUpdatePlayer={handleUpdatePlayerInPool}
+          getText={getText}
+          chomboCounts={chomboCounts}
+          onAddChombo={handleAddChombo}
+          onUndoChombo={handleUndoChombo}
+        />
+      )}
     </div>
   );
 }
