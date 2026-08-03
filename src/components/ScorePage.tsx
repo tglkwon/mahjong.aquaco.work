@@ -685,6 +685,11 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
 
   return (
     <div className="w-full max-w-6xl flex flex-col items-center xs:p-0 px-2 py-4 sm:px-4">
+      {isUmaOkaPage && (
+        <p className="w-full max-w-6xl mb-4 text-sm sm:text-base text-gray-600">
+          {getText('umaOkaGuide')}
+        </p>
+      )}
       {isUmaOkaPage && (<PlayerTotals playerPool={playerPool} totalScores={totalScores} getText={getText} />)}
 
 
@@ -733,6 +738,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
         tieHandlingMode={tieHandlingMode}
         setTieHandlingMode={setTieHandlingMode}
         isUmaOkaGlobalDisabled={isUmaOkaGlobalDisabled}
+        showShareWarning={isUmaOkaPage}
       />
       <MessageDisplay message={getText('copied')} isVisible={showCopyMessage} />
       <MessageDisplay message={popupMessage.text} isVisible={popupMessage.show} />

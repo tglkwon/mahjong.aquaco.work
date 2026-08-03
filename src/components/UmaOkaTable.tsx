@@ -127,7 +127,7 @@ function UmaOkaTable({ playerNames, games, getText, handleDeleteGame, handleScor
     <>
       <section className="w-full max-w-6xl mb-4">
         <h3 className="text-lg sm:text-xl font-semibold mb-3 text-gray-800">{getText('recordedScoresTitle')}</h3>
-        {recordedGames.length > 0 && (
+        {recordedGames.length > 0 ? (
           <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full">
             <table className="divide-y divide-gray-200 w-full">
               <TableHeader getText={getText} />
@@ -137,6 +137,10 @@ function UmaOkaTable({ playerNames, games, getText, handleDeleteGame, handleScor
                 ))}
               </tbody>
             </table>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-md p-4 text-sm sm:text-base text-gray-500">
+            {getText('noRecordedScores')}
           </div>
         )}
       </section>
