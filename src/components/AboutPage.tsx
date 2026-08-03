@@ -49,8 +49,8 @@ function AboutPage({ getText }: AboutPageProps) {
   const [versionHistory, setVersionHistory] = useState('');
 
   useEffect(() => {
-    // public 폴더의 README.md 파일을 가져옵니다.
-    fetch('/README.md')
+    // Apache에서 공개가 허용된 서비스 전용 업데이트 파일을 가져옵니다.
+    fetch('/update-history.txt')
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok.');
@@ -67,7 +67,7 @@ function AboutPage({ getText }: AboutPageProps) {
         setVersionHistory(historyLines);
       })
       .catch(error => {
-        console.error('Error fetching or parsing README.md:', error);
+        console.error('Error fetching or parsing update history:', error);
         setVersionHistory(getText('versionHistoryError'));
       });
   }, [getText]); // 언어 변경 시 에러 메시지 재번역을 위해 getText를 의존성 배열에 추가
