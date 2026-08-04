@@ -100,7 +100,7 @@ function ControlPanel({
               aria-controls="uma-oka-settings-panel"
               aria-label={getText(isUmaOkaSettingsExpanded ? 'collapseUmaOkaSettings' : 'expandUmaOkaSettings')}
               onClick={() => setIsUmaOkaSettingsExpanded(prev => !prev)}
-              className="w-full p-2 rounded-lg shadow-md border border-gray-300 bg-white flex items-center justify-between gap-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className={`w-full ${isUmaOkaSettingsExpanded ? '' : 'h-full'} p-2 rounded-lg shadow-md border border-gray-300 bg-white flex items-center justify-between gap-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400`}
             >
               <span className="min-w-0">
                 <span className="block font-semibold text-sm sm:text-base md:text-lg">
