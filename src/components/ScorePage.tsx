@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { deflate, inflate } from 'pako';
+import { encodeShareState, parseShareStateFromHash, ShareState } from '../utils/shareState';
 import Table from './Table';
 import PlayerManagementAndScores from './PlayerManagementAndScores';
 import PlayerTotals from './PlayerTotals';
@@ -23,7 +23,6 @@ interface ScoreTrackerPageProps {
 
 const PLAYER_COUNT = 4;
 const INITIAL_PLAYER_POSITIONS = ['east', 'south', 'west', 'north'];
-const DATA_STRUCTURE_VERSION = 5; // v2: pako on optimized array, v3: added returnScore, isOkaEnabled, v4: added tie handling
 
 const getDefaultPlayerPositions = (): string[] => {
   return [...INITIAL_PLAYER_POSITIONS];
@@ -39,25 +38,6 @@ const getIncrementAmount = (score: number) => {
   if (digits <= 2) return 1;
   return 10 ** (digits - 2);
 };
-
-// Helper to convert binary string to Uint8Array
-const binaryStringToBytes = (binaryString: string) => {
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-};
-
-// Helper to convert Uint8Array to binary string
-const bytesToBinaryString = (bytes: Uint8Array) => {
-  let binaryString = '';
-  bytes.forEach((byte) => {
-    binaryString += String.fromCharCode(byte);
-  });
-  return binaryString;
-};
-
 
 const UMA_VALUES: Record<string, number[]> = {
   '1-2': [20, 10, -10, -20],
@@ -84,116 +64,13 @@ export const calculateTieAwards = (rawScores: Record<number, number>, uma: strin
   return awards;
 };
 
-type SavedGameData =
-  | string[] // Normal mode: scores only
-  | [number, number, number, number, string, string, string, string]; // UmaOka mode: participants + scores
-
-type OptimizedStateArray = [
-  number, // version
-  number, // startingScore
-  string[], // playerNames or playerPool
-  SavedGameData[], // games
-  string, // language
-  [string | null, boolean] | null, // activeUmaOka
-  number | null, // returnScore
-  boolean | null, // isOkaEnabled
-  TieHandlingMode?, // tie handling mode
-  number[]? // per-player chombo counts
-];
-
-interface ParsedState {
-  startingScore: number;
-  games: Game[];
-  language?: string;
-  activeUmaOka: { uma: string | null; oka: boolean };
-  returnScore?: number;
-  isOkaEnabled?: boolean;
-  tieHandlingMode?: TieHandlingMode;
-  playerPool?: string[];
-  playerNames?: string[];
-  chomboCounts?: number[];
-}
-
 function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, translations }: ScoreTrackerPageProps) {
   const location = useLocation();
   const isUmaOkaPage = location.pathname === '/set_score_umaoka';
 
-  const parseStateFromUrl = useCallback((isUmaOka: boolean): ParsedState | null => {
-    const hash = window.location.hash;
-    if (!hash.startsWith('#data=')) return null;
-
-    const encodedData = hash.substring(hash.indexOf('=') + 1);
-
-    try {
-      const binaryString = atob(encodedData);
-      const bytes = binaryStringToBytes(binaryString);
-      const inflatedData = inflate(bytes, { to: 'string' });
-      const parsedData = JSON.parse(inflatedData);
-
-      if (Array.isArray(parsedData)) { // New optimized array format
-        const data = parsedData as OptimizedStateArray;
-        const version = data[0];
-        if (version >= 2) { // Handle v2 and later
-          const restoredGames = data[3].map((gameData: SavedGameData, index: number) => {
-            if (isUmaOka) {
-              const gData = gameData as [number, number, number, number, string, string, string, string];
-              return {
-                id: index + 1,
-                participants: { east: gData[0], south: gData[1], west: gData[2], north: gData[3] },
-                scores: { east: gData[4], south: gData[5], west: gData[6], north: gData[7] },
-                isEditable: false,
-              } as Game;
-            } else {
-              const gData = gameData as string[];
-              return {
-                id: index + 1,
-                scores: gData,
-                isEditable: false,
-                playerPositions: getDefaultPlayerPositions(),
-                umaType: null
-              } as Game;
-            }
-          });
-
-          const result: ParsedState = {
-            startingScore: data[1],
-            games: restoredGames,
-            language: data[4],
-            activeUmaOka: isUmaOka && data[5] ? { uma: data[5][0], oka: data[5][1] } : { uma: null, oka: false },
-            tieHandlingMode: data[8] === 'seatOrder' ? 'seatOrder' : 'split',
-            chomboCounts: Array.isArray(data[9]) ? data[9] : undefined,
-          };
-
-          if (version >= 3) {
-            result.returnScore = data[6] ?? undefined;
-            result.isOkaEnabled = data[7] ?? undefined;
-          }
-
-          if (isUmaOka) {
-            result.playerPool = data[2];
-          } else {
-            result.playerNames = data[2];
-          }
-          return result;
-        } else {
-          throw new Error(`Unsupported data version: ${version}`);
-        }
-      } else if (typeof parsedData === 'object' && parsedData !== null) { // Old pako-on-json format
-        return parsedData as ParsedState;
-      } else {
-        throw new Error('Invalid parsed data type');
-      }
-    } catch (pakoError) {
-      try { // Fallback to legacy uncompressed format
-        const decodedJsonString = decodeURIComponent(escape(atob(encodedData)));
-        return JSON.parse(decodedJsonString) as ParsedState;
-      } catch (legacyError) {
-        console.error('URL 해시에서 상태를 파싱하는데 오류가 발생했습니다 (모든 방식 실패): ', pakoError, legacyError);
-        return null;
-      }
-    }
-  }, []);
-
+  const parseStateFromUrl = useCallback((isUmaOka: boolean): ShareState | null => (
+    parseShareStateFromHash(window.location.hash, isUmaOka)
+  ), []);
   const loadedState = useMemo(() => parseStateFromUrl(isUmaOkaPage), [parseStateFromUrl, isUmaOkaPage]);
 
   const [playerNames, setPlayerNames] = useState<string[]>(() => {
@@ -217,7 +94,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     return Array(PLAYER_COUNT).fill(0);
   });
 
-  const getInitialGames = useCallback((isUmaOka: boolean, state: ParsedState | null): Game[] => {
+  const getInitialGames = useCallback((isUmaOka: boolean, state: ShareState | null): Game[] => {
     const loadedGames = state?.games;
     if (Array.isArray(loadedGames) && loadedGames.length > 0) {
       const maxId = loadedGames.length > 0 ? Math.max(...loadedGames.map(g => g.id)) : 0;
@@ -316,51 +193,13 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   const totalTargetScore = useMemo(() => scaledStartingScore * 4, [scaledStartingScore]);
 
   const generateShareableUrl = useCallback(() => {
-    const stateToSave = {
-      games: games.filter(g => !g.isEditable), // Only save completed games
+      const encodedData = encodeShareState({
+      games: games.filter(g => !g.isEditable),
       startingScore,
       language: currentLanguage,
-      ...(isUmaOkaPage ? { playerPool, activeUmaOka, returnScore, isOkaEnabled, tieHandlingMode } : { playerNames })
-    };
-
-    // New optimized array format
-    const optimizedGames = stateToSave.games.map(game => {
-      if (isUmaOkaPage) {
-        // Ensure participants exist before accessing properties
-        if (!game.participants) {
-          console.error("Game participants missing for game:", game);
-          // Return a default or handle error appropriately. 
-          // Returning dummy data to prevent crash, but this case should ideally be prevented upstream.
-          return [0, 1, 2, 3, "0", "0", "0", "0"];
-        }
-        const parts = game.participants;
-        const scores = game.scores as UmaOkaScores;
-        return [
-          parts.east, parts.south, parts.west, parts.north,
-          scores.east, scores.south, scores.west, scores.north
-        ];
-      }
-      return game.scores;
-    });
-
-    const optimizedData = [
-      DATA_STRUCTURE_VERSION,
-      startingScore,
-      isUmaOkaPage ? playerPool : playerNames,
-      optimizedGames,
-      currentLanguage,
-      isUmaOkaPage ? [activeUmaOka.uma, activeUmaOka.oka] : null,
-      isUmaOkaPage ? returnScore : null,
-      isUmaOkaPage ? isOkaEnabled : null,
-      isUmaOkaPage ? tieHandlingMode : undefined,
-      isUmaOkaPage ? chomboCounts : undefined,
-    ];
-
-    const jsonString = JSON.stringify(optimizedData);
-    const compressedData = deflate(jsonString);
-    const binaryString = bytesToBinaryString(compressedData);
-    const encodedData = btoa(binaryString);
-    return `${window.location.origin}${location.pathname}#data=${encodedData}`;
+      ...(isUmaOkaPage ? { playerPool, activeUmaOka, returnScore, isOkaEnabled, tieHandlingMode, chomboCounts } : { playerNames, activeUmaOka: { uma: null, oka: false } })
+    }, isUmaOkaPage);
+    return `${window.location.origin}${location.pathname}#d=${encodedData}`;
   }, [games, startingScore, currentLanguage, isUmaOkaPage, playerPool, playerNames, activeUmaOka, location.pathname, returnScore, isOkaEnabled, tieHandlingMode, chomboCounts]);
 
   const copyToClipboard = useCallback(() => {

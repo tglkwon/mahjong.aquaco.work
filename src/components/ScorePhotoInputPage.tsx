@@ -5,6 +5,7 @@ import Table from './Table';
 import PhotoUploadPanel from './PhotoUploadPanel';
 import { Translation, Translations } from '../i18n/translations';
 import { Game } from '../types';
+import { parseShareStateFromHash } from '../utils/shareState';
 
 type Language = keyof Translations;
 type TranslationKey = keyof Translation;
@@ -25,19 +26,7 @@ const PLAYER_COUNT = 4;
  */
 function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, translations }: ScorePhotoInputPageProps) {
   // URL에서 상태를 파싱하는 로직 (ScoreTrackerPage와 공유)
-  const parseStateFromUrl = useCallback((): any => { // Type as any for now as return logic is complex
-    const hash = window.location.hash;
-    if (hash.startsWith('#data=')) {
-      try {
-        const encodedData = hash.substring(hash.indexOf('=') + 1);
-        const decodedJsonString = decodeURIComponent(escape(atob(encodedData)));
-        return JSON.parse(decodedJsonString);
-      } catch (error) {
-        console.error('URL 해시에서 상태를 파싱하는데 오류가 발생했습니다:', error);
-      }
-    }
-    return null;
-  }, []);
+  const parseStateFromUrl = useCallback(() => parseShareStateFromHash(window.location.hash, true), []);
 
   // 플레이어 목록 상태
   const [playerPool, setPlayerPool] = useState<string[]>(() => {
