@@ -22,6 +22,7 @@ interface ControlPanelProps {
   tieHandlingMode?: TieHandlingMode;
   setTieHandlingMode?: (mode: TieHandlingMode) => void;
   isUmaOkaGlobalDisabled?: boolean;
+  showShareWarning?: boolean;
   copyToClipboard: () => void;
 }
 
@@ -42,7 +43,8 @@ function ControlPanel({
   activeUmaOka,
   tieHandlingMode = 'split',
   setTieHandlingMode,
-  isUmaOkaGlobalDisabled
+  isUmaOkaGlobalDisabled,
+  showShareWarning = false
 }: ControlPanelProps) {
   const [isUmaOkaSettingsExpanded, setIsUmaOkaSettingsExpanded] = useState(false);
 
@@ -76,9 +78,15 @@ function ControlPanel({
           </div>
 
           {/* Item 2: Sum Difference */}
-          <div className="flex-1 p-2 rounded-lg shadow-md border border-gray-300 bg-white flex items-center justify-center text-center text-sm sm:text-base md:text-lg lg:text-xl">
-            <span className="font-semibold whitespace-nowrap">
-              {getText('sumDifference')}: {totalTargetScore - currentTotal}
+          <div className={`flex-1 p-2 rounded-lg shadow-md border bg-white flex flex-col items-center justify-center text-center text-sm sm:text-base md:text-lg ${currentTotal === totalTargetScore ? 'border-green-300' : 'border-amber-300'}`}>
+            <span className="font-semibold leading-tight">
+              {getText('currentTargetTotal')}
+            </span>
+            <span className="font-semibold mt-1">
+              {currentTotal.toLocaleString()} / {totalTargetScore.toLocaleString()}
+            </span>
+            <span className={`text-xs sm:text-sm font-medium mt-1 ${currentTotal === totalTargetScore ? 'text-green-600' : 'text-amber-600'}`}>
+              {currentTotal === totalTargetScore ? getText('recordReady') : getText('recordNeeded')}
             </span>
           </div>
         </div>
@@ -191,6 +199,11 @@ function ControlPanel({
         >
           {getText('addRecord')}
         </button>
+        {showShareWarning && (
+          <p className="max-w-xl text-center bmb:text-right text-xs sm:text-sm text-gray-500">
+            {getText('shareWarning')}
+          </p>
+        )}
       </div>
     </div>
   );

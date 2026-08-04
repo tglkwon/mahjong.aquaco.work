@@ -7,6 +7,12 @@ export interface Translation {
   menu: string;
   underConstruction: string;
   sumDifference: string;
+  currentTargetTotal: string;
+  recordNeeded: string;
+  recordReady: string;
+  umaOkaGuide: string;
+  noRecordedScores: string;
+  shareWarning: string;
   startingScore: string;
   returnScore: string;
   mahjongWorldTitle: string;
@@ -105,6 +111,12 @@ export const translations: Translations = {
     menu: '메뉴',
     underConstruction: '공사 중',
     sumDifference: '합계 오차',
+    currentTargetTotal: '현재 합계 / 목표 합계',
+    recordNeeded: '합계를 맞춘 뒤 기록하세요.',
+    recordReady: '기록 가능',
+    umaOkaGuide: '플레이어를 설정하고 점수를 입력한 뒤, 합계를 맞추면 기록할 수 있습니다.',
+    noRecordedScores: '아직 기록된 점수가 없습니다.',
+    shareWarning: '기록은 공유 링크에 포함됩니다. 링크를 잃어버리면 복구할 수 없습니다.',
     startingScore: '시작 점수',
     returnScore: '반환 점수',
     mahjongWorldTitle: '아쿠아컴퍼니의 마작 월드',
@@ -189,6 +201,12 @@ export const translations: Translations = {
     underConstruction: 'Under Construction',
     currentGameTotal: 'Current Score Total',
     sumDifference: 'Sum Difference',
+    currentTargetTotal: 'Current total / Target total',
+    recordNeeded: 'Match the total before recording.',
+    recordReady: 'Ready to record',
+    umaOkaGuide: 'Set the players and enter the scores. You can record once the total matches.',
+    noRecordedScores: 'No scores have been recorded yet.',
+    shareWarning: 'Records are included in the share link. If you lose the link, they cannot be recovered.',
     startingScore: 'Starting Score',
     returnScore: 'Return Score',
     mahjongWorldTitle: "Aquaco's Mahjong World",
@@ -272,6 +290,12 @@ export const translations: Translations = {
     underConstruction: '工事中',
     currentGameTotal: '現在の点数合計',
     sumDifference: '合計誤差',
+    currentTargetTotal: '現在の合計 / 目標合計',
+    recordNeeded: '合計を合わせてから記録してください。',
+    recordReady: '記録できます',
+    umaOkaGuide: 'プレイヤーを設定して点数を入力し、合計を合わせると記録できます。',
+    noRecordedScores: 'まだ記録された点数はありません。',
+    shareWarning: '記録は共有リンクに含まれます。リンクを失うと復元できません。',
     startingScore: '開始点',
     returnScore: '返し点',
     mahjongWorldTitle: 'アクアカンパニーの麻雀ワールド',
