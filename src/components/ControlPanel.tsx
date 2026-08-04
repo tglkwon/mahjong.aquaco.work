@@ -116,10 +116,10 @@ function ControlPanel({
             </button>
 
             {isUmaOkaSettingsExpanded && (
-            <div id="uma-oka-settings-panel" className="grid grid-cols-2 sm:grid-cols-4 items-stretch gap-2">
+            <div id="uma-oka-settings-panel" className="flex flex-col sm:flex-row items-stretch gap-2">
               {/* Common Button Classes */}
             {(() => {
-              const commonButtonClasses = "font-semibold min-h-[44px] py-2 px-2 text-sm sm:text-base md:text-lg rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center";
+              const commonButtonClasses = "font-semibold py-2 px-4 text-sm sm:py-2.5 sm:px-8 sm:text-base md:px-14 md:text-lg lg:text-xl rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1 active:scale-95 focus:outline-none flex-1 text-center";
               const disabledClasses = "bg-gray-400 cursor-not-allowed text-gray-700";
               const activeButtonClasses = (isActive: boolean) => isActive ? "bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-400" : "bg-gray-500 hover:bg-gray-600 text-white focus:ring-2 focus:ring-gray-400";
 
@@ -154,7 +154,7 @@ function ControlPanel({
                   </button>
 
                   {/* Oka Control Group */}
-                  <div className="min-w-0 flex flex-col gap-2">
+                  <div className="flex-1 flex flex-col gap-2">
                     <button
                       type="button"
                       onClick={onOkaToggle}
