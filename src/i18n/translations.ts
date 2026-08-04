@@ -38,6 +38,12 @@ export interface Translation {
   position: string;
   uma1_2: string;
   uma1_3: string;
+  umaNone: string;
+  okaOn: string;
+  okaOff: string;
+  umaOkaSettings: string;
+  expandUmaOkaSettings: string;
+  collapseUmaOkaSettings: string;
   oka: string;
   tieSplit: string;
   tieSeatOrder: string;
@@ -130,6 +136,12 @@ export const translations: Translations = {
     position: '자리',
     uma1_2: '1-2 우마',
     uma1_3: '1-3 우마',
+    umaNone: '우마 미적용',
+    okaOn: '오카 적용',
+    okaOff: '오카 꺼짐',
+    umaOkaSettings: '우마·오카 설정',
+    expandUmaOkaSettings: '우마·오카 설정 펼치기',
+    collapseUmaOkaSettings: '우마·오카 설정 접기',
     oka: '오카',
     tieSplit: '동점 균등 분배',
     tieSeatOrder: '자리순',
@@ -208,6 +220,12 @@ export const translations: Translations = {
     position: 'Position',
     uma1_2: '1-2 Uma',
     uma1_3: '1-3 Uma',
+    umaNone: 'Uma off',
+    okaOn: 'Oka on',
+    okaOff: 'Oka off',
+    umaOkaSettings: 'Uma/Oka settings',
+    expandUmaOkaSettings: 'Expand Uma/Oka settings',
+    collapseUmaOkaSettings: 'Collapse Uma/Oka settings',
     oka: 'Oka',
     tieSplit: 'Split Ties',
     tieSeatOrder: 'Seat Order',
@@ -285,6 +303,12 @@ export const translations: Translations = {
     position: '席',
     uma1_2: '1-2 ウマ',
     uma1_3: '1-3 ウマ',
+    umaNone: 'ウマなし',
+    okaOn: 'オカ適用',
+    okaOff: 'オカなし',
+    umaOkaSettings: 'ウマ・オカ設定',
+    expandUmaOkaSettings: 'ウマ・オカ設定を開く',
+    collapseUmaOkaSettings: 'ウマ・オカ設定を閉じる',
     oka: 'オカ',
     tieSplit: '同点均等分配',
     tieSeatOrder: '席順',

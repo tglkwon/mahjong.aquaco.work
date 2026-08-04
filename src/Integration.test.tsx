@@ -37,4 +37,29 @@ describe('Integration Tests', () => {
       expect(cells.find(cell => cell.textContent === '2')).toBeInTheDocument();
     });
   });
+  test('Score Page: does not show UmaOka settings', () => {
+    window.history.pushState({}, '', '/set_score');
+    render(<App />);
+
+    expect(screen.queryByTestId('uma-oka-settings-summary')).not.toBeInTheDocument();
+  });
+
+  test('UmaOka Page: settings are collapsed by default and preserve the selected summary', () => {
+    window.history.pushState({}, '', '/set_score_umaoka');
+    render(<App />);
+
+    const toggle = screen.getByRole('button', { name: '우마·오카 설정 펼치기' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('button', { name: '1-2 우마' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('uma-oka-settings-summary')).toHaveTextContent('우마 미적용 · 오카 꺼짐 · 동점 균등 분배');
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(screen.getByRole('button', { name: '1-2 우마' }));
+    fireEvent.click(screen.getByRole('button', { name: '오카' }));
+    fireEvent.click(screen.getByRole('button', { name: '우마·오카 설정 접기' }));
+
+    expect(screen.getByTestId('uma-oka-settings-summary')).toHaveTextContent('1-2 우마 · 오카 적용 · 동점 균등 분배');
+    expect(screen.queryByRole('button', { name: '1-2 우마' })).not.toBeInTheDocument();
+  });
 });
