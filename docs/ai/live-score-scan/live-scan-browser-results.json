@@ -1,0 +1,71 @@
+{
+  "viewport": "390x844 Edge/Chromium mobile emulation",
+  "fixture": "C:\\Users\\AquaCo\\project\\mahjong.aquaco.work\\research-data\\rex 3\\inspection\\browser-sample-h264.mp4",
+  "physicalCameraTested": false,
+  "mediaSource": "test-only getUserMedia injection with real H.264 video frames; recognition unmocked",
+  "candidates": [
+    "102",
+    "0266",
+    "0606",
+    "0026"
+  ],
+  "mappedPoints": [
+    "2600",
+    "10200",
+    "26600",
+    "60600"
+  ],
+  "cameraEvidence": {
+    "calls": 1,
+    "constraints": [
+      {
+        "audio": false,
+        "video": {
+          "facingMode": {
+            "ideal": "environment"
+          },
+          "width": {
+            "ideal": 1280
+          },
+          "height": {
+            "ideal": 720
+          }
+        }
+      }
+    ],
+    "methods": [
+      "video.captureStream"
+    ],
+    "snapshots": 1
+  },
+  "processingRequests": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:3452/__fixture.mp4"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:3452/__fixture.mp4"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:3452/__fixture.mp4"
+    }
+  ],
+  "uploads": 0,
+  "checks": [
+    "continuous real video recognition",
+    "one automatic snapshot",
+    "stream ended after capture",
+    "human confirmation required",
+    "four shifts restore mapping",
+    "one shift maps recorded players",
+    "repeat confirmation no duplicate",
+    "shared link reload",
+    "wrong sum blocks capture",
+    "explicit stop ends tracks",
+    "permission-denied manual fallback",
+    "late permission result ends tracks"
+  ],
+  "pageErrors": []
+}

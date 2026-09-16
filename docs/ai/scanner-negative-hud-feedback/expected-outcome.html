@@ -1,0 +1,779 @@
+﻿<!DOCTYPE html>
+<html lang="ko" data-work-id="scanner-negative-hud-feedback" data-artifact-revision="3" data-intent-sha256="e8bfea6404e2a9e523c6a54bb8d2991754bd1b03d528c37757daf21e138bea23" data-intent-ko-sha256="a64fed32ac76efb462c54368395700e367b829402bce4f6d5a997a779a3b641d">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <title>점수 인식 영역 조준 가이드 디자인 4선 추천 (ELI5)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-emerald: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-purple: #c084fc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+    header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+    header h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    header p { color: var(--muted); font-size: 13.5px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* CSS Interactive Tabs */
+    .hidden-radio { display: none; }
+    .tab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      background: #0f172a;
+      padding: 6px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .tab-label {
+      flex: 1;
+      min-width: 160px;
+      text-align: center;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      color: var(--muted);
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .tab-label:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    /* Active Tab Glows */
+    #tab-opt-a:checked ~ .container .tab-label[for="tab-opt-a"] {
+      background: rgba(52, 211, 153, 0.2);
+      color: #34d399;
+      border-color: #059669;
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.2);
+    }
+    #tab-opt-b:checked ~ .container .tab-label[for="tab-opt-b"] {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border-color: #0284c7;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+    }
+    #tab-opt-c:checked ~ .container .tab-label[for="tab-opt-c"] {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      border-color: #d97706;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+    }
+    #tab-opt-d:checked ~ .container .tab-label[for="tab-opt-d"] {
+      background: rgba(192, 132, 252, 0.2);
+      color: #c084fc;
+      border-color: #9333ea;
+      box-shadow: 0 0 10px rgba(192, 132, 252, 0.2);
+    }
+
+    /* ======================================================== */
+    /* Viewfinder Shell: Smartphone Camera Viewfinder Simulator */
+    /* ======================================================== */
+    .viewfinder-outer {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      background: #020617;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9);
+      user-select: none;
+    }
+
+    /* Camera Feed: Realistic Mahjong Table Background */
+    .table-camera-feed {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at center top, rgba(16, 185, 129, 0.18) 0%, transparent 60%),
+        linear-gradient(180deg, #064e3b 0%, #022c22 45%, #0f172a 90%);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .table-dice-box {
+      position: absolute;
+      top: 22px;
+      width: 140px;
+      height: 38px;
+      background: rgba(30, 41, 59, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: 0.5px;
+    }
+    .table-mat-label {
+      position: absolute;
+      top: 70px;
+      font-size: 11px;
+      color: rgba(52, 211, 153, 0.5);
+      font-weight: 500;
+    }
+
+    /* Simulated Physical Scoreboard Hardware (Front Panel) */
+    .physical-scoreboard-plate {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 320px;
+      height: 120px;
+      background: #090d16;
+      border: 2px solid #272e3f;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.9), inset 0 0 12px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 16px;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .plate-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .plate-digit-slot {
+      background: #000;
+      border: 1px solid #1f2937;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #ef4444;
+      font-weight: bold;
+      letter-spacing: 1px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+    .digit-sublabel {
+      font-size: 8px;
+      color: #64748b;
+      font-weight: normal;
+    }
+    .plate-bot-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .plate-bot-slot {
+      background: #000;
+      border: 1px solid #374151;
+      padding: 5px 24px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 14px;
+      color: #ef4444;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+
+    /* Common HUD Badges */
+    .outer-hud-badge-tl {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      color: #34d399;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 30;
+    }
+    .outer-hud-badge-tr {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-family: monospace;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 30;
+    }
+    .hud-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #475569;
+    }
+    .hud-dot.d1 { animation: dot-d1 4.5s infinite; }
+    .hud-dot.d2 { animation: dot-d2 4.5s infinite; }
+    .hud-dot.d3 { animation: dot-d3 4.5s infinite; }
+
+    .outer-hud-foot {
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    /* Universal Shutter Flash Layer INSIDE Aiming Guide */
+    .roi-flash-overlay {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+      opacity: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 40;
+      animation: roi-shutter-flash 4.5s infinite ease-out;
+    }
+
+    /* -------------------------------------------------------- */
+    /* OPTION A: [추천] 클리어 윈도우 and 마스크 딤 (Cutout Scrim)    */
+    /* -------------------------------------------------------- */
+    .guide-opt-a { display: none; }
+    #tab-opt-a:checked ~ .container .guide-opt-a { display: block; }
+
+    .scrim-mask-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+    }
+    .scrim-cutout-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 350px;
+      height: 150px;
+      border-radius: 12px;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      animation: guide-box-glow 4.5s infinite ease-in-out;
+    }
+    .guide-badge-pill {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #f8fafc;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+      animation: guide-badge-glow 4.5s infinite ease-in-out;
+    }
+
+    /* -------------------------------------------------------- */
+    /* OPTION B: 심플 바운딩 박스 (Simple Bounding Box)          */
+    /* -------------------------------------------------------- */
+    .guide-opt-b { display: none; }
+    #tab-opt-b:checked ~ .container .guide-opt-b { display: block; }
+
+    .box-target-b {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 350px;
+      height: 150px;
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.02);
+      pointer-events: none;
+      z-index: 20;
+      animation: guide-box-glow 4.5s infinite ease-in-out;
+    }
+    .crosshair-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+    }
+    .crosshair-center::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      left: 0;
+      width: 14px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.4);
+    }
+    .crosshair-center::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 6px;
+      width: 2px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* -------------------------------------------------------- */
+    /* OPTION C: 4분할 밸런스 그리드 (4-Quadrant Grid)          */
+    /* -------------------------------------------------------- */
+    .guide-opt-c { display: none; }
+    #tab-opt-c:checked ~ .container .guide-opt-c { display: block; }
+
+    .box-target-c {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 350px;
+      height: 150px;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.75);
+      background: rgba(0, 0, 0, 0.25);
+      pointer-events: none;
+      z-index: 20;
+      animation: guide-box-glow 4.5s infinite ease-in-out;
+    }
+    .grid-line-h {
+      position: absolute;
+      top: 50%;
+      left: 8px;
+      right: 8px;
+      height: 1px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.35);
+    }
+    .grid-line-v {
+      position: absolute;
+      top: 8px;
+      bottom: 8px;
+      left: 50%;
+      width: 1px;
+      border-left: 1px dashed rgba(255, 255, 255, 0.35);
+    }
+    .quad-dot {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .quad-dot.q1 { top: 22%; left: 22%; }
+    .quad-dot.q2 { top: 22%; right: 22%; }
+    .quad-dot.q3 { bottom: 22%; left: 22%; }
+    .quad-dot.q4 { bottom: 22%; right: 22%; }
+
+    /* -------------------------------------------------------- */
+    /* OPTION D: 와이드 레터박스 슬롯 (Wide Slot Zone)           */
+    /* -------------------------------------------------------- */
+    .guide-opt-d { display: none; }
+    #tab-opt-d:checked ~ .container .guide-opt-d { display: block; }
+
+    .box-target-d {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 370px;
+      height: 135px;
+      border-top: 2.5px solid rgba(255, 255, 255, 0.85);
+      border-bottom: 2.5px solid rgba(255, 255, 255, 0.85);
+      border-left: none;
+      border-right: none;
+      background: rgba(0, 0, 0, 0.28);
+      pointer-events: none;
+      z-index: 20;
+      animation: guide-rail-glow 4.5s infinite ease-in-out;
+    }
+    .slot-bracket-left {
+      position: absolute;
+      top: 15px;
+      bottom: 15px;
+      left: -2px;
+      width: 10px;
+      border-left: 3px solid rgba(255, 255, 255, 0.85);
+      border-top: 3px solid rgba(255, 255, 255, 0.85);
+      border-bottom: 3px solid rgba(255, 255, 255, 0.85);
+      border-radius: 4px 0 0 4px;
+    }
+    .slot-bracket-right {
+      position: absolute;
+      top: 15px;
+      bottom: 15px;
+      right: -2px;
+      width: 10px;
+      border-right: 3px solid rgba(255, 255, 255, 0.85);
+      border-top: 3px solid rgba(255, 255, 255, 0.85);
+      border-bottom: 3px solid rgba(255, 255, 255, 0.85);
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* ======================================================== */
+    /* Keyframe Animations (4.5s Cycle: Wait -> Blue -> Emerald -> Snap) */
+    /* ======================================================== */
+    @keyframes guide-box-glow {
+      0%, 25% {
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52);
+        transform: translate(-50%, -50%) scale(1);
+      }
+      30%, 55% {
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52), 0 0 12px rgba(56, 189, 248, 0.8);
+        transform: translate(-50%, -50%) scale(1);
+      }
+      60%, 80% {
+        border-color: #34d399;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52), 0 0 16px rgba(52, 211, 153, 0.9);
+        transform: translate(-50%, -50%) scale(1);
+      }
+      83%, 93% {
+        border-color: #ffffff;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52), 0 0 24px #ffffff;
+        transform: translate(-50%, -50%) scale(1.02);
+      }
+      98%, 100% {
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52);
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @keyframes guide-rail-glow {
+      0%, 25% {
+        border-color: rgba(255, 255, 255, 0.6);
+        filter: none;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      30%, 55% {
+        border-color: #38bdf8;
+        filter: drop-shadow(0 0 8px #38bdf8);
+        transform: translate(-50%, -50%) scale(1);
+      }
+      60%, 80% {
+        border-color: #34d399;
+        filter: drop-shadow(0 0 10px #34d399);
+        transform: translate(-50%, -50%) scale(1);
+      }
+      83%, 93% {
+        border-color: #ffffff;
+        filter: drop-shadow(0 0 18px #ffffff);
+        transform: translate(-50%, -50%) scale(1.02);
+      }
+      98%, 100% {
+        border-color: rgba(255, 255, 255, 0.6);
+        filter: none;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @keyframes guide-badge-glow {
+      0%, 25% { border-color: rgba(255, 255, 255, 0.3); color: #cbd5e1; }
+      30%, 55% { border-color: #38bdf8; color: #38bdf8; }
+      60%, 80% { border-color: #34d399; color: #34d399; }
+      83%, 93% { border-color: #34d399; color: #fff; background: #059669; }
+      98%, 100% { border-color: rgba(255, 255, 255, 0.3); color: #cbd5e1; }
+    }
+
+    @keyframes roi-shutter-flash {
+      0%, 82% { opacity: 0; }
+      83% { opacity: 0.95; }
+      89% { opacity: 0.85; }
+      94%, 100% { opacity: 0; }
+    }
+
+    @keyframes dot-d1 {
+      0%, 25% { background: #475569; box-shadow: none; }
+      30%, 55% { background: #38bdf8; box-shadow: 0 0 6px #38bdf8; }
+      60%, 93% { background: #34d399; box-shadow: 0 0 6px #34d399; }
+      98%, 100% { background: #475569; box-shadow: none; }
+    }
+    @keyframes dot-d2 {
+      0%, 55% { background: #475569; box-shadow: none; }
+      60%, 93% { background: #34d399; box-shadow: 0 0 6px #34d399; }
+      98%, 100% { background: #475569; box-shadow: none; }
+    }
+    @keyframes dot-d3 {
+      0%, 80% { background: #475569; box-shadow: none; }
+      83%, 93% { background: #34d399; box-shadow: 0 0 8px #34d399; }
+      98%, 100% { background: #475569; box-shadow: none; }
+    }
+
+    /* Comparison Table */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left; }
+    th, td { padding: 10px 12px; border: 1px solid var(--border); }
+    th { background: #0f172a; color: var(--muted); font-weight: 600; }
+    td { background: rgba(15, 23, 42, 0.5); }
+    .badge-rec {
+      background: rgba(52, 211, 153, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- Hidden Radio Controllers for Tabs -->
+  <input type="radio" id="tab-opt-a" name="guide_choice" checked="checked" class="hidden-radio" />
+  <input type="radio" id="tab-opt-b" name="guide_choice" class="hidden-radio" />
+  <input type="radio" id="tab-opt-c" name="guide_choice" class="hidden-radio" />
+  <input type="radio" id="tab-opt-d" name="guide_choice" class="hidden-radio" />
+
+  <div class="container">
+    <header>
+      <h1>🎯 점수 인식 영역 조준 가이드 디자인 4선 추천</h1>
+      <p>뷰파인더 전체 시야 내부에서 실제 점수가 분석되는 '조준 가이드'의 일관된 범용 디자인 비교</p>
+    </header>
+
+    <!-- Interactive Viewfinder Simulation Card -->
+    <section class="card" style="border: 2px solid #38bdf8;">
+      <div class="card-title" style="color: #38bdf8; justify-content: space-between;">
+        <span>📱 카메라 뷰파인더 속 [점수 인식 조준 가이드] 실시간 프리뷰</span>
+        <span style="font-size: 11px; color: var(--muted); font-weight: normal;">(상단 탭을 눌러 비교)</span>
+      </div>
+
+      <!-- Tab Buttons -->
+      <div class="tab-bar">
+        <label for="tab-opt-a" class="tab-label">⭐ 옵션 A: 클리어 윈도우 and 딤 (추천)</label>
+        <label for="tab-opt-b" class="tab-label">📐 옵션 B: 심플 바운딩 박스</label>
+        <label for="tab-opt-c" class="tab-label">⊞ 옵션 C: 4분할 밸런스 그리드</label>
+        <label for="tab-opt-d" class="tab-label">🎞️ 옵션 D: 와이드 레터박스 슬롯</label>
+      </div>
+
+      <!-- Live Smartphone Viewfinder -->
+      <div class="viewfinder-outer">
+        <!-- 1. Background Camera Feed (전탁 테이블, 매트, 주사위통) -->
+        <div class="table-camera-feed">
+          <div class="table-dice-box">🎲 전탁 중앙 주사위통</div>
+          <div class="table-mat-label">전탁 매트 배경 (카메라 뷰파인더 전체 시야)</div>
+        </div>
+
+        <!-- 2. Physical Scoreboard Plate on the Table (실물 점수판 하드웨어) -->
+        <div class="physical-scoreboard-plate">
+          <div class="plate-top-row">
+            <div class="plate-digit-slot">
+              <span class="digit-sublabel">상가(북)</span>
+              <span>250</span>
+            </div>
+            <div class="plate-digit-slot">
+              <span class="digit-sublabel">대가(서)</span>
+              <span>320</span>
+            </div>
+            <div class="plate-digit-slot">
+              <span class="digit-sublabel">하가(남)</span>
+              <span>350</span>
+            </div>
+          </div>
+          <div class="plate-bot-row">
+            <div class="plate-bot-slot">
+              <span class="digit-sublabel">내자리(동)</span>
+              <span>-020</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Outer Viewfinder HUD Badges -->
+        <div class="outer-hud-badge-tl">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #34d399;"></span>
+          실시간 감지 중
+        </div>
+        <div class="outer-hud-badge-tr">
+          <span style="color: #cbd5e1; margin-right: 2px;">합의</span>
+          <span class="hud-dot d1"></span>
+          <span class="hud-dot d2"></span>
+          <span class="hud-dot d3"></span>
+        </div>
+        <div class="outer-hud-foot">
+          ※ 뷰파인더 전체는 넓게 열려 있으며, 중앙 조준 가이드 내부의 점수만 분석 캡처됩니다.
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- Aiming Guide Option A: Clear Window and Dimmed Scrim -->
+        <!-- ==================================================== -->
+        <div class="guide-opt-a scrim-mask-layer">
+          <div class="scrim-cutout-box">
+            <div class="guide-badge-pill">🎯 점수판 조준 윈도우</div>
+            <div class="roi-flash-overlay"></div>
+          </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- Aiming Guide Option B: Simple Bounding Box           -->
+        <!-- ==================================================== -->
+        <div class="guide-opt-b">
+          <div class="box-target-b">
+            <div class="guide-badge-pill">🎯 점수판 바운딩 박스</div>
+            <div class="crosshair-center"></div>
+            <div class="roi-flash-overlay"></div>
+          </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- Aiming Guide Option C: 4-Quadrant Balance Grid       -->
+        <!-- ==================================================== -->
+        <div class="guide-opt-c">
+          <div class="box-target-c">
+            <div class="guide-badge-pill">⊞ 4인 점수 밸런스 가이드</div>
+            <div class="grid-line-h"></div>
+            <div class="grid-line-v"></div>
+            <span class="quad-dot q1"></span>
+            <span class="quad-dot q2"></span>
+            <span class="quad-dot q3"></span>
+            <span class="quad-dot q4"></span>
+            <div class="roi-flash-overlay"></div>
+          </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- Aiming Guide Option D: Wide Letterbox Slot           -->
+        <!-- ==================================================== -->
+        <div class="guide-opt-d">
+          <div class="box-target-d">
+            <div class="guide-badge-pill">🎞️ 가로 점수 슬롯 존</div>
+            <span class="slot-bracket-left"></span>
+            <span class="slot-bracket-right"></span>
+            <div class="roi-flash-overlay"></div>
+          </div>
+        </div>
+      </div>
+
+      <p style="font-size: 12px; color: #a7f3d0; text-align: center; line-height: 1.5;">
+        💡 <strong>상단 탭을 눌러 각 조준 가이드의 외형을 비교해보세요.</strong> 모든 옵션은 특정 기종 형태를 강제하지 않으며, [대기 ➔ 수렴 ➔ <strong>조준 가이드 내부 100ms 찰칵 플래시</strong>]가 실시간 시뮬레이션됩니다.
+      </p>
+    </section>
+
+    <!-- Detailed Comparison Table -->
+    <section class="card">
+      <div class="card-title">
+        <span>📊 점수 조준 가이드 4대 디자인 심층 비교 (Trade-off Matrix)</span>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>디자인 안</th>
+              <th>조준선 시각적 구조</th>
+              <th>기종 무관성 (REX3, JP-EX 등)</th>
+              <th>사용자 조준 직관성 (ELI5)</th>
+              <th>주변 시야 체감</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>옵션 A: 클리어 윈도우 and 딤</strong> <span class="badge-rec">추천 ⭐</span></td>
+              <td>인식 영역만 맑게 뚫린 투명 창 + 바깥쪽 40% 반투명 마스크</td>
+              <td><strong>완전 무관 (최상)</strong><br />박스 안에 점수판 전체를 넣기만 하면 자동 인식</td>
+              <td><strong>최고 (신분증/카드 스캐너 표준)</strong><br />어디에 맞춰야 하는지 설명 없이 0.1초 만에 인지</td>
+              <td>중앙에 집중되나 바깥 상황도 반투명하게 인지 가능</td>
+            </tr>
+            <tr>
+              <td><strong>옵션 B: 심플 바운딩 박스</strong></td>
+              <td>배경 마스크 없이 중앙에 선명한 2px 사각형 테두리 + 센터 십자마크</td>
+              <td><strong>완전 무관 (최상)</strong><br />가장 단순한 순수 사각형 조준 프레임</td>
+              <td><strong>우수</strong><br />카메라 뷰파인더 십자선과 사각 프레임으로 깔끔한 타겟팅</td>
+              <td>전체 화면 시야 100% 개방</td>
+            </tr>
+            <tr>
+              <td><strong>옵션 C: 4분할 밸런스 그리드</strong></td>
+              <td>사각형 내부 은은한 십자 점선 + 4개 분할점(Dot) 마커</td>
+              <td><strong>우수</strong><br />4인 점수를 골고루 담도록 유도하는 마작 특화</td>
+              <td><strong>양호</strong><br />4개 점수가 균형 있게 들어왔는지 확인하기 유리</td>
+              <td>내부 십자선이 점수판 LED 글자와 겹쳐 보일 수 있음</td>
+            </tr>
+            <tr>
+              <td><strong>옵션 D: 와이드 레터박스 슬롯</strong></td>
+              <td>가로로 긴 비율의 상하 수평 레일 + 좌우 브래킷 슬롯</td>
+              <td><strong>우수</strong><br />가로로 긴 점수판 비율에 맞춘 슬롯</td>
+              <td><strong>양호</strong><br />점수판 전체 가로 폭을 맞춰 넣는 느낌 제공</td>
+              <td>세로 높이가 낮아 카메라를 너무 가까이 대면 상하 이탈 가능</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Strategic Decision & Recommendation -->
+    <section class="card">
+      <div class="card-title">
+        <span>💡 아키텍트 분석 및 추천 의견</span>
+      </div>
+      <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6; display: flex; flex-direction: column; gap: 8px;">
+        <p>
+          1. <strong>옵션 A (클리어 윈도우 and 딤)를 추천하는 이유:</strong> 토스, 카카오뱅크의 신분증 스캔이나 QR 스캐너에서 입증된 글로벌 표준 UX입니다. 바깥쪽이 은은하게 어두워지기 때문에 사용자는 텍스트 안내를 읽지 않아도 본능적으로 점수판을 맑은 사각형 창 안에 맞추게 되며, 조준 성공률이 가장 높습니다.
+        </p>
+        <p>
+          2. <strong>옵션 B (심플 바운딩 박스)의 대안 가치:</strong> 사용자께서 말씀하신 "조준 가이드를 단순하게 사각형으로 둬도 될 거 같은데"라는 의도에 가장 충실한 미니멀 디자인입니다. 화면을 어둡게 가리는 스크림을 원치 않고 완전히 맑은 전체 카메라 뷰를 유지하고 싶으실 때 최적의 선택입니다.
+        </p>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "video": "C:\\Users\\AquaCo\\project\\mahjong.aquaco.work\\research-data\\rex 3\\PXL_20260902_054136311.mp4",
+  "size_bytes": 26971299,
+  "fps": 24.001662130607496,
+  "frame_count": 258,
+  "duration_seconds": 10.749255555555555,
+  "decoded_width": 1920,
+  "decoded_height": 1080,
+  "orientation_metadata_degrees": 0.0,
+  "representative_frames": [
+    0,
+    26,
+    64,
+    129,
+    194,
+    232,
+    257
+  ],
+  "sequence_frames": [
+    119,
+    121,
+    123,
+    125,
+    127,
+    129,
+    131,
+    133,
+    135,
+    137,
+    139
+  ]
+}

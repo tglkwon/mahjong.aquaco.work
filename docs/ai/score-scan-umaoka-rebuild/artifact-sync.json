@@ -1,0 +1,45 @@
+{
+  "schema_version": 2,
+  "work_id": "score-scan-umaoka-rebuild",
+  "artifact_revision": "2",
+  "pairs": {
+    "intent": {
+      "canonical": "intent.md",
+      "mirror": "intent.ko.md",
+      "canonical_sha256": "882f2dbff071d1bd76a89b3f892e1f9261bee63d2f4c0848a6fca5bea5eb4f89",
+      "mirror_sha256": "a269566f030e4fef604cbbea58039d0b40eebe733de0109e96242891038f5406",
+      "canonical_content_sha256": "0be220699aed345894c0a3d4641aeaf84330dc494c9205b933bdbe4d29ed0920",
+      "mirror_content_sha256": "30d593197369c427dd48a16a8db081ed2e1336dcdf3dc2150d99fd847dbb0259"
+    },
+    "spec": {
+      "canonical": "spec.md",
+      "mirror": "spec.ko.md",
+      "canonical_sha256": "61ba5f3a829eec3271f2be836241fd5e9017705a5818c0980dcabe54718e25f3",
+      "mirror_sha256": "34fab2ee4de4ebe7e79f8dfc12aee7ca38d3d9f5da2241f3e773aebba712621a",
+      "canonical_content_sha256": "4b29fbad3e2e4d5f7dbdc14b7a9697f7be3c2a839606bec1ccda94705b8cbb7c",
+      "mirror_content_sha256": "55b84657551ca4cc5ee72797a97cc75c94cc880dcefbad6ec6646c1553d28f87"
+    },
+    "plan": {
+      "canonical": "plan.md",
+      "mirror": "plan.ko.md",
+      "canonical_sha256": "4179e0f5ca0bb1966510ecae236649d38d33d9209f2358c02956a1401ad2e19f",
+      "mirror_sha256": "da778e623f6569094a4c3610906b69fee4721b344e8a7f0f16be60f392f74267",
+      "canonical_content_sha256": "c6334bc96b15352e695db07f197190ceb1a696aa4579ea1bbe262c36f8157c01",
+      "mirror_content_sha256": "ab0d204ae085ccdf89f37cb1801f0c778fa641a921197f5a9615cf823a7e608e"
+    },
+    "evidence": {
+      "canonical": "evidence.md",
+      "mirror": "evidence.ko.md",
+      "canonical_sha256": "447e5ccbeee9389ee386ba6dbad2669c94eb56a324e90263c9fa23c2d534a835",
+      "mirror_sha256": "11259099df313ee5d803e175283775a13dc39176bf89dc5e80ef5bb8eb42414a",
+      "canonical_content_sha256": "1c34a848ed42576bfe53b15dccf04c8727bc5010530cdc2500b852133ee28a09",
+      "mirror_content_sha256": "6e4fa384f224655c370012b9e61f34eb9c7931583acc3bf0448b2d29a60a7d8a"
+    }
+  },
+  "preview": {
+    "path": "expected-outcome.html",
+    "source": "intent.md",
+    "source_revision": "2",
+    "sha256": "61610fc49e6bb976c04248e06a74842c4e106e72c7ff9f9d6f25b6a2a923207c"
+  }
+}

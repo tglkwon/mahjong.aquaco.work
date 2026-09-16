@@ -17,7 +17,9 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "react-scripts test --watchAll=false --forceExit",
+    "test:watch": "react-scripts test",
+    "test:mobile": "npx --yes cloudflared tunnel --url http://localhost:3000",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

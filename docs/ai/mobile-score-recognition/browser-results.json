@@ -1,0 +1,59 @@
+{
+  "video": "PXL_20260902_054136311.mp4",
+  "originalNativeDecoded": false,
+  "originalEvents": [
+    {
+      "event": "loadedmetadata",
+      "time": 0,
+      "duration": 10.749256,
+      "width": 0
+    },
+    {
+      "event": "loadeddata",
+      "time": 0.020104,
+      "duration": 10.749256,
+      "width": 0
+    },
+    {
+      "event": "seeked",
+      "time": 1.074925,
+      "duration": 10.749256,
+      "width": 0
+    }
+  ],
+  "videoPathTested": "local H.264 derivative; original HEVC fell back to editable manual input",
+  "viewport": "390x844 Chromium/Edge mobile emulation",
+  "frames": 5,
+  "videoCandidates": [
+    "0026",
+    "0606",
+    "0266",
+    "102"
+  ],
+  "photoCandidates": [
+    "0026",
+    "0606",
+    "0266",
+    "102"
+  ],
+  "normalizedPoints": [
+    2600,
+    60600,
+    26600,
+    10200
+  ],
+  "total": 100000,
+  "mediaProcessingHttpRequests": 0,
+  "checks": [
+    "original HEVC decode or manual fallback",
+    "confirmation gate",
+    "sum mismatch",
+    "single append",
+    "shared link reload",
+    "last record deletion",
+    "photo recognition",
+    "decode failure/manual recovery",
+    "no horizontal overflow"
+  ],
+  "pageErrors": []
+}

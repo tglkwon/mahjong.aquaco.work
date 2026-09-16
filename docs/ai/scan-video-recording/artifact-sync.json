@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "work_id": "scan-video-recording",
+  "artifact_revision": "2",
+  "pairs": {
+    "intent": {
+      "canonical": "intent.md",
+      "mirror": "intent.ko.md",
+      "canonical_sha256": "2eecdfe89b1a0af008b6d939368959017362d436d8edc96ecb7f87adca99c114",
+      "mirror_sha256": "b5d5c68289c5245eaf6d8592dd734a6040d521362ac0b13e894b35d02170ced2",
+      "canonical_content_sha256": "cacd1e2f8dbf6022fef2cebe91b67296973cb9eef4173cd0d6284452732c1fe1",
+      "mirror_content_sha256": "241a7b4842b1051f9237a5704dc33bb1d6d0ba00028b1f8eec82a2bd2e4456ba"
+    },
+    "spec": {
+      "canonical": "spec.md",
+      "mirror": "spec.ko.md",
+      "canonical_sha256": "e739f2f52b815d3743893aec36717a4854ea611f8e9ad9b18e0b1d9e6f013aea",
+      "mirror_sha256": "ee13a915971d26bb0f23ec7f69fec7ca53441c4b81cf31891377679df344d6d9",
+      "canonical_content_sha256": "375571958279bdf04ccc4dd47bdc9776f748836d8dbee8db84c499a98992b0ab",
+      "mirror_content_sha256": "f344bcc597e4e55fa29faeaba4f70eaac4fb75626ef8d094bef8a0469517668e"
+    },
+    "plan": {
+      "canonical": "plan.md",
+      "mirror": "plan.ko.md",
+      "canonical_sha256": "e7ce7b93cace0786025ba1181d13c0c8de488ebed693a8f477aee63136bccf54",
+      "mirror_sha256": "6a7c62cac7427115dee0ada521302f02821e4494a1ce735a740dbeff2c47bf21",
+      "canonical_content_sha256": "9b1b6c3f6bf86db6fa866afca2df101902caaef077069843fdd804a9cf9a9dc7",
+      "mirror_content_sha256": "4a346e0c0bc9b6f1fffaf9d8c8468c525a95b7de99d51081b4b4a9ad91d9b10b"
+    },
+    "evidence": {
+      "canonical": "evidence.md",
+      "mirror": "evidence.ko.md",
+      "canonical_sha256": "ccae51d6a239e099e098563fecd57a70df4d1a3b5e560448e49460f54eb3d87e",
+      "mirror_sha256": "8ff45590a5472ef47c7a31b0a223d8d1d5c487231d010ce2f035501bf5f9b21d",
+      "canonical_content_sha256": "5b3a2bf7a323e1e44b7cd988f179b9ce0235281041227ede6fbd0afd5ff3047a",
+      "mirror_content_sha256": "45a3cf89604dd631f174493c13dba380e47b21d73538ca48d3044092659ed719"
+    }
+  }
+}

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko" data-work-id="mobile-test-drop" data-artifact-revision="2" data-intent-sha256="075772D5490CD1890C1C4ABA132DFD2CF62C980B6830963D7789BDA0BB1591E8" data-intent-ko-sha256="9B706FDEF2F8B69F801665A968C148E76733DC35F2360E9F2054552CD2B58352">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <title>ELI5 프리뷰: 점수 인식 + mobile-drop PC 전송 임시 브리지</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-bright: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-purple: #bc8cff;
+      --accent-red: #f85149;
+      --accent-orange: #d29922;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: #21262d;
+      color: var(--text-muted);
+    }
+    .badge.blue { color: var(--accent-blue); border-color: var(--accent-blue); background: rgba(88,166,255,0.1); }
+    .badge.green { color: var(--accent-green); border-color: var(--accent-green); background: rgba(63,185,80,0.1); }
+    .badge.purple { color: var(--accent-purple); border-color: var(--accent-purple); background: rgba(188,140,255,0.1); }
+    .badge.orange { color: var(--accent-orange); border-color: var(--accent-orange); background: rgba(210,153,34,0.1); }
+
+    h1 { font-size: 22px; color: var(--text-bright); margin-bottom: 6px; }
+    p.sub { font-size: 14px; color: var(--text-muted); }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    h2 {
+      font-size: 16px;
+      color: var(--text-bright);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Comparison / Workflow Flow */
+    .flow-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .flow-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .flow-box {
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      background: #0d1117;
+    }
+    .flow-box.before { border-color: var(--accent-red); }
+    .flow-box.after { border-color: var(--accent-green); }
+    .flow-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; }
+    .step-list { list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--card-bg);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .step-num {
+      font-weight: 700;
+      color: var(--accent-blue);
+      flex-shrink: 0;
+    }
+
+    /* Interactive Mockup */
+    .mockup-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .phone-frame {
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      background: #000;
+      padding: 12px;
+      max-width: 420px;
+      margin: 0 auto;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+      width: 100%;
+    }
+    .phone-screen {
+      background: #fff;
+      color: #111;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 12px;
+      overflow: hidden;
+    }
+
+    .test-bridge-banner {
+      background: #f0fdf4;
+      border: 1.5px solid #22c55e;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+    .bridge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      color: #15803d;
+      margin-bottom: 6px;
+    }
+    .bridge-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .bridge-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .bridge-row {
+      display: flex;
+      gap: 6px;
+    }
+    .mock-input {
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 11px;
+      width: 100%;
+      background: #f8fafc;
+      font-family: monospace;
+    }
+    .mock-btn {
+      background: #1e293b;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: default;
+    }
+    .mock-btn.green { background: #16a34a; }
+    .mock-btn.blue { background: #2563eb; }
+
+    .camera-mock {
+      background: #1e293b;
+      color: #94a3b8;
+      border-radius: 8px;
+      height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 12px;
+    }
+    .hud-reading {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.8);
+      color: #4ade80;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .status-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .progress-bar-wrap {
+      background: #e2e8f0;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 6px 0;
+    }
+    .progress-bar-fill {
+      background: #2563eb;
+      height: 100%;
+      width: 75%;
+    }
+
+    .table-spec {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .table-spec th, .table-spec td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .table-spec th {
+      background: #21262d;
+      color: var(--text-bright);
+    }
+
+    .boundary-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .tag-in { background: rgba(63,185,80,0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .tag-out { background: rgba(248,81,73,0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+    .tag-assume { background: rgba(210,153,34,0.2); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-bar">
+        <span class="badge purple">AI-Native SDLC</span>
+        <span class="badge blue">Work ID: mobile-test-drop</span>
+        <span class="badge green">Revision 1</span>
+        <span class="badge orange">Visual Preview (ELI5)</span>
+      </div>
+      <h1>점수 인식 + mobile-drop 원클릭 전송 브리지</h1>
+      <p class="sub">모바일 현장 테스트 중 화면 스크린샷이나 별도 동영상 전송 없이, 점수 인식과 동시에 PC 워크스페이스(uploads/)로 영상을 직배송하는 임시 워크플로 프리뷰입니다.</p>
+    </header>
+
+    <!-- 1. 과거 방식 vs 제안 방식 비교 -->
+    <section class="card">
+      <h2>1. 워크플로 대조 (Before vs After)</h2>
+      <div class="flow-grid">
+        <div class="flow-box before">
+          <div class="flow-title">
+            <span style="color:var(--accent-red);">기존 번거로운 방식 (Before)</span>
+            <span class="boundary-tag tag-out">비효율 3단계</span>
+          </div>
+          <ul class="step-list">
+            <li class="step-item">
+              <span class="step-num">1</span>
+              <div>스마트폰으로 점수판 인식 시도</div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">2</span>
+              <div>인식 상태를 폰 버튼으로 <strong>수동 스크린샷</strong> 찍거나, 카메라 앱을 따로 열어 <strong>별도 동영상 촬영</strong></div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">3</span>
+              <div>클라우드나 메신저, 사후 파일 전송을 통해 <strong>PC로 수동 이동</strong> 후 디버깅 시작</div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="flow-box after">
+          <div class="flow-title">
+            <span style="color:var(--accent-green);">mobile-drop 연동 방식 (After)</span>
+            <span class="boundary-tag tag-in">자동 1단계</span>
+          </div>
+          <ul class="step-list">
+            <li class="step-item">
+              <span class="step-num">1</span>
+              <div>PC에서 <code>mobile-drop</code> 세션 시작 (URL &amp; PIN 발급)</div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">2</span>
+              <div>모바일 인식 페이지 상단에 <strong>[🧪 PC 전송 모드]</strong> 연결 (URL 파라미터로 원클릭 자동 페어링 가능)</div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">3</span>
+              <div>점수판 촬영/스캔 즉시 <strong>로컬 OCR 인식 + 영상/스냅샷 파일이 PC ./uploads/ 로 청크 직송!</strong></div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 모바일 화면 Mockup -->
+    <section class="card">
+      <h2>2. 모바일 점수 인식 페이지 UI 목업</h2>
+      <div class="mockup-wrap">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <!-- 테스트 브리지 패널 -->
+            <div class="test-bridge-banner">
+              <div class="bridge-header">
+                <span>🧪 PC 전송 모드 (mobile-drop)</span>
+                <span class="bridge-badge">🟢 연결됨 (849***)</span>
+              </div>
+              <p style="font-size:10px; color:#475569; margin-bottom:6px;">
+                인식된 장면과 원본 영상을 PC 워크스페이스로 즉시 전송합니다.
+              </p>
+              <div class="bridge-inputs">
+                <input class="mock-input" value="quiet-water.trycloudflare.com" readonly="readonly" />
+                <div class="bridge-row">
+                  <input class="mock-input" value="PIN: 849201" style="width:100px;" readonly="readonly" />
+                  <span class="mock-btn green">자동 전송 ON</span>
+                  <span class="mock-btn blue">설정 닫기</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 카메라 및 인식 뷰포트 -->
+            <div class="camera-mock">
+              <div style="font-size:32px;">📷</div>
+              <div style="font-size:11px; margin-top:4px;">REXX 3 점수판 실시간 스캔 중</div>
+              <div class="hud-reading">
+                <span>동: 25,000</span>
+                <span>남: 25,000</span>
+                <span>서: 25,000</span>
+                <span>북: 25,000</span>
+              </div>
+            </div>
+
+            <!-- 전송 진행 상황 알림 -->
+            <div class="status-box">
+              <div style="display:flex; justify-content:space-between; font-weight:600;">
+                <span>📤 PC로 테스트 영상 전송 중...</span>
+                <span>75%</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar-fill"></div>
+              </div>
+              <div style="font-size:10px; color:#64748b;">
+                저장 대상: <code>uploads/rexx3_scan_20260915_152010.mp4</code>
+              </div>
+            </div>
+
+            <!-- 조작 버튼들 -->
+            <div style="display:flex; gap:6px;">
+              <button class="mock-btn blue" style="flex:1; padding:8px;">실시간 스캔 시작</button>
+              <button class="mock-btn" style="flex:1; padding:8px;">📷 사진/영상 촬영</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 핵심 결정 사항 및 범위 경계 -->
+    <section class="card">
+      <h2>3. 설계 결정 사항 및 범위 경계 (Boundaries)</h2>
+      <table class="table-spec">
+        <thead>
+          <tr>
+            <th style="width:25%;">항목</th>
+            <th style="width:20%;">구분</th>
+            <th>내용 및 추론</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>통신 보안 및 경로</strong></td>
+            <td><span class="boundary-tag tag-in">범위 내</span></td>
+            <td>Cloudflare Quick Tunnel HTTPS 엔드포인트 필수 사용 (모바일 HTTPS 사이트에서 HTTP 직접 호출 시 Mixed Content 보안 차단 방지). 6자리 PIN 인증.</td>
+          </tr>
+          <tr>
+            <td><strong>영상/사진 전송 규격</strong></td>
+            <td><span class="boundary-tag tag-in">범위 내</span></td>
+            <td><code>mobile-drop</code> 규격 준수: 8MB 청크 분할 전송(<code>/upload/chunk</code>) 및 병합(<code>/upload/complete</code>). 대용량 영상도 타임아웃 없이 안정 전송.</td>
+          </tr>
+          <tr>
+            <td><strong>임시성 및 가역성</strong></td>
+            <td><span class="boundary-tag tag-in">범위 내</span></td>
+            <td>상용 유저 영향 없는 개발자 전용 토글/쿼리스트링 구동. URL 파라미터(<code>?dropUrl=...&amp;dropPin=...</code>)로 접속 시 자동 활성화.</td>
+          </tr>
+          <tr>
+            <td><strong>세션 종료 방식 (질문)</strong></td>
+            <td><span class="boundary-tag tag-assume">결정 대기</span></td>
+            <td><strong>옵션 A:</strong> 1개 전송 후 즉시 종료 (mobile-drop 기본) vs <strong>옵션 B:</strong> 여러 판을 연속 테스트할 수 있는 다중 전송(Continuous) 모드.</td>
+          </tr>
+          <tr>
+            <td><strong>외부 스토리지 저장</strong></td>
+            <td><span class="boundary-tag tag-out">제외 범위</span></td>
+            <td>AWS S3나 별도 DB는 일절 사용하지 않으며, 오직 로컬 PC 워크스페이스(<code>uploads/</code>)에만 직접 저장.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

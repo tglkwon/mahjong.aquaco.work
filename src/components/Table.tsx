@@ -5,6 +5,7 @@ import { Game } from '../types';
 type TranslationKey = keyof Translation;
 
 interface TableProps {
+  allowDeleteLast?: boolean;
   playerNames: string[];
   games: Game[];
   totalScores: (string | number)[];
@@ -20,7 +21,7 @@ interface TableProps {
   handleScoreButtonClick: (gameId: number, playerIndex: number, operation: 'increment' | 'decrement') => void;
 }
 
-function Table({ playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame, handleScoreInputKeyDown, handlePositionChange, isUmaOkaPage, handleUmaOkaScoreChange, handlePlayerForPositionChange, handleScoreButtonClick }: TableProps) {
+function Table({ allowDeleteLast = false, playerNames, games, totalScores, getText, handlePlayerNameChange, handleScoreChange, handleDeleteGame, handleScoreInputKeyDown, handlePositionChange, isUmaOkaPage, handleUmaOkaScoreChange, handlePlayerForPositionChange, handleScoreButtonClick }: TableProps) {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-x-auto w-full max-w-6xl">
       <table className="divide-y divide-gray-200">
@@ -111,7 +112,7 @@ function Table({ playerNames, games, totalScores, getText, handlePlayerNameChang
                 ))
               )}
               <td className="bmb:p-px bmb:text-xs px-0.5 py-3 sm:py-3 whitespace-nowrap text-center font-medium">
-                {!game.isEditable && games.length > 1 && (
+                {!game.isEditable && (allowDeleteLast || games.length > 1) && (
                   <div className="flex items-center justify-center space-x-2">
                     <button
                       onClick={() => handleDeleteGame(game.id)}

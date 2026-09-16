@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko" data-work-id="scan-umaoka-input-unification" data-artifact-revision="2" data-intent-sha256="4fa0931d11754f2e694d24fcc1a25d029bb4e6812eb891a7bdadf2aa0d277b6e" data-intent-ko-sha256="069dba6399077eeec1d22e3f8233d0ef4d9d4ef3fd55dc712631033b81f56168">
+<head>
+  <meta charset="utf-8" />
+  <title>우마·오카 실시간 점수 스캔 UI 단일화 및 시작 점수 연동 프리뷰</title>
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      background: #f8fafc;
+      color: #1e293b;
+      margin: 0;
+      padding: 24px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    h1 {
+      font-size: 20px;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 8px;
+      border-bottom: 2px solid #6366f1;
+      padding-bottom: 10px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: #e0e7ff;
+      color: #3730a3;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .card {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 16px;
+      background: #ffffff;
+    }
+    .card.before {
+      border-color: #fca5a5;
+      background: #fff5f5;
+    }
+    .card.after {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .card.before .card-title { color: #991b1b; }
+    .card.after .card-title { color: #166534; }
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13px;
+    }
+    li { margin-bottom: 6px; }
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f1f5f9;
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .step-num {
+      background: #6366f1;
+      color: white;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .callout {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="badge">MVP 1.4 UI 개선 프리뷰</div>
+    <h1>우마·오카 실시간 점수 스캔 UI 일원화 및 동적 목표 점수 연동</h1>
+    <p style="font-size: 13px; color: #475569;">
+      중복되어 혼란을 주던 스캔 패널의 점수 수동 입력 폼을 제거하고, 우마·오카 점수 기록표를 기준으로 단일화합니다.
+    </p>
+
+    <div class="grid-2">
+      <div class="card before">
+        <div class="card-title">이전 구조 (Before: 역할 중복)</div>
+        <ul>
+          <li>스캔 패널 내에 별도의 점수 입력 필드 4개 및 단위/확정 폼 존재</li>
+          <li>아래쪽 우마·오카 테이블에 또다시 동/남/서/북 점수 입력 필드 존재</li>
+          <li>목표 합계가 100,000점으로 고정되어 시작 점수 변경 미반영</li>
+          <li>두 개의 서로 다른 확정 버튼으로 인한 사용자 혼선</li>
+        </ul>
+      </div>
+      <div class="card after">
+        <div class="card-title">개선 구조 (After: 단일 UI 워크플로우)</div>
+        <ul>
+          <li>스캔 패널은 카메라 뷰파인더, 3-dot 게이지, 라이브 HUD 전용</li>
+          <li>인식된 점수가 우마·오카 테이블 편집 행으로 즉시 자동 입력</li>
+          <li>우마·오카 테이블에서 직접 입력 및 증감 버튼으로 자유로운 수정</li>
+          <li>시작 점수(25,000 -&gt; 30,000) 변경 시 목표 합계(100,000 -&gt; 120,000) 실시간 동적 반영</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div><strong>룰 설정:</strong> 시작 점수(기본 25,000) 및 반환 점수(기본 30,000) 설정 → 목표 합계(시작 점수 × 4) 자동 계산</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div><strong>실시간 스캔:</strong> 카메라를 점수판에 비추면 0.2~0.3초 내 4개 점수 감지 및 자동 캡처</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div><strong>단일 테이블 확인/수정:</strong> 우마·오카 테이블에 점수가 즉시 채워지며, 필요시 테이블에서 직접 수정</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <div><strong>기록 추가 및 공유:</strong> 목표 합계 일치 확인 후 하단 기록 추가 버튼으로 원터치 누적 및 링크 생성</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>핵심 가치:</strong> 화면 스크롤과 중복 폼 없이, 스마트폰 한 화면에서 스캔과 우마·오카 점수 기록을 가장 직관적으로 마칠 수 있습니다.
+    </div>
+  </div>
+</body>
+</html>

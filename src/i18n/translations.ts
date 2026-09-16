@@ -78,6 +78,10 @@ export interface Translation {
   aboutCardDesc: string;
   scorePhotoInputTitle: string;
   scorePhotoInputDesc: string;
+  scoreScanTitle: string;
+  scoreScanDesc: string;
+  scoreScanTestTitle: string;
+  scoreScanTestDesc: string;
   loading: string;
   versionHistoryError: string;
   popup_total_mismatch: string;
@@ -182,6 +186,10 @@ export const translations: Translations = {
     aboutCardDesc: '서비스 정보, 개인정보 처리방침, 업데이트 내역 등을 확인합니다.',
     scorePhotoInputTitle: '대탁 기록표 - 점수 사진 입력 베타',
     scorePhotoInputDesc: '동가가 점수표시 작탁의 사진을 찍어 올리시면 점수가 자동입력 됩니다.',
+    scoreScanTitle: '대탁 기록표 (우마/오카 실시간 스캔)',
+    scoreScanDesc: '스마트폰 카메라로 점수판을 실시간 스캔하여 우마/오카 점수를 자동으로 계산하고 기록합니다.',
+    scoreScanTestTitle: '점수 스캔 테스트 랩 (Lab)',
+    scoreScanTestDesc: '작탁 기종별(Rexx 3, JP-EX, JP-Color) 데이터 수집 및 PC 실시간 전송 테스트를 진행합니다.',
     loading: '로딩 중',
     versionHistoryError: '버전 정보를 불러오는 데 실패했습니다.',
     popup_total_mismatch: '점수 합계가 목표 점수와 일치하지 않습니다.',
@@ -272,6 +280,10 @@ export const translations: Translations = {
     aboutCardDesc: 'Check service information, privacy policy, update history, and more.',
     scorePhotoInputTitle: 'Score Tracker - Photo Input (Beta)',
     scorePhotoInputDesc: 'If the East player uploads a photo of the mahjong table with score display, scores will be entered automatically.',
+    scoreScanTitle: 'Score Tracker (Live Uma/Oka Scan)',
+    scoreScanDesc: 'Scan scoreboard in real time with smartphone camera to automatically calculate and record Uma/Oka scores.',
+    scoreScanTestTitle: 'Score Scan Test Lab',
+    scoreScanTestDesc: 'Collect scoreboard datasets across table models (Rexx 3, JP-EX, JP-Color) and test real-time PC drop.',
     loading: 'Loading',
     versionHistoryError: 'Failed to load version history.',
     popup_total_mismatch: 'The total score does not match the target sum.',
@@ -361,6 +373,10 @@ export const translations: Translations = {
     aboutCardDesc: 'サービス情報、プライバシーポリシー、更新履歴などを確認します。',
     scorePhotoInputTitle: 'スコア記録表 - 点数写真入力 (ベータ)',
     scorePhotoInputDesc: '東家が点数表示卓の写真を撮ってアップロードすると、点数が自動で入力されます。',
+    scoreScanTitle: '対局記録表 (ウマ・オカ リアルタイムスキャン)',
+    scoreScanDesc: 'スマホカメラで点数表示をリアルタイムスキャンし、ウマ・オカ点数を自動計算・記録します。',
+    scoreScanTestTitle: '点数スキャン テストラボ',
+    scoreScanTestDesc: '卓機種別(Rexx 3, JP-EX, JP-Color)のデータ収集およびPCリアルタイム転送テストを行います。',
     loading: '読み込み中',
     versionHistoryError: 'バージョン情報の読み込みに失敗しました。',
     popup_total_mismatch: '点数合計が目標点数と一致しません。',

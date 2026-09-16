@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "work_id": "live-score-scan",
+  "artifact_revision": "1",
+  "pairs": {
+    "intent": {
+      "canonical": "intent.md",
+      "mirror": "intent.ko.md",
+      "canonical_sha256": "fa9be6e9ebbb2c2ebcd56101799a16f99bf7f8293e5f9759ef7c59dcca8a24e5",
+      "mirror_sha256": "eb4d3ec6d8250d52aef16f4ff784123714355c39c2dab89afc0b60d116162a8c",
+      "canonical_content_sha256": "56c08b0c8d1e5d1899b072e962d58ac7cae5808232b6b3f303d6443000c83af5",
+      "mirror_content_sha256": "9890e3f521292d035d5b635795f60d86b280e5b852393742d538cfca283cb866"
+    },
+    "spec": {
+      "canonical": "spec.md",
+      "mirror": "spec.ko.md",
+      "canonical_sha256": "7068080ae72c2d52372a65716c1a9841ffa9b8e88e673e20364dd5e416a6a945",
+      "mirror_sha256": "5c963fdab437e743195eec04087add15df60b0aace0e9af293dd52d5baed0676",
+      "canonical_content_sha256": "10b8a2895bc9c463a1ab7852a95926beed2cc215d8e165032f7a37f5a698a3ad",
+      "mirror_content_sha256": "270142597c24ae4eaed9988271eb0f5fb11fb636357c6badfcc2932933ccbde6"
+    },
+    "plan": {
+      "canonical": "plan.md",
+      "mirror": "plan.ko.md",
+      "canonical_sha256": "80c6e0d6d2e1d4ce44f739671021e5ced363ab5d38bcc2824dbf16b716ce562d",
+      "mirror_sha256": "997eb626b8f528f55ae4822017961a5a63f22b732264ff9717f692b970630db4",
+      "canonical_content_sha256": "4710445bb73bfc7b6aaee56c9c608bfe83176bd04a6208229d2b76e96829c9c4",
+      "mirror_content_sha256": "b3905c6bace35a5e470e93f35888e1a8522e4127ebd792d6963c738825fa1142"
+    },
+    "evidence": {
+      "canonical": "evidence.md",
+      "mirror": "evidence.ko.md",
+      "canonical_sha256": "bea7602ae57355b428539b1f1e65012d39e5514af78c40ca838aa6e525bc102e",
+      "mirror_sha256": "55dd72814752e73992e9cfbbedec45540c2e085b4e67b1bdb6b2efee373944ef",
+      "canonical_content_sha256": "0b6ff3bea22fd4d62ab51c75a388fced841ee4705278aa28a73ec42e4cb0acaf",
+      "mirror_content_sha256": "bfdf532c0774f94e72f00336e34f9a80b16830b38598d72234d9da616b8095d4"
+    }
+  }
+}

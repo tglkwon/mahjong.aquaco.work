@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko" data-work-id="rexx3-letterbox-ocr-fix" data-artifact-revision="2" data-intent-sha256="7e9d03790f439a106cbd6ea12f4ab413e148340227d39d7905caa2ea528454c2" data-intent-ko-sha256="769f5b09773a30af9c93d0789e8059f0f2eaf6e7cc2a340c039373b36b8785b8">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <title>카메라 가로 슬롯 뷰포트 클리핑 &amp; 9700점 OCR 정밀 보정 시각화</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      line-height: 1.5;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    header {
+      text-align: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #334155;
+    }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; color: #60a5fa; }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #1e3a8a;
+      color: #bfdbfe;
+      margin-top: 4px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .phone-mockup {
+      width: 270px;
+      height: 490px;
+      margin: 0 auto;
+      border: 4px solid #475569;
+      border-radius: 28px;
+      background: #020617;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .phone-screen {
+      flex: 1;
+      position: relative;
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      gap: 8px;
+      overflow: hidden;
+    }
+    /* Comparison Screens */
+    .ui-topbar {
+      height: 20px;
+      background: #1e293b;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Option A: Full Height Letterbox */
+    .view-full-camera {
+      height: 290px;
+      background: #020617;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .full-letterbox-top {
+      height: 70px;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      border-bottom: 1px dashed #ef4444;
+    }
+    .full-letterbox-mid {
+      flex: 1;
+      background: #020617;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+    .full-letterbox-bot {
+      height: 70px;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      border-top: 1px dashed #ef4444;
+    }
+    .overflow-warning {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px dashed #ef4444;
+      border-radius: 6px;
+      padding: 6px;
+      font-size: 0.65rem;
+      color: #fca5a5;
+      text-align: center;
+    }
+
+    /* Option B: CSS Viewport Slot Clipping (User Idea) */
+    .view-slot-camera {
+      height: 150px; /* Physically compact slot */
+      background: #000;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    }
+    .slot-badge {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      font-size: 0.55rem;
+      background: rgba(16, 185, 129, 0.85);
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      font-weight: bold;
+    }
+    .slot-clipped-info {
+      position: absolute;
+      bottom: 4px;
+      right: 6px;
+      font-size: 0.55rem;
+      background: rgba(30, 41, 59, 0.8);
+      color: #93c5fd;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .ui-hud-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      background: #1e293b;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+    }
+    .hud-box {
+      background: #0f172a;
+      border-radius: 4px;
+      padding: 3px 2px;
+      text-align: center;
+      font-size: 0.6rem;
+      border: 1px solid #334155;
+    }
+    .hud-box .label { font-size: 0.55rem; color: #94a3b8; }
+    .hud-box .score { font-size: 0.7rem; font-weight: bold; font-family: monospace; color: #f8fafc; }
+    .ui-form-preview {
+      background: #1e293b;
+      border-radius: 6px;
+      padding: 8px;
+      border: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 0.65rem;
+    }
+    .form-btn {
+      background: #2563eb;
+      color: #fff;
+      text-align: center;
+      padding: 5px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.7rem;
+    }
+
+    /* LED numbers */
+    .led-row {
+      display: flex;
+      gap: 10px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #ef4444;
+      font-weight: bold;
+    }
+    .led-main {
+      font-size: 1.05rem;
+      color: #f87171;
+      font-family: monospace;
+      font-weight: 800;
+    }
+
+    /* Comparison Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.85rem;
+    }
+    th, td {
+      padding: 8px 10px;
+      border: 1px solid #334155;
+      text-align: left;
+    }
+    th { background: #0f172a; color: #93c5fd; }
+    .hl-pass { color: #34d399; font-weight: bold; }
+    .hl-fail { color: #f87171; font-weight: bold; }
+
+    /* OCR Diagram */
+    .digit-inspect {
+      background: #020617;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      justify-content: space-around;
+    }
+    .digit-box { text-align: center; }
+    .ascii-digit {
+      font-family: monospace;
+      font-size: 0.75rem;
+      line-height: 1.1;
+      background: #000;
+      color: #ef4444;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>AMOS REXX 3 가로 슬롯 뷰포트 클리핑 &amp; OCR 정밀 보정</h1>
+      <span class="badge">Work ID: rexx3-letterbox-ocr-fix · Revision 1 · 사용자 피드백(슬롯 접어두기) 반영</span>
+    </header>
+
+    <div class="grid">
+      <!-- Option A: Simple Letterbox Overlay -->
+      <div class="card">
+        <h2>❌ 단순 레터박스 덮기 (공간 낭비)</h2>
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="ui-topbar">실시간 스캔 중 (상단 헤더)</div>
+            <div class="view-full-camera">
+              <div class="full-letterbox-top">⬛ 불필요한 상단 가림 (70px)</div>
+              <div class="full-letterbox-mid">
+                <div class="led-row">
+                  <span>0097</span><span>0301</span><span>0250</span>
+                </div>
+                <div class="led-main">0 3 5 . 2</div>
+              </div>
+              <div class="full-letterbox-bot">⬛ 불필요한 하단 가림 (70px)</div>
+            </div>
+            <div class="overflow-warning">
+              ⚠️ 비디오가 290px을 차지하여<br />
+              <strong>하단 폼과 버튼이 화면 밖으로 밀려남!</strong><br />
+              (사용자가 스크롤해야 확인 가능)
+            </div>
+          </div>
+        </div>
+        <ul style="font-size: 0.85rem; color: #94a3b8; padding-left: 18px;">
+          <li>검은 바만 얹으면 <strong style="color:#f87171;">세로 290~400px을 그대로 차지</strong></li>
+          <li>모바일에서 4인 HUD와 기록 버튼이 화면 밑으로 잘림</li>
+        </ul>
+      </div>
+
+      <!-- Option B: CSS Viewport Slot Clipping (User Proposed) -->
+      <div class="card" style="border-color: #3b82f6;">
+        <h2>✅ 가로 슬롯 뷰포트 클리핑 (사용자 제안 완성)</h2>
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="ui-topbar">실시간 스캔 중 (상단 헤더)</div>
+            <!-- Physically compact slot: 150px height -->
+            <div class="view-slot-camera">
+              <div class="slot-badge">⚡ 슬롯 뷰포트 (h-52)</div>
+              <div class="led-row">
+                <span>0097</span><span>0301</span><span>0250</span>
+              </div>
+              <div class="led-main">0 3 5 . 2</div>
+              <div class="slot-clipped-info">위/아래 자동 클리핑 (접힘)</div>
+            </div>
+            <!-- Live 4-player HUD fits without scrolling! -->
+            <div class="ui-hud-grid">
+              <div class="hud-box"><div class="label">동(내자리)</div><div class="score" style="color:#34d399;">35,200</div></div>
+              <div class="hud-box"><div class="label">남(하가)</div><div class="score" style="color:#34d399;">25,000</div></div>
+              <div class="hud-box"><div class="label">서(대가)</div><div class="score" style="color:#34d399;">30,100</div></div>
+              <div class="hud-box"><div class="label">북(상가)</div><div class="score" style="color:#34d399;">9,700</div></div>
+            </div>
+            <!-- Score confirmation form also fits in one screen! -->
+            <div class="ui-form-preview">
+              <div style="display:flex; justify-content:space-between;">
+                <span>합계: <strong>100,000점</strong> (기준 일치)</span>
+                <span style="color:#34d399;">✓ 기록 준비 완료</span>
+              </div>
+              <div class="form-btn">확정하고 기록에 추가</div>
+            </div>
+          </div>
+        </div>
+        <ul style="font-size: 0.85rem; color: #94a3b8; padding-left: 18px;">
+          <li><code>overflow-hidden</code> + <code>object-cover</code>로 <strong style="color:#34d399;">세로 높이를 150~200px로 압축</strong></li>
+          <li>카메라 슬롯 + 4인 HUD + 기록 버튼이 <strong style="color:#34d399;">스크롤 없이 한 화면에 완벽 정렬</strong></li>
+          <li>캔버스 ROI 슬라이스로 연산량 50% 절감 &amp; FPS 2배 상승</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Section 2: OCR 9700 vs 93 Root Cause & Fix -->
+    <div class="card">
+      <h2>🔍 북가 9,700점(`0097`)이 `93`으로 오인식된 원인과 해결책</h2>
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="digit-inspect">
+          <div class="digit-box">
+            <div style="font-size:0.8rem; margin-bottom:4px; color:#f87171;">기존: 중앙(cx=0.5) 검사</div>
+            <pre class="ascii-digit">
+...######... (상단: 1)
+......###...
+.....###....
+....#####... (중앙 기둥: 1) ❌
+....###.....
+...###......
+...###...... (하단 기둥: 1) ❌
+</pre>
+            <div style="font-size:0.75rem; color:#f87171; margin-top:4px;">결과: `1011011` = 숫자 <strong>'3'</strong> 오판정!</div>
+          </div>
+
+          <div class="digit-box">
+            <div style="font-size:0.8rem; margin-bottom:4px; color:#34d399;">개선: 좌측 편향(cx=0.3) 검사</div>
+            <pre class="ascii-digit">
+...######... (상단: 1)
+......###...
+.....###....
+...      ... (중앙 좌측 빈곳: 0) ✅
+....###.....
+...###......
+...      ... (하단 좌측 빈곳: 0) ✅
+</pre>
+            <div style="font-size:0.75rem; color:#34d399; margin-top:4px;">결과: `1010010` = 숫자 <strong>'7'</strong> 완벽 인식!</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; justify-content:center; gap:10px;">
+          <p style="font-size:0.9rem; color:#cbd5e1;">
+            <strong>원인 1 (7 vs 3)</strong>: 숫자 7은 좌측 세그먼트가 없어 바운딩 박스 폭이 좁습니다. 대각선 기둥이 정중앙(cx=0.5)을 지나므로 중간 바 검사에서 1로 켜져 '3'으로 판정되었습니다.
+          </p>
+          <p style="font-size:0.9rem; color:#cbd5e1;">
+            <strong>원인 2 (0097 4자리 보존)</strong>: 상위 0 보존 및 4자리 점수 환산을 통해 <strong>0097 → 9,700점</strong>으로 정확히 매핑합니다.
+          </p>
+          <div style="background:#0f172a; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #10b981;">
+            <span style="color:#34d399; font-weight:bold;">최종 합계 검증</span>:
+            <br />9,700(북) + 30,100(서) + 25,000(남) + 35,200(동) = <strong>100,000점 (완전 일치!)</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Technical Specifications -->
+    <div class="card">
+      <h2>🛠️ 기술 구현 사양 요약</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>기존 (전체 화면 비디오)</th>
+            <th>개선 (가로 슬롯 클리핑 뷰포트)</th>
+            <th>기대 효과</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>UI 뷰포트 높이</strong></td>
+            <td><code>h-auto</code> (세로 500~600px 이상)</td>
+            <td class="hl-pass"><code>h-52 sm:h-60 overflow-hidden</code></td>
+            <td>수직 화면 60% 절약, 1화면 완결 UX</td>
+          </tr>
+          <tr>
+            <td><strong>비디오 피팅</strong></td>
+            <td>화면 맞춤 팽창 (여백 노출)</td>
+            <td class="hl-pass"><code>object-cover object-center</code></td>
+            <td>위(패)·아래(무릎) 자동 잘라내기</td>
+          </tr>
+          <tr>
+            <td><strong>캔버스 분석 ROI</strong></td>
+            <td>전체 프레임 드로잉 및 분석</td>
+            <td class="hl-pass">중앙 50% 슬롯(y: 25%~75%)만 추출</td>
+            <td>분석 픽셀 50% 절감, FPS 2배 향상</td>
+          </tr>
+          <tr>
+            <td><strong>숫자 7 판별</strong></td>
+            <td>정중앙(cx=0.5) 대각선 기둥 간섭 ('3')</td>
+            <td class="hl-pass">좌측 편향(cx=0.30) 빈 공간 검사 ('7')</td>
+            <td>7 vs 3 오인식 0%, 10만 점 자동 통과</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
