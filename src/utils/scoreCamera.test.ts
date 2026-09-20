@@ -1,7 +1,9 @@
 import { startScoreCamera } from './scoreCamera';
 import { recognizeScoreboard } from './scoreRecognition';
+import { classifyTableModel } from './tableClassifier';
 
 jest.mock('./scoreRecognition', () => ({ recognizeScoreboard: jest.fn() }));
+jest.mock('./tableClassifier', () => ({ classifyTableModel: jest.fn() }));
 
 const recognized = recognizeScoreboard as jest.Mock;
 let getUserMedia: jest.Mock;
@@ -37,6 +39,7 @@ beforeEach(() => {
   } as unknown as CanvasRenderingContext2D);
   jest.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/jpeg;base64,capture');
   recognized.mockReturnValue(['102', '0266', '0606', '0026'].map(raw => ({ raw, confidence: .82 })));
+  ((classifyTableModel as unknown) as jest.Mock).mockReturnValue({ model: null, confidence: 0 });
 });
 afterEach(() => { abort.abort(); jest.restoreAllMocks(); jest.clearAllMocks(); jest.useRealTimers(); });
 
@@ -221,4 +224,30 @@ test('emits onVideoReady with canceled status when user aborts', async () => {
   expect(onVideoReady).toHaveBeenCalledWith(expect.any(Blob), 'mp4', 'canceled');
   delete (window as any).MediaRecorder;
 });
+
+test('passes specified table model to recognizeScoreboard', async () => {
+  start({ model: 'amos_jp_ex' }); await settle();
+  await tick(200);
+  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_jp_ex');
+});
+
+test('invokes onModelDetected and updates recognition model when a table model is classified', async () => {
+  const onModelDetected = jest.fn();
+  ((classifyTableModel as unknown) as jest.Mock).mockReturnValue({ model: 'amos_jp_ex', confidence: 0.95 });
+  start({ onModelDetected, model: 'amos_rexx3' }); await settle();
+  await tick(200);
+  expect(onModelDetected).toHaveBeenCalledTimes(1);
+  expect(onModelDetected).toHaveBeenCalledWith('amos_jp_ex');
+  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_jp_ex');
+});
+
+test('does not invoke onModelDetected when confidence is below 0.8', async () => {
+  const onModelDetected = jest.fn();
+  ((classifyTableModel as unknown) as jest.Mock).mockReturnValue({ model: 'amos_jp_ex', confidence: 0.75 });
+  start({ onModelDetected, model: 'amos_rexx3' }); await settle();
+  await tick(200);
+  expect(onModelDetected).not.toHaveBeenCalled();
+  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_rexx3');
+});
+
 

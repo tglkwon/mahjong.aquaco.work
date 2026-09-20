@@ -320,3 +320,66 @@ test('renders viewfinder HUD with Option A aiming window, 3-dot gauge, and targe
 
   jest.useRealTimers();
 });
+
+test('passes default tableModel amos_rexx3 to camera options and allows switching to amos_jp_ex', () => {
+  setup();
+  const select = screen.getByLabelText('작탁 기종 선택') as HTMLSelectElement;
+  expect(select.value).toBe('amos_rexx3');
+
+  fireEvent.click(screen.getByRole('button', { name: '실시간 스캔 시작' }));
+  const initialCalls = (startScoreCamera as jest.Mock).mock.calls.length;
+  expect((startScoreCamera as jest.Mock).mock.calls[initialCalls - 1][1].model).toBe('amos_rexx3');
+
+  fireEvent.click(screen.getByRole('button', { name: '스캔 중지' }));
+
+  fireEvent.change(select, { target: { value: 'amos_jp_ex' } });
+  expect(select.value).toBe('amos_jp_ex');
+  expect(localStorage.getItem('mahjong_table_model')).toBe('amos_jp_ex');
+
+  fireEvent.click(screen.getByRole('button', { name: '실시간 스캔 시작' }));
+  expect((startScoreCamera as jest.Mock).mock.calls.length).toBe(initialCalls + 1);
+  const latestCall = (startScoreCamera as jest.Mock).mock.calls[(startScoreCamera as jest.Mock).mock.calls.length - 1];
+  expect(latestCall[1].model).toBe('amos_jp_ex');
+});
+
+test('automatically syncs detected tableModel and shows badge when onModelDetected is triggered without manual override', () => {
+  setup();
+  const select = screen.getByLabelText('작탁 기종 선택') as HTMLSelectElement;
+  expect(select.value).toBe('amos_rexx3');
+  expect(screen.queryByTestId('auto-detected-badge')).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: '실시간 스캔 시작' }));
+  const calls = (startScoreCamera as jest.Mock).mock.calls;
+  const options = calls[calls.length - 1][1];
+
+  act(() => {
+    options.onModelDetected('amos_jp_ex');
+  });
+
+  expect(select.value).toBe('amos_jp_ex');
+  expect(screen.getByTestId('auto-detected-badge')).toHaveTextContent('✨ 자동 감지됨');
+  expect(localStorage.getItem('mahjong_table_model')).toBe('amos_jp_ex');
+});
+
+test('manual override suppresses auto-detection when user manually changes model', () => {
+  setup();
+  const select = screen.getByLabelText('작탁 기종 선택') as HTMLSelectElement;
+
+  // User manually selects amos_rexx3
+  fireEvent.change(select, { target: { value: 'amos_rexx3' } });
+  expect(select.value).toBe('amos_rexx3');
+
+  fireEvent.click(screen.getByRole('button', { name: '실시간 스캔 시작' }));
+  const calls = (startScoreCamera as jest.Mock).mock.calls;
+  const options = calls[calls.length - 1][1];
+
+  // Camera scanner detects amos_jp_ex, but manual override must prevent switching
+  act(() => {
+    options.onModelDetected('amos_jp_ex');
+  });
+
+  expect(select.value).toBe('amos_rexx3');
+  expect(screen.queryByTestId('auto-detected-badge')).toBeNull();
+  expect(localStorage.getItem('mahjong_table_model')).toBe('amos_rexx3');
+});
+

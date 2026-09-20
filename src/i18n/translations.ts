@@ -82,6 +82,7 @@ export interface Translation {
   scoreScanDesc: string;
   scoreScanTestTitle: string;
   scoreScanTestDesc: string;
+  queueTitle: string;
   loading: string;
   versionHistoryError: string;
   popup_total_mismatch: string;
@@ -190,6 +191,7 @@ export const translations: Translations = {
     scoreScanDesc: '스마트폰 카메라로 점수판을 실시간 스캔하여 우마/오카 점수를 자동으로 계산하고 기록합니다.',
     scoreScanTestTitle: '점수 스캔 테스트 랩 (Lab)',
     scoreScanTestDesc: '작탁 기종별(Rexx 3, JP-EX, JP-Color) 데이터 수집 및 PC 실시간 전송 테스트를 진행합니다.',
+    queueTitle: '대기열 & 자리 추첨',
     loading: '로딩 중',
     versionHistoryError: '버전 정보를 불러오는 데 실패했습니다.',
     popup_total_mismatch: '점수 합계가 목표 점수와 일치하지 않습니다.',
@@ -284,6 +286,7 @@ export const translations: Translations = {
     scoreScanDesc: 'Scan scoreboard in real time with smartphone camera to automatically calculate and record Uma/Oka scores.',
     scoreScanTestTitle: 'Score Scan Test Lab',
     scoreScanTestDesc: 'Collect scoreboard datasets across table models (Rexx 3, JP-EX, JP-Color) and test real-time PC drop.',
+    queueTitle: 'Queue & Seat Draw',
     loading: 'Loading',
     versionHistoryError: 'Failed to load version history.',
     popup_total_mismatch: 'The total score does not match the target sum.',
@@ -377,6 +380,7 @@ export const translations: Translations = {
     scoreScanDesc: 'スマホカメラで点数表示をリアルタイムスキャンし、ウマ・オカ点数を自動計算・記録します。',
     scoreScanTestTitle: '点数スキャン テストラボ',
     scoreScanTestDesc: '卓機種別(Rexx 3, JP-EX, JP-Color)のデータ収集およびPCリアルタイム転送テストを行います。',
+    queueTitle: '待機列＆席抽選',
     loading: '読み込み中',
     versionHistoryError: 'バージョン情報の読み込みに失敗しました。',
     popup_total_mismatch: '点数合計が目標点数と一致しません。',

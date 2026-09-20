@@ -24,7 +24,7 @@ function Sidebar({ isOpen, onClose, getText }: SidebarProps) {
     { path: '/set_score', text: getText('scoreTrackerTitle'), icon: '📊' },
     { path: '/set_score_umaoka', text: getText('scoreTrackerUmaOkaTitle'), icon: '🎲' },
     { path: '/scan_score', text: getText('scoreScanTitle'), icon: '📹' },
-    { path: '/scan_score_test', text: getText('scoreScanTestTitle'), icon: '🧪' },
+    { path: '/queue', text: getText('queueTitle'), icon: '🀄' },
     { path: '/about', text: getText('about'), icon: 'ℹ️' },
   ];
 

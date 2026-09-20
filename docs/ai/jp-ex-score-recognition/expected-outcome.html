@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko" data-work-id="jp-ex-score-recognition" data-artifact-revision="2" data-intent-sha256="7f1313ffa6164dafda70bc63dbf2334c637e99721032946cc14b2cd3cdf7503b">
+<head>
+  <meta charset="utf-8" />
+  <title>AMOS JP-EX 점수판 인식 기능 개발 프리뷰</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-green: #4ade80;
+      --accent-red: #f87171;
+      --accent-yellow: #facc15;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    h1 { font-size: 24px; color: var(--accent); margin-bottom: 8px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      background: var(--border);
+      color: var(--text-muted);
+      margin-right: 6px;
+    }
+    .badge.ready { background: #065f46; color: var(--accent-green); }
+    .badge.warn { background: #78350f; color: var(--accent-yellow); }
+    .badge.danger { background: #7f1d1d; color: var(--accent-red); }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .card h2 { font-size: 18px; margin-bottom: 12px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    .card h3 { font-size: 15px; margin: 12px 0 6px 0; color: var(--accent); }
+
+    .diagram {
+      background: #0b0f19;
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      text-align: center;
+      margin: 12px 0;
+    }
+    .display-box {
+      display: inline-block;
+      background: #000;
+      border: 2px solid #555;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 20px;
+      color: var(--accent-red);
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    .diamond-layout {
+      position: relative;
+      width: 240px;
+      height: 180px;
+      margin: 0 auto;
+      border: 1px solid #223;
+      border-radius: 8px;
+      background: #020617;
+    }
+    .seat-top { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); }
+    .seat-bottom { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); }
+    .seat-left { position: absolute; top: 50%; left: 10px; transform: translateY(-50%); }
+    .seat-right { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    .comparison-table th, .comparison-table td {
+      border: 1px solid var(--border);
+      padding: 8px;
+      text-align: left;
+    }
+    .comparison-table th { background: #1e293b; color: var(--accent); }
+
+    .note-box {
+      background: #172554;
+      border-left: 4px solid var(--accent);
+      padding: 12px;
+      border-radius: 4px;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .warning-box {
+      background: #451a03;
+      border-left: 4px solid var(--accent-yellow);
+      padding: 12px;
+      border-radius: 4px;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    ul { padding-left: 20px; font-size: 14px; color: var(--text-muted); }
+    li { margin-bottom: 4px; }
+    li strong { color: var(--text); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AMOS JP-EX 점수판 인식 기능 개발 프리뷰 (ELI5)</h1>
+    <span class="badge ready">작업 ID: jp-ex-score-recognition</span>
+    <span class="badge ready">리비전: 1</span>
+    <span class="badge warn">모드: canonical</span>
+  </header>
+
+  <div class="note-box">
+    <strong>요약:</strong> 오프 마장(역곡) 실전 사진을 기반으로 AMOS JP-EX 전탁의 3자리 LED(100점 단위) 점수판을 정확히 인식하고, 10,000점 미만 2자리 표기(`97` = 9,700점) 탈락 버그를 수정한 뒤 실측 픽스처로 검증합니다.
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>1. 하드웨어 표기 방식 비교</h2>
+      <table class="comparison-table">
+        <tr>
+          <th>구분</th>
+          <th>AMOS REXX 3</th>
+          <th>AMOS JP-EX (역곡 실측)</th>
+        </tr>
+        <tr>
+          <td><strong>표시 자릿수</strong></td>
+          <td>4자리 고정 (`1 250`)</td>
+          <td>2~3자리 백단위 (`97`, `220`)</td>
+        </tr>
+        <tr>
+          <td><strong>순위 세그먼트</strong></td>
+          <td>내 자리 1자리 존재 (슬라이싱 필요)</td>
+          <td>순위 세그먼트 없음 (슬라이싱 금지)</td>
+        </tr>
+        <tr>
+          <td><strong>배치 구조</strong></td>
+          <td>T-형 전면 패널</td>
+          <td>다이아몬드 (상/하/좌/우)</td>
+        </tr>
+        <tr>
+          <td><strong>점수 단위</strong></td>
+          <td>100점 단위</td>
+          <td>100점 단위 (합계 1,000 = 10만점)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>2. 다이아몬드 레이아웃과 순서 매핑</h2>
+      <div class="diagram">
+        <div class="diamond-layout">
+          <div class="seat-top"><span class="display-box">200</span></div>
+          <div class="seat-left"><span class="display-box">97</span></div>
+          <div class="seat-right"><span class="display-box">483</span></div>
+          <div class="seat-bottom"><span class="display-box">220</span></div>
+        </div>
+      </div>
+      <ul>
+        <li><strong>동가(내 자리, 하단):</strong> <code>220</code> (22,000점)</li>
+        <li><strong>남가(하가, 우측):</strong> <code>483</code> (48,300점)</li>
+        <li><strong>서가(대가, 상단):</strong> <code>200</code> (20,000점)</li>
+        <li><strong>북가(상가, 좌측):</strong> <code>97</code> (9,700점)</li>
+        <li><strong>합계 검증:</strong> 220 + 483 + 200 + 97 = 1,000 (100,000점 정상!)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 24px;">
+    <h2>3. 핵심 결함 수정 및 변경 사항</h2>
+    <div class="grid">
+      <div>
+        <h3>기존 코드의 문제점 (AS-IS)</h3>
+        <ul>
+          <li><code>g.length &gt;= 3 &amp;&amp; g.length &lt;= 4</code> 조건으로 인해 <strong>2자리 점수(<code>97</code>, <code>26</code>)가 필터에서 탈락</strong>하여 즉시 인식 실패(<code>empty()</code>).</li>
+          <li>JP-EX 테스트가 REXX 3 픽스처를 재활용한 가짜 단위 테스트에 불과함.</li>
+          <li>카메라 스캔 및 UI에서 모델명이 <code>'amos_rexx3'</code>로 하드코딩됨.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>수정 후 동작 (TO-BE)</h3>
+        <ul>
+          <li><strong>하한값 완화:</strong> <code>g.length &gt;= 2 &amp;&amp; g.length &lt;= 4</code>로 수정하여 10,000점 미만 2자리 정상 인식.</li>
+          <li><strong>진짜 픽스처 도입:</strong> 역곡 클린 사진(<code>KakaoTalk_20230528_2.jpg</code>) 기반 RGB/마스크 픽스처 신규 등록.</li>
+          <li><strong>모델 선택 지원:</strong> UI 및 스캔 옵션에 <code>amos_jp_ex</code> 모델 전달 경로 구축.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="warning-box">
+    <strong>주의 (Red Team 검증 결과):</strong>
+    사진 중 <code>KakaoTalk_20230528_1.jpg</code>의 5자리 표기(<code>48700</code> 등)는 사용자가 카카오톡에서 덧칠한 스티커 오버레이입니다. 전탁 하드웨어에는 5자리 모드가 존재하지 않으므로, 텍스트 스티커가 없는 순수 클린 사진(<code>KakaoTalk_20230528_2.jpg</code>)을 기준 픽스처로 사용합니다.
+  </div>
+</body>
+</html>

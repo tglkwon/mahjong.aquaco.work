@@ -1,0 +1,34 @@
+{
+  "schema_version": 3,
+  "artifact_mode": "canonical",
+  "work_id": "test-session-bundle",
+  "artifact_revision": "4",
+  "artifacts": {
+    "intent": {
+      "path": "intent.md",
+      "sha256": "4fa45acdff8a97f1cb208884a00ec7a2a4ed262c448a89ec03927d5f59d60d4f",
+      "content_sha256": "3aaa9c64b9662da376397d2a4d03ac105b4374b45933b39876a0352c62d89b26"
+    },
+    "spec": {
+      "path": "spec.md",
+      "sha256": "334009e391ba353401d1bb806939e6f734a62a72720da7b35189143ba6d9a508",
+      "content_sha256": "22865d19f039313e37d8e6912ae380f0d03e68a4b173b8afbf3a4304aa99a3a6"
+    },
+    "plan": {
+      "path": "plan.md",
+      "sha256": "7edebc4c2db5a803d5a7ee88686f28551d803516feb9f6ab5edb891ea19d6d97",
+      "content_sha256": "4377e16df7d676df3ba5304a0ddd00211fd432c3157db706d2c849eb76e6cd19"
+    },
+    "evidence": {
+      "path": "evidence.md",
+      "sha256": "ab1dc1b8ddd1db52abf9e5fcaec5fa416cde6cb40e9def49f067410e0859542f",
+      "content_sha256": "8ee78ec7bfacf82a085c7147228d340b2aaa4b3c0a4cbbf17419f011118d92c8"
+    }
+  },
+  "preview": {
+    "path": "expected-outcome.html",
+    "source": "intent.md",
+    "source_revision": "4",
+    "sha256": "d5d7e0aa80ab99420f81fee5c652bb800b3a0d4e282603d5aa989c94b6be1bb4"
+  }
+}

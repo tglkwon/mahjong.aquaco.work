@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>마작 1번 탁 좌석 QR 안내판</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --east-color: #38bdf8;
+      --south-color: #fb7185;
+      --west-color: #fbbf24;
+      --north-color: #4ade80;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .table-container {
+      width: 100%;
+      max-width: 860px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 640px) {
+      .table-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .seat-card {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      position: relative;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .seat-card:hover {
+      transform: translateY(-2px);
+    }
+    .seat-card.east { border-color: rgba(56, 189, 248, 0.4); }
+    .seat-card.south { border-color: rgba(251, 113, 133, 0.4); }
+    .seat-card.west { border-color: rgba(251, 191, 36, 0.4); }
+    .seat-card.north { border-color: rgba(74, 222, 128, 0.4); }
+
+    .seat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 14px;
+    }
+    .wind-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .badge-east { background: var(--east-color); }
+    .badge-south { background: var(--south-color); }
+    .badge-west { background: var(--west-color); }
+    .badge-north { background: var(--north-color); }
+
+    .seat-status {
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+    }
+    .seat-status.seated {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .qr-frame {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .qr-frame:hover {
+      opacity: 0.92;
+    }
+    .qr-image {
+      display: block;
+      width: 180px;
+      height: 180px;
+    }
+
+    .action-btn {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background 0.2s;
+    }
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .footer-nav {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--card-border);
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-link:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .scan-hint {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🀄 1번 탁 좌석 QR 안내판</h1>
+    <p class="subtitle">모바일 카메라로 본인 자리의 QR 코드를 스캔하거나 카드를 클릭해 1초 만에 착석하세요.</p>
+  </header>
+
+  <main class="table-container" id="seatsContainer">
+    <!-- 동가 -->
+    <div class="seat-card east" id="card-east">
+      <div class="seat-header">
+        <span class="wind-badge badge-east">東 동가</span>
+        <span class="seat-status" id="status-east">대기 중</span>
+      </div>
+      <a class="qr-frame" id="qr-link-east" target="_blank" title="클릭하여 직접 착석">
+        <img class="qr-image" id="qr-img-east" alt="동가 QR" />
+      </a>
+      <a class="action-btn" id="btn-east" target="_blank">⚡ 동가 착석 링크 열기</a>
+    </div>
+
+    <!-- 남가 -->
+    <div class="seat-card south" id="card-south">
+      <div class="seat-header">
+        <span class="wind-badge badge-south">南 남가</span>
+        <span class="seat-status" id="status-south">대기 중</span>
+      </div>
+      <a class="qr-frame" id="qr-link-south" target="_blank" title="클릭하여 직접 착석">
+        <img class="qr-image" id="qr-img-south" alt="남가 QR" />
+      </a>
+      <a class="action-btn" id="btn-south" target="_blank">⚡ 남가 착석 링크 열기</a>
+    </div>
+
+    <!-- 서가 -->
+    <div class="seat-card west" id="card-west">
+      <div class="seat-header">
+        <span class="wind-badge badge-west">西 서가</span>
+        <span class="seat-status" id="status-west">대기 중</span>
+      </div>
+      <a class="qr-frame" id="qr-link-west" target="_blank" title="클릭하여 직접 착석">
+        <img class="qr-image" id="qr-img-west" alt="서가 QR" />
+      </a>
+      <a class="action-btn" id="btn-west" target="_blank">⚡ 서가 착석 링크 열기</a>
+    </div>
+
+    <!-- 북가 -->
+    <div class="seat-card north" id="card-north">
+      <div class="seat-header">
+        <span class="wind-badge badge-north">北 북가</span>
+        <span class="seat-status" id="status-north">대기 중</span>
+      </div>
+      <a class="qr-frame" id="qr-link-north" target="_blank" title="클릭하여 직접 착석">
+        <img class="qr-image" id="qr-img-north" alt="북가 QR" />
+      </a>
+      <a class="action-btn" id="btn-north" target="_blank">⚡ 북가 착석 링크 열기</a>
+    </div>
+  </main>
+
+  <p class="scan-hint">💡 2초마다 착석자 현황이 실시간 갱신됩니다.</p>
+
+  <footer style="margin-top: 20px;">
+    <nav class="footer-nav">
+      <a href="/queue" class="nav-link" target="_blank">👥 온라인 대기열 & 자리 추첨</a>
+      <a href="/scan_score_test" class="nav-link" target="_blank">📊 기록자 점수판 (/scan_score_test)</a>
+      <a href="/" class="nav-link">🏠 홈으로</a>
+    </nav>
+  </footer>
+
+  <script>
+    const origin = window.location.origin;
+    const winds = ['east', 'south', 'west', 'north'];
+
+    // Setup QR codes based on current origin
+    winds.forEach(w => {
+      const seatUrl = `${origin}/seat?table=1&seat=${w}`;
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(seatUrl)}`;
+      
+      const img = document.getElementById(`qr-img-${w}`);
+      const link = document.getElementById(`qr-link-${w}`);
+      const btn = document.getElementById(`btn-${w}`);
+
+      if (img) img.src = qrApiUrl;
+      if (link) link.href = seatUrl;
+      if (btn) btn.href = seatUrl;
+    });
+
+    // Real-time table status polling (2s)
+    async function pollTableStatus() {
+      try {
+        const res = await fetch('/api/tables/1/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        const seats = data.seats || {};
+
+        winds.forEach(w => {
+          const statusEl = document.getElementById(`status-${w}`);
+          const cardEl = document.getElementById(`card-${w}`);
+          const seated = seats[w];
+
+          if (seated && seated.nickname) {
+            statusEl.textContent = `착석: ${seated.nickname}`;
+            statusEl.classList.add('seated');
+          } else {
+            statusEl.textContent = '대기 중 (스캔 가능)';
+            statusEl.classList.remove('seated');
+          }
+        });
+      } catch (e) {
+        // silent fail during polling
+      }
+    }
+
+    pollTableStatus();
+    setInterval(pollTableStatus, 2000);
+  </script>
+</body>
+</html>

@@ -1,6 +1,19 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # -------------------------------------------------------------
+  # Tier 1 Defense: Block Automated Scrapers, Bots & AI Crawlers
+  # Return HTTP 429 (Too Many Requests) for known automated tools
+  # -------------------------------------------------------------
+  RewriteCond %{HTTP_USER_AGENT} (curl|wget|python|aiohttp|httpx|requests|scrapy) [NC,OR]
+  RewriteCond %{HTTP_USER_AGENT} (headlesschrome|phantomjs|puppeteer|playwright|selenium) [NC,OR]
+  RewriteCond %{HTTP_USER_AGENT} (bytespider|gptbot|chatgpt-user|anthropic-ai|claudebot|ccbot|amazonbot) [NC]
+  RewriteRule .* - [R=429,L]
+
+  # -------------------------------------------------------------
+  # React Single Page Application (SPA) Routing
+  # -------------------------------------------------------------
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

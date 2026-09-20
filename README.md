@@ -11,6 +11,13 @@
 다른 대탁 기록용 페이지처럼 대탁 점수 기록 자체는 저장하지 않지만, 이미지 처리를 위해 업로드되는 사진은 서버에 저장됩니다.
 
 ## 최근 개발 결과
+### 1.9v EC2 Rate Limit & User-Agent 방어 체계 구축 260917
+- AWS EC2 (`t3.micro`) 인스턴스의 CPU 크레딧 및 메모리 보호를 위해 2계층 호출 제한 방어선을 구축했습니다.
+- **1차 방어선 (User-Agent 필터링)**: `public/.htaccess`에 `mod_rewrite` 규칙을 적용하여 자동화 스크레이퍼 및 봇(`curl`, `python`, `aiohttp`, `scrapy`, `puppeteer`, `bytespider`, `gptbot` 등) 감지 시 정적 번들 로딩 없이 즉시 `HTTP 429 Too Many Requests`를 반환합니다.
+- **2차 방어선 (IP 빈도 제어)**: Ubuntu/Apache2 호스트 상에서 `libapache2-mod-evasive`를 구성하여 IP당 초당 5회(페이지) / 50회(사이트 전체) 초과 요청 시 10초간 일시 차단하는 `scripts/setup-apache-ratelimit.sh` 스크립트를 제공합니다.
+- **검증 도구**: User-Agent별 상태 코드(200 vs 429)를 자동 검증하는 `scripts/test-useragent-ratelimit.ps1` 테스트 러너를 추가했습니다.
+- 일반 인간 웹 브라우저(Chrome, Safari, Edge, 모바일 브라우저) 및 React SPA 라우팅(`/index.html` 리라이트)은 100% 정상 작동합니다.
+
 ### 1.8v 공유 URL 및 우마·오카 사용성 개선 260804
 - 기존 `JSON → pako → Base64` 공유 URL 저장 방식을 `바이너리 → pako → Base64URL` 방식으로 개선했습니다.
 - 우마·오카 모드의 게임 기록을 좌석이 아닌 플레이어 ID 기준으로 저장해, 경기마다 좌석 순서가 바뀌어도 점수 차분을 안전하게 복원합니다.

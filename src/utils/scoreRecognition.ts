@@ -103,7 +103,7 @@ function recognizeUpright(
     });
     if (group) group.push(box); else groups.push([box]);
   }
-  const runs = groups.filter(g => g.length >= 3 && g.length <= 4);
+  const runs = groups.filter(g => g.length >= 2 && g.length <= 4);
   if (runs.length !== 4) return empty();
   const center = (g: Box[]) => ({ x: (g[0].x + g[g.length - 1].x + g[g.length - 1].w) / 2, y: g.reduce((n, b) => n + b.y + b.h / 2, 0) / g.length });
 

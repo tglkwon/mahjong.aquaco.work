@@ -1,6 +1,7 @@
 import { inflate } from 'pako';
 import fixtures from './scoreRecognition.fixtures.json';
 import rgbFixture from './scoreRecognition.rgb.fixture.json';
+import jpexFixture from './scoreRecognition.jpex.fixture.json';
 import { recognizeScoreboard } from './scoreRecognition';
 import { validateScoreDraft } from './scoreDraft';
 
@@ -11,17 +12,33 @@ describe('actual PXL_20260902_054136311.mp4 red-pixel fixtures', () => {
     mask.forEach((value, i) => { data[i * 4] = value ? 255 : 0; data[i * 4 + 3] = 255; });
     expect(recognizeScoreboard({ ...fixture, data }, 'amos_rexx3').map(c => c.raw)).toEqual(['102', '0266', '0606', '0026']);
   });
+});
 
-  test('preserves all four digits on bottom display when model is amos_jp_ex', () => {
-    const fixture = fixtures[0];
-    const mask = inflate(Uint8Array.from(atob(fixture.mask), c => c.charCodeAt(0)));
+describe('actual Yeokgok AMOS JP-EX parlor photo fixture', () => {
+  test('reads four scores in [bottom, right, top, left] order including 2-digit score (<10,000) on AMOS JP-EX mask', () => {
+    const mask = inflate(Uint8Array.from(atob(jpexFixture.mask), c => c.charCodeAt(0)));
     const data = new Uint8ClampedArray(mask.length * 4);
     mask.forEach((value, i) => { data[i * 4] = value ? 255 : 0; data[i * 4 + 3] = 255; });
-    const result = recognizeScoreboard({ ...fixture, data }, 'amos_jp_ex');
-    // Bottom display has 4 digits instead of 3
-    expect(result[0].raw.length).toBe(4);
-    expect(result[0].raw.endsWith('102')).toBe(true);
-    expect(result.slice(1).map(c => c.raw)).toEqual(['0266', '0606', '0026']);
+    const result = recognizeScoreboard({ width: jpexFixture.width, height: jpexFixture.height, data }, 'amos_jp_ex');
+    const rawScores = result.map(c => c.raw);
+    expect(rawScores).toEqual(['220', '483', '200', '97']);
+
+    // Validates 100,000 target total with 100-point units
+    const draft = validateScoreDraft(rawScores, 100, '100000', [0, 1, 2, 3], 4);
+    expect(draft.valid).toBe(true);
+    expect(draft.total).toBe(100000);
+    expect(draft.scores).toEqual(['22000', '48300', '20000', '9700']);
+  });
+
+  test('classifies actual full RGB frame for AMOS JP-EX photo (KakaoTalk_20230528_2.jpg)', () => {
+    const rgb = inflate(Uint8Array.from(atob(jpexFixture.rgb), c => c.charCodeAt(0)));
+    const data = new Uint8ClampedArray(jpexFixture.width * jpexFixture.height * 4);
+    for (let i = 0; i < rgb.length / 3; i++) {
+      data.set(rgb.subarray(i * 3, i * 3 + 3), i * 4);
+      data[i * 4 + 3] = 255;
+    }
+    const result = recognizeScoreboard({ width: jpexFixture.width, height: jpexFixture.height, data }, 'amos_jp_ex');
+    expect(result.map(c => c.raw)).toEqual(['220', '483', '200', '97']);
   });
 });
 

@@ -14,7 +14,7 @@ import { encodeShareState, parseShareStateFromHash } from '../utils/shareState';
 type Language = keyof Translations;
 type TranslationKey = keyof Translation;
 
-interface ScorePhotoInputPageProps {
+interface ScoreScanPageProps {
   currentLanguage: string;
   setCurrentLanguage: (lang: Language) => void;
   getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
@@ -28,7 +28,7 @@ const INITIAL_PLAYER_POSITIONS = ['east', 'south', 'west', 'north'];
 const getDefaultPlayerPositions = (): string[] => [...INITIAL_PLAYER_POSITIONS];
 const getDefaultUmaOkaParticipants = (): UmaOkaParticipants => ({ east: 0, south: 1, west: 2, north: 3 });
 
-function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, translations, isTestMode = false }: ScorePhotoInputPageProps) {
+function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translations, isTestMode = false }: ScoreScanPageProps) {
   const parseStateFromUrl = useCallback(() => parseShareStateFromHash(window.location.hash, true), []);
   const loadedState = useMemo(() => parseStateFromUrl(), [parseStateFromUrl]);
 
@@ -54,6 +54,82 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
     }
     return Array(playerPool.length).fill(0);
   });
+
+  // 테이블 1 실시간 연동 상태 (isTestMode 전용)
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [tableLiveSeats, setTableLiveSeats] = useState<{
+    east: { nickname: string; client_id: string } | null;
+    south: { nickname: string; client_id: string } | null;
+    west: { nickname: string; client_id: string } | null;
+    north: { nickname: string; client_id: string } | null;
+  } | null>(null);
+  const [sessionTimingText, setSessionTimingText] = useState<string | null>(null);
+
+  // effectiveTestMode: isTestMode prop 또는 URL 쿼리 파라미터(?testMode=true) 판별
+  const effectiveTestMode = useMemo(() => {
+    if (isTestMode) return true;
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashQuery = window.location.hash.includes('?')
+        ? new URLSearchParams(window.location.hash.split('?')[1])
+        : new URLSearchParams();
+      return searchParams.get('testMode') === 'true' || hashQuery.get('testMode') === 'true';
+    } catch {
+      return false;
+    }
+  }, [isTestMode]);
+
+  // 테이블 1 좌석 2초 주기 폴링 훅
+  useEffect(() => {
+    if (!effectiveTestMode) return;
+
+    let isMounted = true;
+    const pollTableStatus = async () => {
+      try {
+        const res = await fetch('/api/tables/1/status');
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          setActiveSessionId(data.session_id);
+          setTableLiveSeats(data.seats);
+
+          // 4인 착석 시 playerPool 자동 주입
+          if (data.seats && data.seats.east && data.seats.south && data.seats.west && data.seats.north) {
+            const liveNames = [
+              data.seats.east.nickname,
+              data.seats.south.nickname,
+              data.seats.west.nickname,
+              data.seats.north.nickname,
+            ];
+            setPlayerPool(prev => {
+              if (prev[0] === liveNames[0] && prev[1] === liveNames[1] && prev[2] === liveNames[2] && prev[3] === liveNames[3]) {
+                return prev;
+              }
+              const rest = prev.slice(4);
+              return [...liveNames, ...rest];
+            });
+          }
+
+          if (data.started_at) {
+            const start = new Date(data.started_at);
+            const now = new Date();
+            const elapsedMins = Math.floor((now.getTime() - start.getTime()) / 60000);
+            setSessionTimingText(`⏱️ 경기 진행 중 (${elapsedMins}분 경과)`);
+          } else {
+            setSessionTimingText('대기 중 (4인 착석 대기)');
+          }
+        }
+      } catch {
+        // 네트워크 에러 시 로컬 상태 유지
+      }
+    };
+
+    pollTableStatus();
+    const interval = setInterval(pollTableStatus, 2000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [effectiveTestMode]);
 
   // URL에서 언어 설정 불러오기
   useEffect(() => {
@@ -259,6 +335,16 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
     });
   }, []);
 
+  // 테스트 모드용 점수 자동 채우기 (동: 35000, 남: 28000, 서: 22000, 북: 15000 = 합계 100,000점)
+  const handleFillTestScores = () => {
+    handleScoresRecognized({
+      east: '35000',
+      south: '28000',
+      west: '22000',
+      north: '15000',
+    });
+  };
+
   // 실시간 스캔에서 점수 확정 시 우마·오카 게임 기록으로 추가
   const handlePhotoConfirm = (scores: string[], players: number[]) => {
     const newScores: UmaOkaScores = {
@@ -313,7 +399,7 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
 
   const targetTotalScore = startingScore * 4;
 
-  const handleRecordButtonPress = () => {
+  const handleRecordButtonPress = async () => {
     if (!currentEditableGame) return;
     const s = currentEditableGame.scores as UmaOkaScores;
     const p = currentEditableGame.participants || getDefaultUmaOkaParticipants();
@@ -338,6 +424,49 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
       setPopupMessage({ show: true, text: getText('popup_duplicate_players') });
       setTimeout(() => setPopupMessage({ show: false, text: '' }), 2000);
       return;
+    }
+
+    // 백엔드 세션 종료 및 소요 시간 영구 기록 (effectiveTestMode && activeSessionId)
+    if (effectiveTestMode && activeSessionId) {
+      try {
+        const finishRes = await fetch(`/api/sessions/${activeSessionId}/finish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table_id: 1,
+            scores: {
+              east: parseInt(s.east, 10),
+              south: parseInt(s.south, 10),
+              west: parseInt(s.west, 10),
+              north: parseInt(s.north, 10),
+            },
+            participants: {
+              east: tableLiveSeats?.east?.client_id || playerPool[playersArr[0]],
+              south: tableLiveSeats?.south?.client_id || playerPool[playersArr[1]],
+              west: tableLiveSeats?.west?.client_id || playerPool[playersArr[2]],
+              north: tableLiveSeats?.north?.client_id || playerPool[playersArr[3]],
+            },
+            raw_payload: {
+              source: 'scan_score_test',
+              targetTotalScore,
+            },
+          }),
+        });
+
+        if (finishRes.ok) {
+          const finishData = await finishRes.json();
+          const dur = finishData.duration_seconds || 0;
+          const mins = Math.floor(dur / 60);
+          const secs = dur % 60;
+          setPopupMessage({
+            show: true,
+            text: `경기 기록 저장 완료! (소요 시간: ${mins}분 ${secs}초, Table 1 리셋)`,
+          });
+          setTimeout(() => setPopupMessage({ show: false, text: '' }), 3500);
+        }
+      } catch {
+        // 백엔드 단절 시에도 로컬 점수 저장은 계속 진행
+      }
     }
 
     handlePhotoConfirm(scoresArr, playersArr);
@@ -391,14 +520,7 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
         <p className="text-sm sm:text-base text-gray-600">
           {getText('umaOkaGuide')}
         </p>
-        {!isTestMode ? (
-          <Link
-            to="/scan_score_test"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-semibold hover:bg-purple-100 transition-colors shrink-0"
-          >
-            <span>🧪 PC 전송 테스트 Lab 이동</span>
-          </Link>
-        ) : (
+        {effectiveTestMode && (
           <Link
             to="/scan_score"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors shrink-0"
@@ -407,6 +529,38 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
           </Link>
         )}
       </div>
+
+      {/* 테이블 1 실시간 연동 인디케이터 (effectiveTestMode) */}
+      {effectiveTestMode && (
+        <div className="w-full max-w-6xl mb-4 p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-between gap-2 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-bold text-sky-400">테이블 1 실시간 연동 중</span>
+            <span className="text-gray-400">|</span>
+            <span className="text-gray-300">
+              동: <strong className="text-emerald-400">{tableLiveSeats?.east?.nickname || '대기'}</strong> /
+              남: <strong className="text-emerald-400">{tableLiveSeats?.south?.nickname || '대기'}</strong> /
+              서: <strong className="text-emerald-400">{tableLiveSeats?.west?.nickname || '대기'}</strong> /
+              북: <strong className="text-emerald-400">{tableLiveSeats?.north?.nickname || '대기'}</strong>
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {sessionTimingText && (
+              <div className="text-emerald-400 font-semibold shrink-0">
+                {sessionTimingText}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={handleFillTestScores}
+              className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition-colors shadow-sm"
+              title="테스트용 점수(35000, 28000, 22000, 15000 = 10만점) 자동 채우기"
+            >
+              🎲 테스트 점수 채우기 (10만점)
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 플레이어 총점 랭킹 */}
       <PlayerTotals playerPool={playerPool} totalScores={totalScores} getText={getText} />
@@ -417,7 +571,7 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
         playerNames={playerPool}
         targetTotalScore={targetTotalScore}
         onScoresRecognized={handleScoresRecognized}
-        isTestMode={isTestMode}
+        isTestMode={effectiveTestMode}
       />
 
       {confirmedGamesCount > 0 && (
@@ -483,4 +637,4 @@ function ScorePhotoInputPage({ currentLanguage, setCurrentLanguage, getText, tra
   );
 }
 
-export default ScorePhotoInputPage;
+export default ScoreScanPage;

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko" data-work-id="test-session-bundle" data-artifact-revision="4" data-intent-sha256="4fa45acdff8a97f1cb208884a00ec7a2a4ed262c448a89ec03927d5f59d60d4f">
+<head>
+  <meta charset="utf-8" />
+  <title>서비스 UI 테스트 모드 완전 격리 및 원클릭 모바일 테스트 세션 번들 프리뷰</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --purple: #a855f7;
+      --rose: #f43f5e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 24px; line-height: 1.6; }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    h1 { font-size: 22px; color: var(--accent); margin-bottom: 8px; }
+    p.lead { color: var(--text-muted); font-size: 14px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .card h2 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .badge { font-size: 11px; padding: 3px 8px; border-radius: 9999px; font-weight: bold; }
+    .badge-prod { background: rgba(34, 197, 94, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-dev { background: rgba(168, 85, 247, 0.2); color: var(--purple); border: 1px solid var(--purple); }
+    .nav-preview { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; font-size: 13px; }
+    .nav-item { padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-active { background: rgba(56, 189, 248, 0.15); color: var(--accent); font-weight: 600; }
+    .nav-hidden { opacity: 0.35; text-decoration: line-through; color: var(--rose); }
+    .flow-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .step { display: flex; gap: 14px; margin-bottom: 16px; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0; }
+    .step-body h3 { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+    .step-body p { font-size: 12px; color: var(--text-muted); }
+    .code-box { background: #000; border: 1px solid #334155; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; color: #38bdf8; word-break: break-all; margin-top: 6px; }
+    .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+    .tag-ok { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .tag-block { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+    .meta-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    .meta-table th, .meta-table td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+    .meta-table th { background: rgba(0,0,0,0.3); color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎯 서비스 UI 테스트 기능 완전 은닉 &amp; 원클릭 모바일 테스트 세션</h1>
+      <p class="lead">EC2 실제 배포 전 일반 사용자 UI에서 테스트 기능 및 랩 전환 링크를 완벽히 숨기고, 대기열(&#47;queue)을 사이드바에 공식 노출하며, 개발자가 "모바일 테스트 서버 열어줘" 한 마디로 PC 전송 파라미터가 모두 주입된 원클릭 링크를 받는 통합 오케스트레이션 번들을 구축합니다.</p>
+    </header>
+
+    <!-- 1. 비교: 일반 사용자 vs 개발자 온디맨드 UI -->
+    <div class="grid">
+      <!-- 일반 사용자 서비스 뷰 -->
+      <div class="card">
+        <h2>
+          <span>🌐 일반 사용자 서비스 뷰</span>
+          <span class="badge badge-prod">Production Mode</span>
+        </h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+          일반 사용자 화면에서는 테스트 랩이나 PC 전송 모드 관련 UI가 100% 은닉됩니다.
+        </p>
+        <div class="nav-preview">
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: bold;">[사이드바 메뉴]</div>
+          <div class="nav-item"><span>🏠 홈</span><span class="tag tag-ok">노출</span></div>
+          <div class="nav-item"><span>📊 점수 계산기</span><span class="tag tag-ok">노출</span></div>
+          <div class="nav-item"><span>🎲 우마/오카 계산기</span><span class="tag tag-ok">노출</span></div>
+          <div class="nav-item"><span>📹 점수판 스캔 (/scan_score)</span><span class="tag tag-ok">노출</span></div>
+          <div class="nav-item"><span>🀄 대기열 &amp; 자리 추첨 (/queue)</span><span class="tag tag-ok">추가됨</span></div>
+          <div class="nav-item nav-hidden"><span>🧪 테스트 스캔 (/scan_score_test)</span><span class="tag tag-block">제거됨</span></div>
+          <div class="nav-item"><span>ℹ️ 소개</span><span class="tag tag-ok">노출</span></div>
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+          <div>• <strong>대기열 (/queue)</strong>: 점수 스캔 버튼 ➔ <code>/scan_score</code> 이동</div>
+          <div>• <strong>착석 (/seat)</strong>: 자동 카운트다운/버튼 ➔ <code>/scan_score</code> 이동</div>
+          <div>• <strong>점수 입력 (/scan_score)</strong>: 🧪 테스트 Lab 전환 탭 비노출</div>
+        </div>
+      </div>
+
+      <!-- 개발자 온디맨드 뷰 -->
+      <div class="card">
+        <h2>
+          <span>🧪 개발자 온디맨드 뷰</span>
+          <span class="badge badge-dev">Developer Mode</span>
+        </h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+          URL 직접 접속(<code>/scan_score_test</code> 또는 <code>?testMode=true</code>) 시 모든 테스트 기능이 활성화됩니다.
+        </p>
+        <div class="nav-preview">
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: bold;">[개발자 랩 기능 정상 가동]</div>
+          <div class="nav-item nav-active"><span>🧪 PC 전송 테스트 브리지 (8899)</span><span class="tag tag-ok">정상</span></div>
+          <div class="nav-item"><span>🔬 작탁 기종 진단 (REX 3 / JP-EX)</span><span class="tag tag-ok">정상</span></div>
+          <div class="nav-item"><span>📡 테이블 1 실시간 웹소켓/폴링 연동</span><span class="tag tag-ok">정상</span></div>
+          <div class="nav-item"><span>🔄 원본 프레임 90도 회전/진단 패널</span><span class="tag tag-ok">정상</span></div>
+          <div class="nav-item"><span>📹 일반 서비스 복귀 링크 노출</span><span class="tag tag-ok">정상</span></div>
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+          <div>• <strong>파라미터 지원</strong>: <code>dropUrl</code>, <code>dropPin</code>, <code>device</code> 자동 연동</div>
+          <div>• <strong>다기종 지원</strong>: <code>rex3</code>, <code>jpex</code>, <code>jpcolor</code> 기기별 디렉터리 분기</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 원클릭 모바일 테스트 세션 번들 오케스트레이션 -->
+    <div class="flow-box">
+      <h2 style="font-size: 16px; margin-bottom: 14px; color: var(--accent);">
+        ⚡ 원클릭 모바일 테스트 세션 번들 워크플로우 (Orchestration)
+      </h2>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>개발자 트리거 요청</h3>
+          <p>채팅창에 <strong>"모바일 테스트 서버 열어줘"</strong> 또는 <strong>"테스트 세션 시작"</strong> 입력</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>자동 백그라운드 번들 구동 (scripts/start-test-session.ps1)</h3>
+          <p>React 개발 서버(3000) 및 mobile-drop 파이썬 수신기(8899) 동시 구동 + Cloudflare 듀얼 터널 자동 연결</p>
+          <div class="code-box">
+            pwsh.exe -File scripts/start-test-session.ps1 -Port 3000 -DropPort 8899 -Device rex3
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>세션 메타데이터 (.test-session.json) 생성</h3>
+          <p>실행 중인 프로세스들의 PID와 터널 URL을 저장하여 추후 안전한 일괄 종료를 보장합니다.</p>
+          <table class="meta-table">
+            <tr><th>항목</th><th>설명</th></tr>
+            <tr><td><code>web_tunnel_url</code></td><td>React 개발 서버 Cloudflare HTTPS 공개 URL</td></tr>
+            <tr><td><code>drop_tunnel_url</code></td><td>mobile-drop 수신 서버 Cloudflare HTTPS 공개 URL</td></tr>
+            <tr><td><code>pin</code></td><td>6자리 난수 보안 인증 PIN</td></tr>
+            <tr><td><code>pids</code></td><td>Node.js(3000), Python(8899), cloudflared 2기 PID 기록</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>원클릭 모바일 테스트 URL 즉시 제공</h3>
+          <p>모바일 브라우저에서 탭하는 즉시 PC 수신기와 페어링 완료 상태로 스캔 랩이 열립니다.</p>
+          <div class="code-box">
+            https:&#47;&#47;&lt;web-tunnel&gt;.trycloudflare.com/scan_score_test?dropUrl=https:&#47;&#47;&lt;drop-tunnel&gt;.trycloudflare.com/upload&amp;dropPin=123456&amp;device=rex3
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h3>안전한 세션 일괄 종료 (scripts/stop-test-session.ps1)</h3>
+          <p>테스트 완료 후 <strong>"서버 닫아줘"</strong> 요청 시 .test-session.json의 PID를 기반으로 모든 프로세스를 즉시 강제 종료하고 정리합니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

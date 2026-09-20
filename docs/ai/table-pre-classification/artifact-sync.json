@@ -1,0 +1,34 @@
+{
+  "schema_version": 3,
+  "artifact_mode": "canonical",
+  "work_id": "table-pre-classification",
+  "artifact_revision": "2",
+  "artifacts": {
+    "intent": {
+      "path": "intent.md",
+      "sha256": "4775f0228d0ad0b3b8cfb0191545ba25a0557c9350a5332a0d89ebedd74af567",
+      "content_sha256": "4037bbcbf6871f28b36e9ad9e57a6bbe2b74b3e50d2e497983e2c4e294d471b8"
+    },
+    "spec": {
+      "path": "spec.md",
+      "sha256": "ae80dde70ea640977d2e85a3560b71d58a871f8147cd40b11885c1287e0513b1",
+      "content_sha256": "0f356e14ad9d884f8fc9ba59523c28ce210030da3084c4ff81a3537cda7f3663"
+    },
+    "plan": {
+      "path": "plan.md",
+      "sha256": "0b8fc6635fd18d389095114d5db264263a7bd6097b30ca78ebe3224de9b1fe3d",
+      "content_sha256": "dd96e250b5436c2f7dea8c2d1befa445371103cb88c3f740b434065d16aee161"
+    },
+    "evidence": {
+      "path": "evidence.md",
+      "sha256": "cbb2c6069459dd0b522ec20e654f7a44a56d98c1a52a39ff4485afc174665c88",
+      "content_sha256": "3846306d843bd3192752257fc20b13bea03b0e4c87e8fe1ee3127b7a18827268"
+    }
+  },
+  "preview": {
+    "path": "expected-outcome.html",
+    "source": "intent.md",
+    "source_revision": "2",
+    "sha256": "c1f9904ca760d15635d46465eb1699f29910437bf5216a77cf1e1f501d01b715"
+  }
+}

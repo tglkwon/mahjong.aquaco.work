@@ -46,4 +46,27 @@ describe('App routing and navigation', () => {
     const titleElements = screen.getAllByText((c) => c.includes('점수 스캔 테스트 랩'));
     expect(titleElements.length).toBeGreaterThan(0);
   });
+
+  test('renders test mode on /scan_score when ?testMode=true query parameter is present', () => {
+    window.history.pushState({}, '', '/scan_score?testMode=true');
+    render(<App />);
+    // In test mode via query param, PC transfer bridge button and test banner should be present
+    expect(screen.getByText(/PC 전송 모드/i)).toBeInTheDocument();
+    expect(screen.getByText(/테이블 1 실시간 연동 중/i)).toBeInTheDocument();
+  });
+
+  test('sidebar navigation contains /queue and does not contain /scan_score_test or /seat', () => {
+    window.history.pushState({}, '', '/');
+    render(<App />);
+    // Click menu button in Header to open Sidebar
+    const menuBtn = screen.getByRole('button', { name: '메뉴' });
+    menuBtn.click();
+
+    // Verify /queue is present
+    expect(screen.getByText(/대기열 & 자리 추첨/i)).toBeInTheDocument();
+
+    // Verify /scan_score_test and /seat are not present
+    expect(screen.queryByText(/테스트 스캔/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/좌석 착석/i)).not.toBeInTheDocument();
+  });
 });

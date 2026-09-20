@@ -1,0 +1,16 @@
+{
+  "name": "mahjong-session-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test db.test.js index.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mahjong.aquaco.work": "file:.."
+  }
+}

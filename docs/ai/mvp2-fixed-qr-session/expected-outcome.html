@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ko" data-work-id="mvp2-fixed-qr-session" data-artifact-revision="4" data-intent-sha256="3c10122b839a16661af9a298c0ad424c14f6158449a2b0035cc01654ff6eae21" data-intent-ko-sha256="1dcc6a4b3a5236b099d49bb5670ff3b42b4334263de5033e288729ce83cf5ad3">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <title>대탁 초경량 세션 연동 시스템 예상 시각화</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-green: #4ade80;
+      --accent-amber: #fbbf24;
+      --accent-rose: #fb7185;
+      --accent-purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px 16px 48px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding: 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .badge-primary {
+      background-color: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    p.lead {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .flow-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .flow-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 8px;
+    }
+    .cycle-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .cycle-step {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      position: relative;
+    }
+    .step-num {
+      width: 24px;
+      height: 24px;
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 800;
+      font-size: 12px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+    }
+    .step-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .step-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .mockup-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .mockup-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .phone-frame {
+      background: #090d16;
+      border: 2px solid #334155;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .phone-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .seat-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      color: var(--accent-green);
+      font-weight: 700;
+      font-size: 13px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .btn-action {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 14px;
+      border-radius: 10px;
+      text-align: center;
+      border: none;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+    .btn-action.fast {
+      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+    }
+    .btn-action.secondary {
+      background: #334155;
+      color: #e2e8f0;
+      box-shadow: none;
+      font-size: 12px;
+      padding: 8px;
+    }
+    .seat-pos {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #1e293b;
+      border: 1px solid #334155;
+    }
+    .seat-pos.active {
+      background: rgba(74, 222, 128, 0.2);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+    .seat-pos.waiting {
+      background: rgba(251, 191, 36, 0.2);
+      border-color: var(--accent-amber);
+      color: var(--accent-amber);
+    }
+    .status-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .status-ready {
+      background: rgba(74, 222, 128, 0.2);
+      color: var(--accent-green);
+    }
+    .status-waiting {
+      background: rgba(251, 191, 36, 0.2);
+      color: var(--accent-amber);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .data-table th, .data-table td {
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .data-table th {
+      background: #0f172a;
+      color: var(--text-muted);
+    }
+    .callout {
+      background: rgba(56, 189, 248, 0.08);
+      border-left: 4px solid var(--accent);
+      padding: 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 12px;
+      color: #e2e8f0;
+      margin-top: 12px;
+    }
+    .callout-success {
+      background: rgba(74, 222, 128, 0.08);
+      border-left-color: var(--accent-green);
+    }
+    .callout-warn {
+      background: rgba(251, 191, 36, 0.08);
+      border-left-color: var(--accent-amber);
+    }
+    /* 🀄 마작패(바람패: 東, 南, 西, 北) 입체 타일 디자인 */
+    .tiles-draw-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .mahjong-tile-card {
+      background: linear-gradient(180deg, #fffdf8 0%, #f4eee1 100%);
+      border: 1px solid #d4cbb8;
+      border-bottom: 4px solid #166534; /* 마작패 녹색 등판 효과 */
+      border-radius: 10px;
+      padding: 10px 8px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      position: relative;
+    }
+    .mahjong-tile-card.highlight {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px #38bdf8, 0 4px 8px rgba(56, 189, 248, 0.3);
+    }
+    .tile-wind-char {
+      font-family: "Songti SC", "SimSun", "Noto Serif CJK KR", "Batang", serif;
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 4px;
+      text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.15);
+    }
+    .wind-east { color: #1e3a8a; } /* 東 청색 */
+    .wind-south { color: #dc2626; } /* 南 적색 */
+    .wind-west { color: #1e293b; } /* 西 흑색 */
+    .wind-north { color: #15803d; } /* 北 녹색 */
+    .tile-seat-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #475569;
+      margin-bottom: 2px;
+    }
+    .tile-player-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 6px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tile-player-name.me {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="badge badge-primary">MVP 2 System Architecture (v3)</span>
+      <h1>대탁 초경량 세션 연동 시스템</h1>
+      <p class="lead">무인증 지연 UUID 착석 ➔ 대기열 4인 마작패 자리 추첨 ➔ UmaOkaTable 실시간 연동 ➔ 정밀 경기 시간 추적 ➔ 자동 리셋</p>
+    </header>
+
+    <!-- 전체 라이프사이클 흐름 -->
+    <div class="flow-card">
+      <div class="flow-title">
+        <span>🔄</span> 전체 운영 사이클 (Game Lifecycle)
+      </div>
+      <div class="cycle-grid">
+        <div class="cycle-step">
+          <div class="step-num">1</div>
+          <div class="step-title">자리 추첨</div>
+          <div class="step-desc">/queue 디지털 자리 뽑기 또는 오프라인 추첨</div>
+        </div>
+        <div class="cycle-step">
+          <div class="step-num">2</div>
+          <div class="step-title">고정 QR 스캔</div>
+          <div class="step-desc">테이블 해당 좌석 QR 찍어 1초 원클릭 착석</div>
+        </div>
+        <div class="cycle-step">
+          <div class="step-num">3</div>
+          <div class="step-title">4인 세션 시작</div>
+          <div class="step-desc">started_at 자동 기록 및 UmaOkaTable 4인 주입</div>
+        </div>
+        <div class="cycle-step">
+          <div class="step-num">4</div>
+          <div class="step-title">점수 확정 &amp; 종료</div>
+          <div class="step-desc">[기록 추가 및 공유] 클릭 ➔ duration_seconds 산출</div>
+        </div>
+        <div class="cycle-step">
+          <div class="step-num">5</div>
+          <div class="step-title">저장 &amp; 리셋</div>
+          <div class="step-desc">SQLite 영구 저장 ➔ 테이블 자동 리셋 ➔ 1번 순환</div>
+        </div>
+      </div>
+      <div class="callout callout-success">
+        <strong>💡 핵심 가치:</strong> 자리 추첨부터 착석, 경기 소요 시간 측정, 점수 입력 및 세션 종료까지 운영자의 번거로운 수동 개입이 전혀 필요 없습니다.
+      </div>
+    </div>
+
+    <!-- UI Mockups: 착석 및 대기열 -->
+    <div class="flow-card">
+      <div class="flow-title">
+        <span>📱</span> 사용자 화면 경험 (User Experience Mockup)
+      </div>
+      <div class="mockup-container">
+        <!-- 폰 1: 좌석 착석 화면 -->
+        <div class="phone-frame">
+          <div class="phone-header">
+            <span>mahjong.aquaco.work/seat</span>
+            <span>테이블 1</span>
+          </div>
+          <div style="text-align: center; padding: 8px 0;">
+            <div class="seat-badge">🪑 [동(East)] 좌석 착석</div>
+            <p style="font-size: 12px; color: #cbd5e1; margin-bottom: 12px;">
+              환영합니다, <strong>마작왕</strong>님!
+            </p>
+            <div class="btn-action fast">
+              ⚡ 마작왕(으)로 1초 착석
+            </div>
+            <div style="margin-top: 12px;">
+              <span style="font-size: 11px; color: #94a3b8; text-decoration: underline;">[기기 등록 정보 초기화]</span>
+            </div>
+          </div>
+          <div style="margin-top: 16px; border-top: 1px solid #1e293b; padding-top: 10px;">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">현재 테이블 현황 (3/4인 착석 중)</div>
+            <div style="display: flex; gap: 4px; justify-content: space-between; font-size: 11px;">
+              <span class="seat-pos active">동: (본인)</span>
+              <span class="seat-pos active">남: 김타짜</span>
+              <span class="seat-pos active">서: 박리치</span>
+              <span class="seat-pos waiting">북: 대기중</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 폰 2: 온라인 대기열 화면 -->
+        <div class="phone-frame">
+          <div class="phone-header">
+            <span>mahjong.aquaco.work/queue</span>
+            <span>대기열</span>
+          </div>
+          <div style="padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 13px; font-weight: 700; color: #ffffff;">현재 대기 명단 (4명 모임)</span>
+              <span class="status-badge status-ready">준비 완료</span>
+            </div>
+
+            <!-- 대기 4인 마작패 자리 뽑기 기능 (바람패 입체 타일) -->
+            <div style="margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent);">🀄 4인 마작패 자리 추첨 (바람패 타일)</span>
+                <span style="font-size: 10px; color: var(--accent-green);">추첨 완료</span>
+              </div>
+              <div class="tiles-draw-container">
+                <div class="mahjong-tile-card highlight">
+                  <div class="tile-wind-char wind-east">東</div>
+                  <div class="tile-seat-label">동가 (East)</div>
+                  <div class="tile-player-name me">이역만 (나)</div>
+                </div>
+                <div class="mahjong-tile-card">
+                  <div class="tile-wind-char wind-south">南</div>
+                  <div class="tile-seat-label">남가 (South)</div>
+                  <div class="tile-player-name">최론</div>
+                </div>
+                <div class="mahjong-tile-card">
+                  <div class="tile-wind-char wind-west">西</div>
+                  <div class="tile-seat-label">서가 (West)</div>
+                  <div class="tile-player-name">정텐파이</div>
+                </div>
+                <div class="mahjong-tile-card">
+                  <div class="tile-wind-char wind-north">北</div>
+                  <div class="tile-seat-label">북가 (North)</div>
+                  <div class="tile-player-name">강화료</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="callout" style="margin-top: 10px; font-size: 11px;">
+              추첨된 좌석의 물리적 고정 QR을 찍으면 자동으로 <code>playing</code> 상태로 전환됩니다.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 점수판 자동 연동 및 세션 종료 -->
+    <div class="flow-card">
+      <div class="flow-title">
+        <span>📸</span> 기록자 화면 자동 연동 및 세션 종료 (정밀 시간 추적)
+      </div>
+      <div style="background: #090d16; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 700; color: #ffffff;">/scan_score_test (테스트 모드 활성화)</span>
+          <span style="font-size: 11px; color: var(--accent-green); font-weight: 700;">⏱️ 경기 진행 시간: 42분 18초</span>
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; font-size: 12px;">
+          <div style="flex: 1; background: #1e293b; padding: 8px; border-radius: 8px; text-align: center;">
+            <div style="color: var(--text-muted); font-size: 10px;">동(East)</div>
+            <div style="color: var(--accent-green); font-weight: 700;">마작왕</div>
+          </div>
+          <div style="flex: 1; background: #1e293b; padding: 8px; border-radius: 8px; text-align: center;">
+            <div style="color: var(--text-muted); font-size: 10px;">남(South)</div>
+            <div style="color: var(--accent-green); font-weight: 700;">김타짜</div>
+          </div>
+          <div style="flex: 1; background: #1e293b; padding: 8px; border-radius: 8px; text-align: center;">
+            <div style="color: var(--text-muted); font-size: 10px;">서(West)</div>
+            <div style="color: var(--accent-green); font-weight: 700;">박리치</div>
+          </div>
+          <div style="flex: 1; background: #1e293b; padding: 8px; border-radius: 8px; text-align: center;">
+            <div style="color: var(--text-muted); font-size: 10px;">북(North)</div>
+            <div style="color: var(--accent-green); font-weight: 700;">최국사</div>
+          </div>
+        </div>
+        <div style="background: rgba(30, 41, 59, 0.8); border: 1px dashed #475569; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 12px;">
+          <span style="font-size: 12px; color: #94a3b8;">📷 카메라 OCR 실시간 스캔 점수: 동 35,000 / 남 25,000 / 서 22,000 / 북 18,000 (합계 100,000 검증 완료)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; color: var(--accent-green);">✓ 4인 착석 및 점수 일치 확인 완료</span>
+          <div class="btn-action" style="width: auto; padding: 8px 16px; margin: 0; font-size: 12px; background: #16a34a;">
+            [기록 추가 및 공유] 클릭 ➔ 세션 종료 &amp; duration_seconds 저장
+          </div>
+        </div>
+      </div>
+      <div class="callout callout-warn">
+        <strong>⚡ 세션 종료 트리거:</strong> <strong>[기록 추가 및 공유]</strong> 버튼을 누르는 순간 <code>finished_at</code>이 기록되며 순수 플레이 소요 시간(<code>duration_seconds</code>)이 자동 산출되어 SQLite에 저장됩니다.
+      </div>
+    </div>
+
+    <!-- EC2 인프라 및 정리 체계 -->
+    <div class="flow-card">
+      <div class="flow-title">
+        <span>🛡️</span> EC2 인프라 &amp; 사후 정리 보장 체계
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>적용 기술 / 정책</th>
+            <th>보장 내용</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>백엔드</strong></td>
+            <td>Node.js Express + better-sqlite3</td>
+            <td>RAM 1GB t3.micro 최적화, 메모리 사용량 50~100MB 유지</td>
+          </tr>
+          <tr>
+            <td><strong>동시성</strong></td>
+            <td>SQLite WAL (Write-Ahead Logging)</td>
+            <td>2초 폴링 읽기 및 쓰기 락 충돌 방지, 초경량 구동</td>
+          </tr>
+          <tr>
+            <td><strong>인증 &amp; 초기화</strong></td>
+            <td>Zero-Auth + Lazy UUID + reset_{epoch}</td>
+            <td>등록 시 지연 발급, 초기화 시 홈 이동 및 닉네임 타임스탬프 비식별화</td>
+          </tr>
+          <tr>
+            <td><strong>경기 시간 분석</strong></td>
+            <td>started_at &amp; duration_seconds</td>
+            <td>4인 착석 시점부터 점수 확정까지의 순수 게임 시간 자동 측정</td>
+          </tr>
+          <tr>
+            <td><strong>데이터 보존</strong></td>
+            <td>mahjong.db 영구 보존</td>
+            <td>실전 대탁 경기 기록 절대 유실 없음</td>
+          </tr>
+          <tr>
+            <td><strong>사후 정리</strong></td>
+            <td>cleanup-test-artifacts.sh</td>
+            <td>사용자 요청 시 임시 테스트 코드, 레거시 백업 폴더, 더미 DB만 일괄 삭제</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

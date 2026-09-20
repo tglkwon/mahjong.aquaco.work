@@ -45,3 +45,14 @@ This file contains notes to help track project structure and modifications.
   - `react-scripts test`는 비동기 타이머(`setTimeout` 등)나 Jest 워커 스레드로 인해 테스트 완료 후에도 프로세스가 종료되지 않는 오픈 핸들 현상이 있습니다.
   - 단위 테스트 실행 시 항상 `--watchAll=false --forceExit` 플래그를 사용하십시오 (`package.json`의 `"test"` 스크립트에 기본 설정됨).
   - 대화형 감시 모드가 필요한 경우에만 `"test:watch"`를 사용하십시오.
+
+## Mobile Test Session Bundle Operations (모바일 테스트 세션 운영)
+
+- **표준 트리거 키워드 및 실행 절차:**
+  - **세션 시작 ("모바일 테스트 서버 열어줘", "테스트 세션 시작"):**
+    - `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/start-test-session.ps1 -Device rex3`
+    - React 개발 서버(포트 3000), mobile-drop 수신기(포트 8899), Cloudflare 듀얼 터널이 백그라운드 구동되고 `.test-session.json`에 메타데이터가 기록됩니다.
+    - 콘솔에 출력된 사전 주입 링크(`https://<web-tunnel>.trycloudflare.com/scan_score_test?dropUrl=https://<drop-tunnel>.trycloudflare.com/upload&dropPin=...&device=rex3`)를 모바일 브라우저에서 탭하여 원클릭 테스트를 시작합니다.
+  - **세션 종료 ("서버 닫아줘", "테스트 종료"):**
+    - `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/stop-test-session.ps1`
+    - `.test-session.json`의 PID를 기반으로 Node.js, Python, Cloudflared 프로세스를 일괄 안전 종료하고 세션 파일을 정리합니다.

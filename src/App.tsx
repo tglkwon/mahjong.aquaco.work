@@ -2,8 +2,10 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import MainPage from './components/MainPage';
 import ScorePage from './components/ScorePage';
-import ScorePhotoInputPage from './components/ScorePhotoInputPage';
+import ScoreScanPage from './components/ScoreScanPage';
 import AboutPage from './components/AboutPage';
+import SeatCheckinPage from './components/SeatCheckinPage';
+import QueuePage from './components/QueuePage';
 import Layout from './components/Layout'; // Layout 컴포넌트 임포트
 import useTranslation from './hooks/useTranslation'; // 다국어 상태 관리를 위해 훅을 임포트합니다.
 import './App.css'; // Assuming you have global styles here
@@ -87,7 +89,7 @@ function App() {
               setCurrentLanguage={setCurrentLanguage}
               getText={getText}
             >
-              <ScorePhotoInputPage
+              <ScoreScanPage
                 currentLanguage={currentLanguage}
                 setCurrentLanguage={setCurrentLanguage}
                 getText={getText}
@@ -108,7 +110,7 @@ function App() {
               setCurrentLanguage={setCurrentLanguage}
               getText={getText}
             >
-              <ScorePhotoInputPage
+              <ScoreScanPage
                 currentLanguage={currentLanguage}
                 setCurrentLanguage={setCurrentLanguage}
                 getText={getText}
@@ -127,6 +129,36 @@ function App() {
         <Route
           path="/set_score_photo"
           element={<LegacyPhotoRedirect />}
+        />
+        {/* 고정 QR 좌석 착석 라우트 */}
+        <Route
+          path="/seat"
+          element={
+            <Layout
+              title="좌석 착석"
+              showHomeButton={true}
+              currentLanguage={currentLanguage}
+              setCurrentLanguage={setCurrentLanguage}
+              getText={getText}
+            >
+              <SeatCheckinPage />
+            </Layout>
+          }
+        />
+        {/* 대기열 및 4인 자리 추첨 라우트 */}
+        <Route
+          path="/queue"
+          element={
+            <Layout
+              title="대기열 및 자리 추첨"
+              showHomeButton={true}
+              currentLanguage={currentLanguage}
+              setCurrentLanguage={setCurrentLanguage}
+              getText={getText}
+            >
+              <QueuePage />
+            </Layout>
+          }
         />
         {/* 서비스 정보 페이지 라우트 */}
         <Route

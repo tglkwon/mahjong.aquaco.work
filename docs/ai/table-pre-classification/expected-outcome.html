@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko" data-work-id="table-pre-classification" data-artifact-revision="2" data-intent-sha256="4775f0228d0ad0b3b8cfb0191545ba25a0557c9350a5332a0d89ebedd74af567">
+<head>
+  <meta charset="utf-8" />
+  <title>작탁 기종 사전 자동 판별 알고리즘 프리뷰</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 24px; line-height: 1.6; }
+    .container { max-width: 860px; margin: 0 auto; }
+    header { margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    h1 { font-size: 22px; color: var(--accent); margin-bottom: 8px; }
+    p.lead { color: var(--text-muted); font-size: 14px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .card h2 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: bold; }
+    .badge-rexx { background: rgba(34, 197, 94, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-jpex { background: rgba(245, 158, 11, 0.2); color: var(--amber); border: 1px solid var(--amber); }
+    .led-box { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 13px; }
+    .led-dot { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+    .led-green { background: #22c55e; color: #22c55e; }
+    .led-amber { background: #f59e0b; color: #f59e0b; }
+    .flow-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .step { display: flex; gap: 14px; margin-bottom: 14px; }
+    .step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0; }
+    .step-body h3 { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+    .step-body p { font-size: 12px; color: var(--text-muted); }
+    .mockup-ui { background: #fff; color: #000; border-radius: 8px; padding: 14px; font-size: 12px; margin-top: 10px; }
+    .mockup-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 8px; }
+    .auto-tag { background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .select-mock { border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; font-size: 12px; width: 100%; background: #f8fafc; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>작탁 기종 사전 자동 판별 알고리즘 (Pre-classifier)</h1>
+      <p class="lead">카메라가 켜지는 순간 영상 속 CHECK LED 위치와 색상을 0.01초 내에 감지하여 REXX 3 또는 JP-EX를 자동 선택하고, 필요한 경우 사용자가 수동으로 변경할 수 있는 스마트 파이프라인입니다.</p>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h2><span class="badge badge-rexx">REXX 3 판별 지표</span> AMOS REXX 3</h2>
+        <div class="led-box">
+          <div class="led-dot led-green"></div>
+          <div><strong>좌측 상단 녹색 LED</strong>: CHECK 표시등이 좌측 상단에 위치</div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+          • 하단 4자리 표시 (1자리 순위 + 3자리 점수)<br />
+          • 매끄러운 단색 플라스틱 베젤 및 순위 화살표 인쇄
+        </p>
+      </div>
+
+      <div class="card">
+        <h2><span class="badge badge-jpex">JP-EX 판별 지표</span> AMOS JP-EX</h2>
+        <div class="led-box">
+          <div class="led-dot led-amber"></div>
+          <div><strong>우측 상단 주황색 LED</strong>: CHECK 표시등이 우측 상단에 위치</div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+          • 3자리 100점 단위 전용 (1만점 미만은 2자리 Zero-blanking)<br />
+          • 카본 격자 무늬 페이스플레이트 및 곡선형 타원 베젤
+        </p>
+      </div>
+    </div>
+
+    <div class="flow-box">
+      <h2 style="font-size: 16px; margin-bottom: 16px;">스캔 및 자동 전환 흐름 (UX Flow)</h2>
+      
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>기본값 로드 및 카메라 초기화</h3>
+          <p>사용자가 이전에 사용한 기종(또는 REXX 3 기본값)으로 초기 시작합니다.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>프레임 사전 분류기 (Pre-classifier) 1회 실행</h3>
+          <p>카메라가 점수판을 비추면 상단 LED 영역을 스캔하여 녹색(좌) vs 주황색(우)을 5ms 내에 판별합니다.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>기종 자동 동기화 &amp; 수동 오버라이드 유지</h3>
+          <p>JP-EX가 감지되면 UI 드롭다운이 <code>AMOS JP-EX</code>로 자동 전환되고 사용자에게 피드백을 제공합니다. 사용자가 드롭다운을 직접 변경하면 자동 전환이 중단되고 수동 선택값이 우선합니다.</p>
+          
+          <div class="mockup-ui">
+            <div class="mockup-header">
+              <span>작탁 기종 선택</span>
+              <span class="auto-tag">✨ 자동 감지됨: AMOS JP-EX</span>
+            </div>
+            <div class="select-mock">AMOS JP-EX (3자리 백단위 표기) [선택됨]</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>전용 OCR 파서 실행 &amp; 자동 캡처</h3>
+          <p>확정된 기종의 전용 규칙(순위 슬라이싱 여부, 2~4자리 필터링)에 맞춰 고속 OCR 및 합계 100,000점 검증이 진행됩니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

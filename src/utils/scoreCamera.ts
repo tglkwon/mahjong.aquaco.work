@@ -1,5 +1,6 @@
 import { LocalFrame } from './scoreMedia';
-import { recognizeScoreboard, ScoreCandidate } from './scoreRecognition';
+import { recognizeScoreboard, ScoreCandidate, TableModel } from './scoreRecognition';
+import { classifyTableModel } from './tableClassifier';
 import { validateScoreDraft } from './scoreDraft';
 import { createScoreStabilityTracker } from './scoreStability';
 
@@ -9,6 +10,8 @@ interface ScanOptions {
   expected: string;
   players: number[];
   playerCount: number;
+  model?: TableModel;
+  onModelDetected?: (model: TableModel) => void;
   stabilityThreshold?: { count?: number; spanMs?: number };
   onReading: (reading: ScoreCandidate[], count: number) => void;
   onCapture: (frame: LocalFrame, reading: ScoreCandidate[]) => void;
@@ -27,6 +30,8 @@ export function startScoreCamera(video: HTMLVideoElement, options: ScanOptions):
   const countThreshold = options.stabilityThreshold?.count ?? 3;
   const spanMsThreshold = options.stabilityThreshold?.spanMs ?? 200;
   const tracker = createScoreStabilityTracker(countThreshold, spanMsThreshold, 1500);
+  let currentModel: TableModel = options.model ?? 'amos_rexx3';
+  let modelDetected = false;
   let stream: MediaStream | undefined;
   let recorder: MediaRecorder | undefined;
   let recordedChunks: Blob[] = [];
@@ -91,7 +96,16 @@ export function startScoreCamera(video: HTMLVideoElement, options: ScanOptions):
       const context = canvas.getContext('2d', { willReadFrequently: true });
       if (!context) throw new Error('이 브라우저에서 영상 처리를 사용할 수 없습니다.');
       context.drawImage(video, 0, sy, video.videoWidth, sHeight, 0, 0, width, height);
-      const reading = recognizeScoreboard(context.getImageData(0, 0, width, height), 'amos_rexx3');
+      const imageData = context.getImageData(0, 0, width, height);
+      if (options.onModelDetected && !modelDetected) {
+        const detected = classifyTableModel(imageData);
+        if (detected.model && detected.confidence >= 0.8) {
+          modelDetected = true;
+          currentModel = detected.model;
+          options.onModelDetected(detected.model);
+        }
+      }
+      const reading = recognizeScoreboard(imageData, currentModel);
       const draft = validateScoreDraft(reading.map(value => value.raw), options.unit, options.expected, options.players, options.playerCount);
       // Confidence is a fixed recognizer flag, not a calibrated probability. Require temporal agreement too.
       const stable = tracker.observe(draft.scores, now, draft.valid && reading.every(value => value.raw !== ''));

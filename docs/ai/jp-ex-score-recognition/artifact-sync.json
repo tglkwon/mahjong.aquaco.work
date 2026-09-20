@@ -1,0 +1,34 @@
+{
+  "schema_version": 3,
+  "artifact_mode": "canonical",
+  "work_id": "jp-ex-score-recognition",
+  "artifact_revision": "2",
+  "artifacts": {
+    "intent": {
+      "path": "intent.md",
+      "sha256": "7f1313ffa6164dafda70bc63dbf2334c637e99721032946cc14b2cd3cdf7503b",
+      "content_sha256": "66b08dab77b3f73d4dc958b34d726fc6003e7dae5c07c811740497df5c968eb3"
+    },
+    "spec": {
+      "path": "spec.md",
+      "sha256": "088a3754f11cfb42f2fba400887c00de5a0f4f5d5ffa2330c6a02a5c07103ae7",
+      "content_sha256": "cbd5804e0acbba6c991d241b450bc01170a191cca2f8cb666c28c5bc48de0c9f"
+    },
+    "plan": {
+      "path": "plan.md",
+      "sha256": "4002cc0fd027f67bcf7a51bc88388d0efa19c95443a5a588c4077c6c85862aad",
+      "content_sha256": "2c28e4f23c2c289dc5237fcc1750954d873ebfdcbfb11a3e5266c871dd239980"
+    },
+    "evidence": {
+      "path": "evidence.md",
+      "sha256": "db9db30c3175761f9070c11f04fe847d7d88958c1950476815282c12eca95358",
+      "content_sha256": "6ef7844c3feac405ee59cfe8d0d309972a4ce0ec7d54d00e6d11e891d03d0c6e"
+    }
+  },
+  "preview": {
+    "path": "expected-outcome.html",
+    "source": "intent.md",
+    "source_revision": "2",
+    "sha256": "078086a157a897c9a7884e47dd6adf6add74ac222e789a37d7603fdb5ba30821"
+  }
+}

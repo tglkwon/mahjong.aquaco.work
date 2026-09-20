@@ -30,7 +30,9 @@ export function cleanServerUrl(url: string): string {
   if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
     cleaned = 'https://' + cleaned;
   }
-  return cleaned.replace(/\/+$/, '');
+  cleaned = cleaned.replace(/\/+$/, '');
+  cleaned = cleaned.replace(/\/upload$/, '');
+  return cleaned;
 }
 
 /**

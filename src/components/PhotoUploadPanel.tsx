@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Translation } from '../i18n/translations';
 import { framePixels, LocalFrame, rotateFrame } from '../utils/scoreMedia';
-import { recognizeScoreboard, ScoreCandidate } from '../utils/scoreRecognition';
+import { recognizeScoreboard, ScoreCandidate, TableModel } from '../utils/scoreRecognition';
 import { startScoreCamera } from '../utils/scoreCamera';
 import { checkDropStatus, uploadToMobileDrop } from '../utils/mobileDropClient';
 
@@ -25,8 +25,8 @@ interface PhotoUploadPanelProps {
   onConfirm?: (scores: string[], players: number[]) => void;
   onScoresRecognized?: (scores: { east: string; south: string; west: string; north: string }) => void;
   isTestMode?: boolean;
+  defaultTableModel?: TableModel;
 }
-const tableModel = 'amos_rexx3';
 const blank = () => ['', '', '', ''];
 const button = 'border rounded px-4 py-2 bg-blue-50 text-blue-900 disabled:opacity-50';
 
@@ -38,7 +38,26 @@ function PhotoUploadPanel({
   targetTotalScore,
   onScoresRecognized,
   isTestMode = false,
+  defaultTableModel,
 }: PhotoUploadPanelProps) {
+  const [tableModel, setTableModel] = useState<TableModel>(() => {
+    try {
+      const saved = localStorage.getItem('mahjong_table_model');
+      if (saved === 'amos_jp_ex' || saved === 'amos_rexx3') return saved;
+    } catch {}
+    return defaultTableModel || 'amos_rexx3';
+  });
+  const [detectedModel, setDetectedModel] = useState<TableModel | null>(null);
+  const [isManualOverride, setIsManualOverride] = useState<boolean>(false);
+
+  const handleModelChange = (newModel: TableModel) => {
+    setIsManualOverride(true);
+    setDetectedModel(null);
+    setTableModel(newModel);
+    try {
+      localStorage.setItem('mahjong_table_model', newModel);
+    } catch {}
+  };
   const [frames, setFrames] = useState<LocalFrame[]>([]);
   const [results, setResults] = useState<ScoreCandidate[][]>([]);
   const [selected, setSelected] = useState(0);
@@ -217,6 +236,17 @@ function PhotoUploadPanel({
     setStatus('카메라를 여는 중입니다. 스마트폰을 세로로 들고 점수판을 비춰 주세요.');
     const cancel = startScoreCamera(videoRef.current, {
       signal: abort.signal, unit, expected, players: [...players], playerCount: playerNames.length,
+      model: tableModel,
+      onModelDetected: (detected: TableModel) => {
+        if (token !== job.current) return;
+        if (!isManualOverride) {
+          setTableModel(detected);
+          setDetectedModel(detected);
+          try {
+            localStorage.setItem('mahjong_table_model', detected);
+          } catch {}
+        }
+      },
       onReading: (reading, count) => {
         if (token !== job.current) return;
         setConsensusCount(Math.min(3, Math.max(0, count)));
@@ -483,20 +513,45 @@ function PhotoUploadPanel({
       </div>
     )}
 
-    <div className="flex flex-wrap items-center gap-3">
-      <button type="button" className="rounded-lg bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 font-semibold text-base shadow-sm disabled:opacity-50" onClick={beginScan} disabled={busy}>실시간 스캔 시작</button>
-      {scanning && <button type="button" className="border rounded-lg px-4 py-2 bg-red-50 text-red-700 border-red-200 font-medium" onClick={manual}>스캔 중지</button>}
-      <button type="button" className={button} onClick={manual}>직접 입력</button>
-      {isTestMode && dropConfig.enabled && (frames.length > 0 || currentFile) && (
-        <button
-          type="button"
-          className="border rounded px-4 py-2 bg-emerald-50 text-emerald-900 border-emerald-300 font-medium hover:bg-emerald-100 disabled:opacity-50"
-          onClick={handleManualDrop}
-          disabled={busy || uploadState.uploading}
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className="rounded-lg bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 font-semibold text-base shadow-sm disabled:opacity-50" onClick={beginScan} disabled={busy}>실시간 스캔 시작</button>
+        {scanning && <button type="button" className="border rounded-lg px-4 py-2 bg-red-50 text-red-700 border-red-200 font-medium" onClick={manual}>스캔 중지</button>}
+        <button type="button" className={button} onClick={manual}>직접 입력</button>
+        {isTestMode && dropConfig.enabled && (frames.length > 0 || currentFile) && (
+          <button
+            type="button"
+            className="border rounded px-4 py-2 bg-emerald-50 text-emerald-900 border-emerald-300 font-medium hover:bg-emerald-100 disabled:opacity-50"
+            onClick={handleManualDrop}
+            disabled={busy || uploadState.uploading}
+          >
+            📤 PC로 전송
+          </button>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <label htmlFor="table-model-select" className="text-xs font-semibold text-gray-700">작탁 기종:</label>
+        <select
+          id="table-model-select"
+          aria-label="작탁 기종 선택"
+          className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs bg-white font-medium text-gray-800"
+          value={tableModel}
+          onChange={e => handleModelChange(e.target.value as TableModel)}
+          disabled={busy || scanning}
         >
-          📤 PC로 전송
-        </button>
-      )}
+          <option value="amos_rexx3">AMOS REXX 3 (4자리 / 순위 내장)</option>
+          <option value="amos_jp_ex">AMOS JP-EX (2~3자리 / 다이아몬드)</option>
+        </select>
+        {detectedModel && !isManualOverride && (
+          <span
+            data-testid="auto-detected-badge"
+            className="bg-emerald-100 text-emerald-800 text-[11px] px-2 py-0.5 rounded-full font-bold border border-emerald-300 animate-pulse"
+          >
+            ✨ 자동 감지됨
+          </span>
+        )}
+      </div>
     </div>
 
     <p role="status" aria-live="polite" className="text-sm text-gray-700 font-medium">{status}</p>
@@ -589,7 +644,9 @@ function PhotoUploadPanel({
         </div>}
       </div>
       <p className="text-sm text-gray-600">
-        AMOS REXX 3: 아래쪽 큰 표시의 맨 왼쪽 순위 숫자는 점수에서 제외합니다. 위치별 플레이어를 확인해 주세요.
+        {tableModel === 'amos_jp_ex'
+          ? 'AMOS JP-EX: 전 좌석 3자리(100점 단위) 다이아몬드 배치입니다. 10,000점 미만은 2자리로 표기됩니다.'
+          : 'AMOS REXX 3: 아래쪽 큰 표시의 맨 왼쪽 순위 숫자는 점수에서 제외합니다. 위치별 플레이어를 확인해 주세요.'}
       </p>
     </div>}
   </section>;
