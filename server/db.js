@@ -80,6 +80,19 @@ function initDb(customPath = null) {
       recorded_at TEXT NOT NULL,
       raw_payload TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS session_score_submissions (
+      submission_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      client_id TEXT NOT NULL,
+      seat TEXT NOT NULL,
+      device_name TEXT,
+      scores TEXT NOT NULL,
+      confidence REAL NOT NULL,
+      submitted_at TEXT NOT NULL,
+      is_canonical INTEGER DEFAULT 0,
+      FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+    );
   `);
 
   // Ensure default table 1 exists

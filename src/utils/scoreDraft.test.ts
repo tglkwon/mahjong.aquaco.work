@@ -26,3 +26,13 @@ test('accepts negative scores, zero and explicit alternate target; rejects overf
   expect(check(['999999999999999999', '0', '0', '0']).valid).toBe(false);
   expect(check(['50000000000000', '0', '0', '0'], 100, '5000000000000000').valid).toBe(false);
 });
+
+test('auto-corrects single digit 0-vs-8 optical flare ambiguity via 100k backtracking solver', () => {
+  // Digit 0 misclassified as 8 in 250 -> 258 (sum is 100800 instead of 100000)
+  // Backtracking solver identifies 258 -> 250 as the unique solution matching 100,000.
+  const res = check(['350', '258', '220', '180']);
+  expect(res.valid).toBe(true);
+  expect(res.scores).toEqual(['35000', '25000', '22000', '18000']);
+  expect(res.total).toBe(100000);
+});
+

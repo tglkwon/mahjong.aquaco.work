@@ -84,6 +84,52 @@ function createApp(dbInstance = null) {
     });
   });
 
+  let latestDrawCache = null;
+
+  function getLatestDrawForTable(tableId = 1) {
+    if (latestDrawCache && latestDrawCache.table_id === tableId) {
+      return latestDrawCache;
+    }
+    const table = db.prepare('SELECT * FROM tables WHERE table_id = ?').get(tableId);
+    if (!table || !table.current_session_id) return null;
+    const session = db.prepare('SELECT * FROM sessions WHERE session_id = ?').get(table.current_session_id);
+    if (!session || session.status !== 'active') return null;
+
+    const seats = db.prepare(`
+      SELECT ss.seat, ss.client_id, c.nickname
+      FROM session_seats ss
+      LEFT JOIN clients c ON ss.client_id = c.client_id
+      WHERE ss.session_id = ?
+    `).all(session.session_id);
+
+    if (seats.length === 4) {
+      const windMap = {
+        east: { wind_char: '東', seat_label: '동가 (East)' },
+        south: { wind_char: '南', seat_label: '남가 (South)' },
+        west: { wind_char: '西', seat_label: '서가 (West)' },
+        north: { wind_char: '北', seat_label: '북가 (North)' },
+      };
+      const draw = ['east', 'south', 'west', 'north'].map(s => {
+        const row = seats.find(r => r.seat === s) || {};
+        return {
+          seat: s,
+          wind_char: windMap[s].wind_char,
+          seat_label: windMap[s].seat_label,
+          client_id: row.client_id,
+          nickname: row.nickname || '익명',
+        };
+      });
+      latestDrawCache = {
+        table_id: tableId,
+        session_id: session.session_id,
+        draw,
+        drawn_at: session.started_at || session.created_at,
+      };
+      return latestDrawCache;
+    }
+    return null;
+  }
+
   // Helper: Get or create active session for table
   function getOrCreateTableSession(tableId) {
     let table = db.prepare('SELECT * FROM tables WHERE table_id = ?').get(tableId);
@@ -145,6 +191,24 @@ function createApp(dbInstance = null) {
 
     const occupiedCount = Object.values(seats).filter(Boolean).length;
 
+    // Multi-device submissions for this session
+    const submissions = db.prepare(`
+      SELECT submission_id, client_id, seat, device_name, scores, confidence, submitted_at, is_canonical
+      FROM session_score_submissions
+      WHERE session_id = ?
+      ORDER BY submission_id ASC
+    `).all(session.session_id);
+
+    const canonicalSubmission = submissions.find(s => s.is_canonical === 1);
+    let canonicalScore = null;
+    if (canonicalSubmission) {
+      try {
+        canonicalScore = typeof canonicalSubmission.scores === 'string'
+          ? JSON.parse(canonicalSubmission.scores)
+          : canonicalSubmission.scores;
+      } catch {}
+    }
+
     res.json({
       table_id: tableId,
       session_id: session.session_id,
@@ -154,6 +218,16 @@ function createApp(dbInstance = null) {
       finished_at: session.finished_at,
       occupied_count: occupiedCount,
       seats,
+      canonical_score: canonicalScore,
+      submissions_count: submissions.length,
+      submissions: submissions.map(s => ({
+        client_id: s.client_id,
+        seat: s.seat,
+        device_name: s.device_name,
+        confidence: s.confidence,
+        is_canonical: s.is_canonical === 1,
+        submitted_at: s.submitted_at,
+      })),
     });
   });
 
@@ -246,7 +320,8 @@ function createApp(dbInstance = null) {
       WHERE status = 'waiting'
       ORDER BY enqueued_at ASC
     `).all();
-    res.json({ count: list.length, queue: list });
+    const latestDraw = getLatestDrawForTable(1);
+    res.json({ count: list.length, queue: list, latest_draw: latestDraw });
   });
 
   // 8. Join Queue
@@ -290,6 +365,24 @@ function createApp(dbInstance = null) {
 
   // 10. 4-Player Digital Seat Draw (3D Wind Tile Allocation)
   app.post('/api/queue/draw-seats', (req, res) => {
+    const tableId = parseInt(req.body.table_id || 1, 10);
+    const session = getOrCreateTableSession(tableId);
+
+    // Idempotency: return active draw if 4 seats are already occupied
+    const existingSeats = db.prepare(`
+      SELECT ss.seat, ss.client_id, c.nickname
+      FROM session_seats ss
+      LEFT JOIN clients c ON ss.client_id = c.client_id
+      WHERE ss.session_id = ?
+    `).all(session.session_id);
+
+    if (existingSeats.length === 4 && session.status === 'active') {
+      const activeDraw = getLatestDrawForTable(tableId);
+      if (activeDraw) {
+        return res.json({ success: true, ...activeDraw, idempotent: true });
+      }
+    }
+
     const waitingList = db.prepare(`
       SELECT client_id, nickname FROM queue WHERE status = 'waiting' ORDER BY enqueued_at ASC LIMIT 4
     `).all();
@@ -315,13 +408,117 @@ function createApp(dbInstance = null) {
       { seat: 'north', wind_char: '北', seat_label: '북가 (North)' },
     ];
 
+    const now = new Date().toISOString();
     const draw = windTiles.map((wind, idx) => ({
       ...wind,
       client_id: shuffled[idx].client_id,
       nickname: shuffled[idx].nickname,
     }));
 
-    res.json({ success: true, draw });
+    // Atomic DB execution
+    const runTransaction = db.transaction(() => {
+      // 1. Claim seats
+      const insertSeat = db.prepare(`
+        INSERT OR REPLACE INTO session_seats (session_id, seat, client_id, joined_at)
+        VALUES (?, ?, ?, ?)
+      `);
+      draw.forEach(d => {
+        insertSeat.run(session.session_id, d.seat, d.client_id, now);
+      });
+
+      // 2. Update queue status for the 4 players to 'playing'
+      const updateQueue = db.prepare(`
+        UPDATE queue SET status = 'playing', updated_at = ? WHERE client_id = ?
+      `);
+      draw.forEach(d => {
+        updateQueue.run(now, d.client_id);
+      });
+
+      // 3. Promote session to active
+      db.prepare(`
+        UPDATE sessions SET status = 'active', started_at = ? WHERE session_id = ?
+      `).run(now, session.session_id);
+    });
+
+    runTransaction();
+
+    latestDrawCache = {
+      table_id: tableId,
+      session_id: session.session_id,
+      draw,
+      drawn_at: now,
+    };
+
+    res.json({ success: true, table_id: tableId, session_id: session.session_id, draw, drawn_at: now });
+  });
+
+  // 10-B. Submit OCR/Manual Score for Multi-Device Cross-Verification & Telemetry
+  app.post('/api/sessions/:session_id/submit-score', (req, res) => {
+    const sessionId = parseInt(req.params.session_id, 10);
+    const { client_id, seat, device_name, scores, confidence } = req.body;
+
+    if (!client_id || !scores) {
+      return res.status(400).json({ error: 'client_id and scores are required' });
+    }
+
+    const session = db.prepare('SELECT * FROM sessions WHERE session_id = ?').get(sessionId);
+    if (!session || session.status === 'finished') {
+      return res.status(400).json({ error: 'Session is not active' });
+    }
+
+    const conf = typeof confidence === 'number' ? Math.max(0, Math.min(1, confidence)) : 0.82;
+    const scoresStr = typeof scores === 'object' ? JSON.stringify(scores) : String(scores);
+    const now = new Date().toISOString();
+
+    const existingSubmissions = db.prepare(`
+      SELECT * FROM session_score_submissions WHERE session_id = ?
+    `).all(sessionId);
+
+    const currentCanonical = existingSubmissions.find(s => s.is_canonical === 1);
+    let shouldBeCanonical = false;
+
+    if (!currentCanonical) {
+      // First submission is optimistically canonical
+      shouldBeCanonical = true;
+    } else {
+      const scoresEqual = currentCanonical.scores === scoresStr;
+      if (!scoresEqual) {
+        if (conf >= currentCanonical.confidence + 0.10) {
+          shouldBeCanonical = true;
+        } else {
+          const matchCount = existingSubmissions.filter(s => s.scores === scoresStr).length + 1;
+          if (matchCount >= 2) {
+            shouldBeCanonical = true;
+          }
+        }
+      }
+    }
+
+    const runTx = db.transaction(() => {
+      if (shouldBeCanonical) {
+        db.prepare('UPDATE session_score_submissions SET is_canonical = 0 WHERE session_id = ?').run(sessionId);
+      }
+      db.prepare(`
+        INSERT INTO session_score_submissions (
+          session_id, client_id, seat, device_name, scores, confidence, submitted_at, is_canonical
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(sessionId, client_id, seat || 'unknown', device_name || 'unknown', scoresStr, conf, now, shouldBeCanonical ? 1 : 0);
+    });
+
+    runTx();
+
+    const allSubmissions = db.prepare(`
+      SELECT * FROM session_score_submissions WHERE session_id = ?
+    `).all(sessionId);
+    const canonical = allSubmissions.find(s => s.is_canonical === 1);
+
+    res.json({
+      success: true,
+      session_id: sessionId,
+      is_canonical: shouldBeCanonical,
+      canonical_scores: canonical ? JSON.parse(canonical.scores) : null,
+      submissions_count: allSubmissions.length,
+    });
   });
 
   // 11. Finish Session & Record Duration
@@ -338,10 +535,22 @@ function createApp(dbInstance = null) {
     const startedAt = session.started_at || session.created_at;
     const durationSeconds = Math.max(0, Math.round((new Date(finishedAt) - new Date(startedAt)) / 1000));
 
-    // Update session status
-    db.prepare(`
-      UPDATE sessions SET status = 'finished', finished_at = ? WHERE session_id = ?
+    // First-Write-Wins Atomic State Update
+    const updateResult = db.prepare(`
+      UPDATE sessions SET status = 'finished', finished_at = ? WHERE session_id = ? AND status != 'finished'
     `).run(finishedAt, sessionId);
+
+    if (updateResult.changes === 0) {
+      const existing = db.prepare('SELECT * FROM game_records WHERE session_id = ?').get(sessionId);
+      return res.json({
+        success: true,
+        message: '이미 기록이 완료되었습니다.',
+        session_id: sessionId,
+        record_id: existing ? existing.record_id : null,
+        status: 'finished',
+        duration_seconds: existing ? existing.duration_seconds : durationSeconds,
+      });
+    }
 
     // Insert game record
     const s = scores || {};
@@ -373,6 +582,8 @@ function createApp(dbInstance = null) {
     if (table_id || session.table_id) {
       db.prepare('UPDATE tables SET current_session_id = NULL WHERE table_id = ?').run(table_id || session.table_id);
     }
+
+    latestDrawCache = null;
 
     res.json({
       success: true,

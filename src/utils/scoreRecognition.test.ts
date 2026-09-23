@@ -476,3 +476,68 @@ test('recognizes negative score (hakoten) with horizontal minus bar on AMOS REXX
   expect(draft.scores).toEqual(['-2000', '35000', '35000', '32000']);
 });
 
+test('distinguishes digit 0 from 8 under severe optical bloom and light bleeding', () => {
+  const imgW = 280, imgH = 90;
+  const data = new Uint8ClampedArray(imgW * imgH * 4);
+
+  const bitPatterns: Record<string, number[]> = {
+    '0': [1, 1, 1, 0, 1, 1, 1],
+    '1': [0, 0, 1, 0, 0, 1, 0],
+    '2': [1, 0, 1, 1, 1, 0, 1],
+    '3': [1, 0, 1, 1, 0, 1, 1],
+    '4': [0, 1, 1, 1, 0, 1, 0],
+    '5': [1, 1, 0, 1, 0, 1, 1],
+    '6': [1, 1, 0, 1, 1, 1, 1],
+    '7': [1, 0, 1, 0, 0, 1, 0],
+    '8': [1, 1, 1, 1, 1, 1, 1],
+    '9': [1, 1, 1, 1, 0, 1, 1],
+  };
+
+  const fillRect = (bx: number, by: number, x0: number, y0: number, x1: number, y1: number) => {
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const idx = ((by + y) * imgW + (bx + x)) * 4;
+        data[idx] = 255;
+        data[idx + 1] = 0;
+        data[idx + 2] = 0;
+        data[idx + 3] = 255;
+      }
+    }
+  };
+
+  const drawDigit = (bx: number, by: number, digit: string, hasMiddleBloom = false) => {
+    const bits = bitPatterns[digit] || [0, 0, 0, 0, 0, 0, 0];
+    if (bits[0]) fillRect(bx, by, 2, 1, 9, 2);
+    if (bits[1]) fillRect(bx, by, 1, 2, 3, 9);
+    if (bits[2]) fillRect(bx, by, 8, 2, 10, 9);
+    if (bits[3]) fillRect(bx, by, 2, 8, 9, 10);
+    if (bits[4]) fillRect(bx, by, 1, 9, 3, 16);
+    if (bits[5]) fillRect(bx, by, 8, 9, 10, 16);
+    if (bits[6]) fillRect(bx, by, 2, 15, 9, 17);
+
+    // If bloom is present in digit '0', simulate light bleed into middle bar
+    if (hasMiddleBloom && !bits[3]) {
+      fillRect(bx, by, 3, 8, 6, 9);
+    }
+  };
+
+  const drawNumber = (startX: number, startY: number, numStr: string, bloomIndex = -1) => {
+    for (let i = 0; i < numStr.length; i++) {
+      drawDigit(startX + i * 15, startY, numStr[i], i === bloomIndex);
+    }
+  };
+
+  // Top row: Left (0320), Center (0350), Right (0350)
+  drawNumber(15, 15, '0320');
+  drawNumber(105, 15, '0350');
+  drawNumber(195, 15, '0350');
+  // Bottom row: Center (0250 with blooming 0 at index 3)
+  drawNumber(105, 52, '0250', 3);
+
+  const result = recognizeScoreboard({ width: imgW, height: imgH, data }, 'amos_rexx3');
+  // Bottom score must be accurately recognized as '250', NOT '258'!
+  expect(result[0].raw).toBe('250');
+  expect(result.every(c => c.confidence >= 0.75)).toBe(true);
+});
+
+

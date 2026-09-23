@@ -240,3 +240,62 @@ test('hides test lab transition tab on /scan_score and shows return link on test
 
   expect(screen.getByText(/일반 서비스 화면 이동/i)).toBeInTheDocument();
 });
+
+test('production /scan_score polls Table 1 status, displays nicknames, and calls finish API', async () => {
+  const tableStatusMock = {
+    table_id: 1,
+    session_id: 77,
+    session_status: 'active',
+    started_at: new Date(Date.now() - 60000).toISOString(),
+    seats: {
+      east: { client_id: 'e1', nickname: '프로동', joined_at: 'now' },
+      south: { client_id: 's1', nickname: '프로남', joined_at: 'now' },
+      west: { client_id: 'w1', nickname: '프로서', joined_at: 'now' },
+      north: { client_id: 'n1', nickname: '프로북', joined_at: 'now' },
+    },
+    submissions_count: 2,
+    canonical_score: { east: 35000, south: 25000, west: 22000, north: 18000 },
+  };
+
+  const fetchSpy = jest.spyOn(global, 'fetch').mockImplementation(async (url: any) => {
+    if (String(url).includes('/api/tables/1/status')) {
+      return { ok: true, json: async () => tableStatusMock } as any;
+    }
+    if (String(url).includes('/api/sessions/77/finish')) {
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          record_id: 101,
+          duration_seconds: 60,
+        }),
+      } as any;
+    }
+    return { ok: true, json: async () => ({}) } as any;
+  });
+
+  // Access pure production route: /scan_score (isTestMode = false)
+  window.history.pushState({}, '', '/scan_score');
+  render(<App />);
+
+  // Unblocked polling: live seat indicator and nicknames MUST be visible in production!
+  expect(await screen.findByText('테이블 1 실시간 연동 중')).toBeInTheDocument();
+  expect((await screen.findAllByText(/프로동/)).length).toBeGreaterThanOrEqual(1);
+  expect((await screen.findAllByText(/프로남/)).length).toBeGreaterThanOrEqual(1);
+  expect(screen.getByText(/🟢 2개 기종 교차 검증 통과/)).toBeInTheDocument();
+
+  // Test finish API call in production
+  fireEvent.change(screen.getByLabelText('경기 1 동 점수'), { target: { value: '25000' } });
+  fireEvent.change(screen.getByLabelText('경기 1 남 점수'), { target: { value: '25000' } });
+  fireEvent.change(screen.getByLabelText('경기 1 서 점수'), { target: { value: '25000' } });
+  fireEvent.change(screen.getByLabelText('경기 1 북 점수'), { target: { value: '25000' } });
+
+  const addBtn = screen.getByRole('button', { name: '기록 추가하고 공유하기' });
+  fireEvent.click(addBtn);
+
+  expect(fetchSpy).toHaveBeenCalledWith(
+    '/api/sessions/77/finish',
+    expect.objectContaining({ method: 'POST' })
+  );
+});
+

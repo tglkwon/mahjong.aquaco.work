@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마작 웹앱 현장 테스트 결함 3종 개선 프리뷰 (ELI5)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #10b981;
+      --accent: #38bdf8;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 32px; }
+    h1 { font-size: 24px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+    p.subtitle { color: var(--text-muted); font-size: 14px; }
+    
+    .issue-grid { display: flex; flex-direction: column; gap: 28px; }
+    .issue-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .issue-title {
+      font-size: 17px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-weight: 700;
+    }
+    .badge-red { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+    .badge-green { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+    
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .comparison { grid-template-columns: 1fr; }
+    }
+    
+    .side {
+      background: #0b1120;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+    .side.before { border-color: rgba(239, 68, 68, 0.4); }
+    .side.after { border-color: rgba(16, 185, 129, 0.4); }
+    
+    .side-label {
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .side.before .side-label { color: var(--danger); }
+    .side.after .side-label { color: var(--success); }
+    
+    .mock-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .mock-step {
+      background: rgba(255,255,255,0.04);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border-left: 3px solid var(--border);
+    }
+    .side.before .mock-step { border-left-color: var(--danger); }
+    .side.after .mock-step { border-left-color: var(--success); }
+    
+    .tile-row { display: flex; gap: 6px; margin-top: 6px; }
+    .tile {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 52px;
+      background: #ffffff;
+      color: #1e293b;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+    .tile span.wind { font-size: 18px; }
+    .tile span.name { font-size: 9px; color: #64748b; }
+    
+    .ocr-box {
+      font-family: monospace;
+      font-size: 26px;
+      letter-spacing: 4px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: #000000;
+      display: inline-block;
+      margin: 8px 0;
+      text-align: center;
+    }
+    .ocr-red { color: #ff3333; text-shadow: 0 0 8px rgba(255, 51, 51, 0.8); }
+    
+    .highlight-red { color: var(--danger); font-weight: 700; }
+    .highlight-green { color: var(--success); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🀄 마작 웹앱 현장 테스트 결함 3종 개선 프리뷰</h1>
+      <p class="subtitle">오프라인 작탁 환경 실전 운영을 위한 단일 진실 공급원(SSOT) 및 광학 번짐 내성 엔진 구축</p>
+    </header>
+
+    <div class="issue-grid">
+      <!-- 이슈 1 -->
+      <div class="issue-card">
+        <div class="issue-title">
+          <span class="badge badge-red">결함 1</span>
+          <span>대기열 추첨 후 점수판 이동 시 닉네임 미반영 (연동 단절)</span>
+        </div>
+        <div class="comparison">
+          <div class="side before">
+            <div class="side-label">❌ 현재 (AS-IS)</div>
+            <div class="mock-flow">
+              <div class="mock-step">
+                <strong>대기열에서 4명 자리 추첨 완료</strong><br>
+                동: 뽀삐 / 남: 밍키 / 서: 초코 / 북: 해피
+              </div>
+              <div class="mock-step">
+                <strong>[점수판으로 이동] 버튼 클릭</strong><br>
+                단순 <code>/scan_score</code>로 이동 (파라미터/상태 누락)
+              </div>
+              <div class="mock-step highlight-red">
+                <strong>DB 착석 기록 없음 + 프로덕션 폴링 차단</strong><br>
+                결과: <span style="text-decoration: underline;">플레이어1, 플레이어2, 플레이어3, 플레이어4</span>로 롤백!
+              </div>
+            </div>
+          </div>
+          <div class="side after">
+            <div class="side-label">✅ 개선 후 (TO-BE)</div>
+            <div class="mock-flow">
+              <div class="mock-step">
+                <strong>자리 추첨 시 DB 영구 착석</strong><br>
+                <code>session_seats</code>에 4명 즉시 INSERT, Table 1 활성화
+              </div>
+              <div class="mock-step">
+                <strong>네비게이션 0ms 즉시 주입</strong><br>
+                <code>/scan_score?table=1</code> (라우터 state에 4인 닉네임 포함)
+              </div>
+              <div class="mock-step highlight-green">
+                <strong>프로덕션 상시 좌석 폴링 & 경기 기록 활성화</strong><br>
+                동: 뽀삐 / 남: 밍키 / 서: 초코 / 북: 해피 즉시 표시 & 매치 종료 시 소요 시간 영구 기록!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 이슈 2 -->
+      <div class="issue-card">
+        <div class="issue-title">
+          <span class="badge badge-red">결함 2</span>
+          <span>4인 자리 추첨의 중복 실행 및 결과 불일치 (동기화 부재)</span>
+        </div>
+        <div class="comparison">
+          <div class="side before">
+            <div class="side-label">❌ 현재 (AS-IS)</div>
+            <div class="mock-flow">
+              <div class="mock-step">
+                <strong>4명 전원의 폰에 [자리 추첨] 버튼 활성</strong><br>
+                모두가 각자 버튼을 누를 수 있음
+              </div>
+              <div class="mock-step highlight-red">
+                <strong>누를 때마다 난수 새로 생성 (무상태 API)</strong><br>
+                A폰: 동: 뽀삐 / 남: 밍키...<br>
+                B폰: 동: 밍키 / 남: 해피...<br>
+                서로 다른 바람패가 나와 심각한 혼선 발생!
+              </div>
+              <div class="mock-step">
+                <strong>다른 사람 화면에 결과 전파 안 됨</strong>
+              </div>
+            </div>
+          </div>
+          <div class="side after">
+            <div class="side-label">✅ 개선 후 (TO-BE)</div>
+            <div class="mock-flow">
+              <div class="mock-step">
+                <strong>원자적 단일 추첨 & 멱등성 보장</strong><br>
+                누가 먼저 누르든 최초 1회만 셔플하여 확정 저장
+              </div>
+              <div class="mock-step highlight-green">
+                <strong>폴링 동기화 (GET /api/queue 확장)</strong><br>
+                1~3초 내 4명 전원의 화면이 100% 동일한 결과 카드로 일제히 자동 전환!
+              </div>
+              <div class="mock-step">
+                <strong>추첨 버튼 자동 소멸</strong><br>
+                중복 추첨 완전 차단 및 좌석 착석/점수판 이동 버튼만 표시
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 이슈 3 -->
+      <div class="issue-card">
+        <div class="issue-title">
+          <span class="badge badge-red">결함 3</span>
+          <span>타 기종 카메라에서 숫자 '0'과 '8'의 깜빡임 및 인식 불가</span>
+        </div>
+        <div class="comparison">
+          <div class="side before">
+            <div class="side-label">❌ 현재 (AS-IS)</div>
+            <div class="mock-flow">
+              <div class="mock-step">
+                <strong>강렬한 적색 LED 빛 번짐 (Bloom)</strong><br>
+                0의 가운데 빈 공간으로 주변 빛이 새어 들어옴
+              </div>
+              <div class="ocr-box ocr-red">
+                2 5 [0 ⇄ 8]
+              </div>
+              <div class="mock-step highlight-red">
+                <strong>절대 임계값(0.40) & 좌측 편향으로 0을 8로 오인식</strong><br>
+                단 1개만 8로 튀어도 합계가 108,000점이 되어 10만점 검증에서 100% 탈락, 무한 스캔 루프 발생
+              </div>
+            </div>
+          </div>
+          <div class="side after">
+            <div class="side-label">✅ 개선 후 (TO-BE)</div>
+            <div class="mock-flow">
+              <div class="mock-step">
+                <strong>상대적 대비율(Relative Contrast) 판정</strong><br>
+                주변 켜진 세그먼트 휘도 대비 가운데 영역의 상대적 어두움 측정 -> 빛 번짐 완벽 필터링
+              </div>
+              <div class="ocr-box ocr-red" style="color: #4ade80; text-shadow: 0 0 8px rgba(74, 222, 128, 0.8);">
+                2 5 0 (확정)
+              </div>
+              <div class="mock-step highlight-green">
+                <strong>도메인 지식 10만점 역추적(Backtracking) 보정</strong><br>
+                모호한 0/8 발생 시 4인 점수 합계 100,000점 일치 제약 조건을 역추적하여 0으로 자동 교정, 3연속 프레임 일치(Consensus) 즉시 통과!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

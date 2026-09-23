@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import PlayerManagementAndScores from './PlayerManagementAndScores';
 import PlayerTotals from './PlayerTotals';
@@ -10,6 +10,7 @@ import { Translation, Translations } from '../i18n/translations';
 import { Game, UmaOkaParticipants, UmaOkaScores } from '../types';
 import { calculateTieAwards, TieHandlingMode } from './ScorePage';
 import { encodeShareState, parseShareStateFromHash } from '../utils/shareState';
+import { getClientId } from '../utils/clientId';
 
 type Language = keyof Translations;
 type TranslationKey = keyof Translation;
@@ -29,6 +30,7 @@ const getDefaultPlayerPositions = (): string[] => [...INITIAL_PLAYER_POSITIONS];
 const getDefaultUmaOkaParticipants = (): UmaOkaParticipants => ({ east: 0, south: 1, west: 2, north: 3 });
 
 function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translations, isTestMode = false }: ScoreScanPageProps) {
+  const location = useLocation();
   const parseStateFromUrl = useCallback(() => parseShareStateFromHash(window.location.hash, true), []);
   const loadedState = useMemo(() => parseStateFromUrl(), [parseStateFromUrl]);
 
@@ -55,7 +57,22 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     return Array(playerPool.length).fill(0);
   });
 
-  // 테이블 1 실시간 연동 상태 (isTestMode 전용)
+  // 라우터 state(QueuePage의 drawnSeats)를 통한 0ms 즉시 하이드레이션
+  useEffect(() => {
+    const state = location.state as { drawnSeats?: Array<{ seat: string; nickname: string }> } | undefined;
+    if (state?.drawnSeats && Array.isArray(state.drawnSeats) && state.drawnSeats.length === 4) {
+      const windOrder = ['east', 'south', 'west', 'north'];
+      const ordered = windOrder.map(s => {
+        const item = state.drawnSeats?.find(d => d.seat === s);
+        return item ? item.nickname : '';
+      });
+      if (ordered.every(Boolean)) {
+        setPlayerPool(prev => [...ordered, ...prev.slice(4)]);
+      }
+    }
+  }, [location.state]);
+
+  // 테이블 1 실시간 연동 상태
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [tableLiveSeats, setTableLiveSeats] = useState<{
     east: { nickname: string; client_id: string } | null;
@@ -64,6 +81,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     north: { nickname: string; client_id: string } | null;
   } | null>(null);
   const [sessionTimingText, setSessionTimingText] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
 
   // effectiveTestMode: isTestMode prop 또는 URL 쿼리 파라미터(?testMode=true) 판별
   const effectiveTestMode = useMemo(() => {
@@ -79,10 +97,8 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     }
   }, [isTestMode]);
 
-  // 테이블 1 좌석 2초 주기 폴링 훅
+  // 테이블 1 좌석 2초 주기 폴링 훅 (프로덕션/테스트 상시 실행)
   useEffect(() => {
-    if (!effectiveTestMode) return;
-
     let isMounted = true;
     const pollTableStatus = async () => {
       try {
@@ -109,6 +125,16 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
             });
           }
 
+          if (data.submissions_count > 0) {
+            if (data.submissions_count >= 2) {
+              setVerificationStatus(`🟢 ${data.submissions_count}개 기종 교차 검증 통과`);
+            } else if (data.submissions && data.submissions[0]) {
+              const firstSub = data.submissions[0];
+              const confPct = Math.round((firstSub.confidence || 0.82) * 100);
+              setVerificationStatus(`📱 ${firstSub.seat?.toUpperCase() || ''} 1차 인식 (신뢰도 ${confPct}%)`);
+            }
+          }
+
           if (data.started_at) {
             const start = new Date(data.started_at);
             const now = new Date();
@@ -129,7 +155,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
       isMounted = false;
       clearInterval(interval);
     };
-  }, [effectiveTestMode]);
+  }, []);
 
   // URL에서 언어 설정 불러오기
   useEffect(() => {
@@ -317,8 +343,8 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     }
   };
 
-  // 실시간 스캔에서 점수 인식 시 UmaOkaTable 편집 행에 자동 주입
-  const handleScoresRecognized = useCallback((recognizedScores: { east: string; south: string; west: string; north: string }) => {
+  // 실시간 스캔에서 점수 인식 시 UmaOkaTable 편집 행에 자동 주입 및 다기종 교차 검증 전송
+  const handleScoresRecognized = useCallback((recognizedScores: { east: string; south: string; west: string; north: string }, confidence = 0.82) => {
     setGames(prev => {
       return prev.map(game => {
         if (!game.isEditable) return game;
@@ -333,7 +359,29 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
         };
       });
     });
-  }, []);
+
+    // 백엔드로 다기종 점수 제출 (교차 검증 및 기종 데이터 누적)
+    if (activeSessionId) {
+      const cid = getClientId() || 'anonymous';
+      const devName = navigator.userAgent.includes('iPhone') ? 'iPhone'
+        : navigator.userAgent.includes('Android') ? 'Android' : 'Desktop/Other';
+      fetch(`/api/sessions/${activeSessionId}/submit-score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: cid,
+          device_name: devName,
+          scores: {
+            east: parseInt(recognizedScores.east, 10),
+            south: parseInt(recognizedScores.south, 10),
+            west: parseInt(recognizedScores.west, 10),
+            north: parseInt(recognizedScores.north, 10),
+          },
+          confidence,
+        }),
+      }).catch(() => {});
+    }
+  }, [activeSessionId]);
 
   // 테스트 모드용 점수 자동 채우기 (동: 35000, 남: 28000, 서: 22000, 북: 15000 = 합계 100,000점)
   const handleFillTestScores = () => {
@@ -426,8 +474,8 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
       return;
     }
 
-    // 백엔드 세션 종료 및 소요 시간 영구 기록 (effectiveTestMode && activeSessionId)
-    if (effectiveTestMode && activeSessionId) {
+    // 백엔드 세션 종료 및 소요 시간 영구 기록 (프로덕션/테스트 상시 실행)
+    if (activeSessionId) {
       try {
         const finishRes = await fetch(`/api/sessions/${activeSessionId}/finish`, {
           method: 'POST',
@@ -530,10 +578,10 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
         )}
       </div>
 
-      {/* 테이블 1 실시간 연동 인디케이터 (effectiveTestMode) */}
-      {effectiveTestMode && (
+      {/* 테이블 1 실시간 연동 및 다기종 검증 인디케이터 */}
+      {(effectiveTestMode || tableLiveSeats) && (
         <div className="w-full max-w-6xl mb-4 p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-between gap-2 shadow-sm">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-bold text-sky-400">테이블 1 실시간 연동 중</span>
             <span className="text-gray-400">|</span>
@@ -543,6 +591,11 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
               서: <strong className="text-emerald-400">{tableLiveSeats?.west?.nickname || '대기'}</strong> /
               북: <strong className="text-emerald-400">{tableLiveSeats?.north?.nickname || '대기'}</strong>
             </span>
+            {verificationStatus && (
+              <span className="ml-1 px-2 py-0.5 rounded bg-sky-950/80 border border-sky-600 text-sky-300 text-xs font-semibold">
+                {verificationStatus}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {sessionTimingText && (
@@ -550,14 +603,16 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
                 {sessionTimingText}
               </div>
             )}
-            <button
-              type="button"
-              onClick={handleFillTestScores}
-              className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition-colors shadow-sm"
-              title="테스트용 점수(35000, 28000, 22000, 15000 = 10만점) 자동 채우기"
-            >
-              🎲 테스트 점수 채우기 (10만점)
-            </button>
+            {effectiveTestMode && (
+              <button
+                type="button"
+                onClick={handleFillTestScores}
+                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition-colors shadow-sm"
+                title="테스트용 점수(35000, 28000, 22000, 15000 = 10만점) 자동 채우기"
+              >
+                🎲 테스트 점수 채우기 (10만점)
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -53,11 +53,21 @@ export const QueuePage: React.FC = () => {
           );
           setIsEnqueued(inQueue);
         }
+
+        // 4인 자리 추첨 실시간 동기화
+        if (data.latest_draw && Array.isArray(data.latest_draw.draw) && data.latest_draw.draw.length === 4) {
+          const isParticipant = currentClientId && data.latest_draw.draw.some(
+            (d: TileDrawResult) => d.client_id === currentClientId
+          );
+          if (isParticipant || !drawResult) {
+            setDrawResult(data.latest_draw.draw);
+          }
+        }
       }
     } catch {
       // ignore network errors during poll
     }
-  }, [currentClientId]);
+  }, [currentClientId, drawResult]);
 
   useEffect(() => {
     const nick = getStoredNickname();
@@ -263,8 +273,8 @@ export const QueuePage: React.FC = () => {
         )}
       </div>
 
-      {/* 4인 모였을 때 자리 추첨 버튼 */}
-      {queue.length >= 4 && (
+      {/* 4인 모였을 때 자리 추첨 버튼 (추첨 완료 시 숨김) */}
+      {queue.length >= 4 && !drawResult && (
         <div style={{ marginBottom: 20 }}>
           <button
             type="button"
@@ -381,7 +391,7 @@ export const QueuePage: React.FC = () => {
           <div style={{ marginTop: 14 }}>
             <button
               type="button"
-              onClick={() => navigate('/scan_score')}
+              onClick={() => navigate('/scan_score?table=1', { state: { drawnSeats: drawResult } })}
               style={{
                 width: '100%',
                 padding: '12px',

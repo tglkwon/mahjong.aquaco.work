@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<title>리치 마작 기록실 · 페이지별 실제 화면 및 개발 현황</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f2f5f3;
+  --card-bg: #ffffff;
+  --ink: #142820;
+  --muted: #536960;
+  --line: #dbe4df;
+  --primary: #0f6e52;
+  --primary-light: #e6f3ed;
+  --primary-dark: #084332;
+  --accent: #d97706;
+  --accent-light: #fef3c7;
+  --success: #15803d;
+  --success-light: #dcfce7;
+  --danger: #dc2626;
+  --shadow: 0 6px 24px -4px rgba(18, 54, 40, 0.08);
+  --mockup-bg: #1e293b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  padding: 36px 16px 80px;
+}
+
+main {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, #0f6e52 0%, #063829 100%);
+  color: #ffffff;
+  padding: 44px 32px;
+  border-radius: 24px;
+  box-shadow: 0 12px 36px -4px rgba(6, 56, 41, 0.35);
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: "🀄";
+  position: absolute;
+  right: 24px;
+  bottom: -25px;
+  font-size: 150px;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.eyebrow {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ebfaf2;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: clamp(26px, 4.5vw, 42px);
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+
+.hero-desc {
+  font-size: 17px;
+  color: #c9e8dc;
+  max-width: 720px;
+  line-height: 1.65;
+}
+
+/* Quick KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.kpi-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 14px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.kpi-num {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.kpi-num.live { color: var(--success); }
+.kpi-num.ready { color: #0284c7; }
+.kpi-num.plan { color: var(--accent); }
+.kpi-num.tech { color: var(--primary); }
+
+.kpi-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* Major Page Section */
+.page-block {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 32px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.page-title-wrap h2 {
+  font-size: 23px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-summary {
+  font-size: 14.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 680px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.badge-live { background: var(--success-light); color: #14532d; border: 1px solid #86efac; }
+.badge-ready { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+.badge-plan { background: var(--accent-light); color: #92400e; border: 1px solid #fcd34d; }
+
+.route-pill {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  background: #edf4f0;
+  color: var(--primary-dark);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+/* Split: Story + Mockup */
+.page-content-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1.25fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* Story / Scenario Side */
+.story-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.scenario-card {
+  background: #f8faf9;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.scenario-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scenario-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scenario-step {
+  font-size: 13.5px;
+  line-height: 1.5;
+  display: flex;
+  gap: 10px;
+}
+
+.step-circle {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.features-highlight {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-point {
+  font-size: 13px;
+  color: var(--ink);
+  background: #ffffff;
+  border: 1px solid #e2ece7;
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.feature-point strong {
+  color: var(--primary-dark);
+}
+
+/* Mockup UI Window / Device Frame */
+.mockup-window {
+  background: #ffffff;
+  border: 2px solid #cbd7d1;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.window-bar {
+  background: #edf2ef;
+  border-bottom: 1px solid #d4ded9;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.window-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot-red { background: #ef4444; }
+.dot-yellow { background: #f59e0b; }
+.dot-green { background: #10b981; }
+
+.window-address {
+  flex-grow: 1;
+  background: #ffffff;
+  border: 1px solid #d1ded7;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.screen-body {
+  padding: 16px;
+  background: #fafbfb;
+}
+
+/* Component UI Specific Mockups */
+
+/* 1. UmaOka Mockup */
+.mockup-header-app {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5eae7;
+}
+.mockup-header-app .app-logo { font-size: 13px; font-weight: 800; color: var(--primary); }
+.mockup-header-app .lang-badge { font-size: 10.5px; background: #e2ede8; padding: 2px 6px; border-radius: 4px; }
+
+.rules-toggle-bar {
+  background: #f1f6f3;
+  border: 1px dashed #b5cfc4;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.rank-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.rank-card {
+  background: #ffffff;
+  border: 1px solid #dbe6e0;
+  border-radius: 8px;
+  padding: 8px 6px;
+  text-align: center;
+}
+.rank-card.first { border-top: 3px solid #d97706; background: #fffdfa; }
+.rank-card.second { border-top: 3px solid #0284c7; }
+.rank-card.third { border-top: 3px solid #64748b; }
+.rank-card.fourth { border-top: 3px solid #ef4444; }
+
+.rank-title { font-size: 10px; font-weight: 800; color: var(--muted); }
+.rank-name { font-size: 12px; font-weight: 700; margin: 2px 0; }
+.rank-score { font-size: 13px; font-weight: 800; }
+.score-pos { color: #16a34a; }
+.score-neg { color: #dc2626; }
+
+.mock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  margin-bottom: 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2ece7;
+}
+.mock-table th, .mock-table td {
+  padding: 6px 4px;
+  text-align: center;
+  border-bottom: 1px solid #edf3f0;
+}
+.mock-table th { background: #edf4f1; font-weight: 700; font-size: 11px; }
+
+.input-seat-row {
+  background: #f7fbf8;
+  border: 1px solid #bce2ce;
+  border-radius: 8px;
+  padding: 8px 6px;
+  margin-bottom: 12px;
+}
+.input-seat-label { font-size: 10.5px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.input-cell {
+  background: #ffffff;
+  border: 1px solid #cadcd3;
+  border-radius: 6px;
+  padding: 4px 6px;
+  text-align: center;
+}
+.cell-seat { font-size: 10px; font-weight: 700; color: var(--muted); }
+.cell-val { font-size: 12px; font-weight: 800; color: #111827; }
+
+.sum-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #dcfce7;
+  color: #166534;
+  margin-bottom: 10px;
+}
+
+.mock-btn-primary {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: #0f6e52;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 12.5px;
+  padding: 9px;
+  border-radius: 8px;
+}
+
+/* 2. ScoreScan Camera HUD Mockup */
+.camera-viewfinder {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 16px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #334155;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+.camera-guide-box {
+  border: 2px dashed rgba(52, 211, 153, 0.5);
+  border-radius: 12px;
+  padding: 14px;
+  position: relative;
+}
+
+.table-detected-pill {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(16, 185, 129, 0.25);
+  border: 1px solid #10b981;
+  color: #6ee7b7;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.digital-compass {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 8px;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0 10px;
+}
+
+.hud-seat {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 6px 4px;
+}
+.hud-seat.north { grid-column: 2; grid-row: 1; }
+.hud-seat.west { grid-column: 1; grid-row: 2; }
+.hud-seat.east { grid-column: 3; grid-row: 2; }
+.hud-seat.south { grid-column: 2; grid-row: 3; }
+
+.hud-center {
+  grid-column: 2;
+  grid-row: 2;
+  background: rgba(15, 110, 82, 0.4);
+  border: 1px solid #34d399;
+  border-radius: 8px;
+  padding: 12px 4px;
+  font-size: 11px;
+  color: #a7f3d0;
+  font-weight: 800;
+}
+
+.hud-label { font-size: 9.5px; color: #94a3b8; font-weight: 700; }
+.seven-seg {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+.seven-seg.neg {
+  color: #f87171;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.8);
+}
+
+.hud-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+}
+
+.mock-scan-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  background: #0284c7;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 12.5px;
+  padding: 9px;
+  border-radius: 8px;
+  text-align: center;
+  border: none;
+}
+
+/* 3. Queue Page Mockup */
+.queue-input-box {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.mock-input {
+  flex-grow: 1;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  background: #ffffff;
+  color: #64748b;
+}
+.mock-input-btn {
+  background: #0f6e52;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 11.5px;
+  border-radius: 6px;
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+
+.queue-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.queue-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+}
+.queue-row.selected {
+  border-left: 4px solid var(--primary);
+  background: #f4fbf7;
+}
+
+.queue-num { font-weight: 800; color: var(--primary); font-size: 11px; }
+.queue-name { font-weight: 700; margin-left: 6px; }
+.status-pill-ok {
+  background: #dcfce7;
+  color: #166534;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.status-pill-wait {
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.draw-result-container {
+  background: #f1f7f4;
+  border: 1px dashed #99d2ba;
+  border-radius: 10px;
+  padding: 10px;
+}
+.draw-title { font-size: 11px; font-weight: 800; color: var(--primary-dark); margin-bottom: 6px; text-align: center; }
+.draw-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.draw-tile {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 2px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.wind-east { color: #1e3a8a; font-weight: 800; font-size: 13px; }
+.wind-south { color: #dc2626; font-weight: 800; font-size: 13px; }
+.wind-west { color: #1e293b; font-weight: 800; font-size: 13px; }
+.wind-north { color: #15803d; font-weight: 800; font-size: 13px; }
+.draw-player-name { font-size: 11px; font-weight: 700; margin-top: 2px; }
+
+/* 4. Seat QR Checkin Mockup */
+.seat-card-hero {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.seat-badge-pill {
+  display: inline-block;
+  background: #1e3a8a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+.seat-title-lg { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+.seat-sub { font-size: 11.5px; color: var(--muted); }
+
+.seat-table-diagram {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 6px;
+  align-items: center;
+  text-align: center;
+  margin: 10px auto;
+  max-width: 240px;
+}
+.seat-box {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 4px;
+  font-size: 10px;
+}
+.seat-box.done { background: #dcfce7; border-color: #86efac; color: #166534; font-weight: 700; }
+.seat-box.empty { background: #f8fafc; color: #94a3b8; border-style: dashed; }
+.seat-box.n { grid-column: 2; grid-row: 1; }
+.seat-box.w { grid-column: 1; grid-row: 2; }
+.seat-box.e { grid-column: 3; grid-row: 2; }
+.seat-box.s { grid-column: 2; grid-row: 3; }
+.table-center-box {
+  grid-column: 2;
+  grid-row: 2;
+  background: #0f6e52;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+/* End to End Pipeline */
+.pipeline-section {
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8f5 100%);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 32px;
+}
+
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.pipeline-card {
+  background: #ffffff;
+  border: 1px solid #dce6e1;
+  border-radius: 12px;
+  padding: 16px 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.pipeline-card::after {
+  content: "➔";
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-weight: 800;
+  font-size: 14px;
+}
+.pipeline-card:last-child::after { display: none; }
+
+.pipeline-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.pipeline-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.pipeline-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+/* Callout & Footer */
+.final-note {
+  background: #eef7f3;
+  border-left: 4px solid var(--primary);
+  border-radius: 4px 12px 12px 4px;
+  padding: 18px 20px;
+  font-size: 14px;
+  margin-top: 16px;
+  line-height: 1.6;
+}
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 40px;
+  line-height: 1.7;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .page-content-grid {
+    grid-template-columns: 1fr;
+  }
+  .pipeline-grid {
+    grid-template-columns: 1fr;
+  }
+  .pipeline-card::after { display: none; }
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+</style>
+</head>
+<body>
+<main>
+
+  <!-- Hero -->
+  <header class="hero">
+    <span class="eyebrow">Interactive Product Tour</span>
+    <h1>리치 마작 기록실<br />실제 화면과 기능 시각화 가이드</h1>
+    <p class="hero-desc">
+      각 페이지가 <strong>실제 어떤 모습으로 작동하는지</strong>, 이용자가 어떤 순서로 조작하며 <strong>어떤 가치를 얻는지</strong> 한눈에 알아볼 수 있도록 실제 UI를 정교하게 재현하여 구성했습니다.
+    </p>
+  </header>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-num live">3개</div>
+      <div class="kpi-label">상용 서비스 중</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num ready">MVP 1.4</div>
+      <div class="kpi-label">카메라 AI 스캔 완료</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num plan">MVP 2</div>
+      <div class="kpi-label">고정 QR 세션 기획 중</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num tech">38.8%</div>
+      <div class="kpi-label">URL 데이터 크기 단축</div>
+    </div>
+  </div>
+
+  <!-- PAGE 1: UMA OKA SCORE RECORD -->
+  <article class="page-block">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h2>
+          🀄 1. 우마·오카 점수 기록기
+          <span class="route-pill">/set_score_umaoka</span>
+        </h2>
+        <p class="page-summary">
+          복잡한 대회 공식 룰(30,000점 반환, 우마 계산, 동점자 분배, 촌보 페널티)을 자동 연산하고 카카오톡 링크로 공유하는 핵심 페이지입니다.
+        </p>
+      </div>
+      <span class="badge badge-live">● 상용 서비스 중</span>
+    </div>
+
+    <div class="page-content-grid">
+      <!-- Story / Usage -->
+      <div class="story-panel">
+        <div class="scenario-card">
+          <div class="scenario-title">💡 실제 사용 시나리오</div>
+          <ul class="scenario-steps">
+            <li class="scenario-step">
+              <span class="step-circle">1</span>
+              <div><strong>룰 설정:</strong> 접이식 버튼으로 M리그(10-30), 일반(10-20), 기준점수(30,000점)를 간편하게 지정합니다.</div>
+            </li>
+            <li class="scenario-step">
+              <span class="step-circle">2</span>
+              <div><strong>점수 입력:</strong> 동·남·서·북 4인의 국별 최종 점수를 입력하면 합계 10만 점 일치 시 녹색 '기록 가능' 표시가 뜹니다.</div>
+            </li>
+            <li class="scenario-step">
+              <span class="step-circle">3</span>
+              <div><strong>자동 정산 &amp; 공유:</strong> 우마·오카가 즉시 반영되어 총점 순위가 매겨지며, '기록 추가 및 공유' 버튼을 누르면 단체방 전송용 초경량 URL이 복사됩니다.</div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="features-highlight">
+          <div class="feature-point">
+            <span>✨</span>
+            <div><strong>동점자 균등 분배:</strong> 동점 발생 시 해당 등수의 우마·오카를 소수점 첫째 자리까지 공평하게 나눠줍니다.</div>
+          </div>
+          <div class="feature-point">
+            <span>⚖️</span>
+            <div><strong>대회룰 촌보(-20) 메뉴:</strong> 플레이어 이름 옆 `⋮` 메뉴에서 촌보 페널티를 누적·차감 관리할 수 있습니다.</div>
+          </div>
+          <div class="feature-point">
+            <span>📦</span>
+            <div><strong>바이너리 URL 델타 압축:</strong> 10국 이상 경기 기록도 링크 길이 부담 없이 한 번에 공유됩니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realistic UI Mockup -->
+      <div class="mockup-window">
+        <div class="window-bar">
+          <div class="window-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="window-address">mahjong.aquaco.work/set_score_umaoka</div>
+        </div>
+
+        <div class="screen-body">
+          <div class="mockup-header-app">
+            <span class="app-logo">🀄 리치 마작 점수 기록판</span>
+            <span class="lang-badge">🌐 한국어</span>
+          </div>
+
+          <!-- Rules Bar -->
+          <div class="rules-toggle-bar">
+            <span>⚙️ 30,000점 반환 · 10-20 우마 · 동점 균등</span>
+            <span>▼ 설정 접기</span>
+          </div>
+
+          <!-- Rank Cards -->
+          <div class="rank-board">
+            <div class="rank-card first">
+              <div class="rank-title">1위 🥇</div>
+              <div class="rank-name">민수</div>
+              <div class="rank-score score-pos">+48.2</div>
+            </div>
+            <div class="rank-card second">
+              <div class="rank-title">2위 🥈</div>
+              <div class="rank-name">지훈</div>
+              <div class="rank-score score-pos">+12.4</div>
+            </div>
+            <div class="rank-card third">
+              <div class="rank-title">3위 🥉</div>
+              <div class="rank-name">영희</div>
+              <div class="rank-score score-neg">-15.1</div>
+            </div>
+            <div class="rank-card fourth">
+              <div class="rank-title">4위</div>
+              <div class="rank-name">철수</div>
+              <div class="rank-score score-neg">-45.5</div>
+            </div>
+          </div>
+
+          <!-- Recorded Table -->
+          <table class="mock-table">
+            <thead>
+              <tr>
+                <th>국</th>
+                <th>東 민수</th>
+                <th>南 지훈</th>
+                <th>西 영희</th>
+                <th>北 철수</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1국</td>
+                <td class="score-pos">+35.2</td>
+                <td class="score-pos">+8.1</td>
+                <td class="score-neg">-12.3</td>
+                <td class="score-neg">-31.0</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Score Input Row -->
+          <div class="input-seat-row">
+            <div class="input-seat-label">2국 점수 입력 (점수봉 원점)</div>
+            <div class="input-grid">
+              <div class="input-cell">
+                <div class="cell-seat">東 민수</div>
+                <div class="cell-val">38,000</div>
+              </div>
+              <div class="input-cell">
+                <div class="cell-seat">南 지훈</div>
+                <div class="cell-val">29,000</div>
+              </div>
+              <div class="input-cell">
+                <div class="cell-seat">西 영희</div>
+                <div class="cell-val">21,000</div>
+              </div>
+              <div class="input-cell">
+                <div class="cell-seat">北 철수</div>
+                <div class="cell-val">12,000</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status Bar & Button -->
+          <div class="sum-status-bar">
+            <span>✓ 현재 합계: 100,000 / 100,000점</span>
+            <span>[기록 가능]</span>
+          </div>
+
+          <div class="mock-btn-primary">
+            ➕ 기록 추가 및 단체방 공유 링크 복사
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- PAGE 2: LIVE SCORE SCAN -->
+  <article class="page-block">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h2>
+          📸 2. 작탁 점수판 실시간 AI OCR 스캔
+          <span class="route-pill">/scan_score</span>
+        </h2>
+        <p class="page-summary">
+          스마트폰 카메라로 전동 작탁(Amos REXX 3, JP-EX 등) 중앙 점수판을 1초간 비추면 4인의 7세그먼트 점수를 실시간으로 인식해 계산기에 자동 입력합니다.
+        </p>
+      </div>
+      <span class="badge badge-ready">● MVP 1.4 검증 완료</span>
+    </div>
+
+    <div class="page-content-grid">
+      <!-- Story / Usage -->
+      <div class="story-panel">
+        <div class="scenario-card">
+          <div class="scenario-title">💡 실제 사용 시나리오</div>
+          <ul class="scenario-steps">
+            <li class="scenario-step">
+              <span class="step-circle">1</span>
+              <div><strong>작탁 비추기:</strong> 대탁이 끝나면 앱에서 카메라 버튼을 누르고 작탁 중앙 디스플레이를 화면 사각형에 맞춥니다.</div>
+            </li>
+            <li class="scenario-step">
+              <span class="step-circle">2</span>
+              <div><strong>기종 자동 분류:</strong> AI가 아모스 렉스 3(REXX 3) 또는 JP-EX 기종을 자동 판별하여 최적의 인식 알고리즘을 가동합니다.</div>
+            </li>
+            <li class="scenario-step">
+              <span class="step-circle">3</span>
+              <div><strong>합계 검증 &amp; 전송:</strong> 4자리 점수의 총합이 100,000점(오차 0)으로 확인되는 순간, 버튼 하나로 우마·오카 계산판으로 즉시 전송됩니다.</div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="features-highlight">
+          <div class="feature-point">
+            <span>🔴</span>
+            <div><strong>마이너스(음수) HUD 감지:</strong> 하코텐(들통) 마이너스 점수 발생 시 붉은색 경고 표시와 함께 음수 부호를 정확히 판독합니다.</div>
+          </div>
+          <div class="feature-point">
+            <span>📐</span>
+            <div><strong>모바일 왜곡/각도 보정:</strong> 의자에 앉아서 비스듬히 찍어도 투시 왜곡과 레터박스를 자동 보정합니다.</div>
+          </div>
+          <div class="feature-point">
+            <span>⏱️</span>
+            <div><strong>시간 단축:</strong> 기존 손 타이핑(약 30초~1분)을 <strong>1~2초</strong>로 획기적으로 줄여줍니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realistic Camera HUD Mockup -->
+      <div class="mockup-window">
+        <div class="window-bar">
+          <div class="window-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="window-address">mahjong.aquaco.work/scan_score</div>
+        </div>
+
+        <div class="screen-body" style="background: #0b1120; padding: 14px;">
+          <div class="camera-viewfinder">
+            <!-- Detection Pill -->
+            <div class="table-detected-pill">
+              ● 자동 감지: Amos REXX 3
+            </div>
+
+            <div class="camera-guide-box">
+              <!-- Digital Compass Layout -->
+              <div class="digital-compass">
+                <!-- North -->
+                <div class="hud-seat north">
+                  <div class="hud-label">北 (North)</div>
+                  <div class="seven-seg neg">-4,000</div>
+                </div>
+
+                <!-- West -->
+                <div class="hud-seat west">
+                  <div class="hud-label">西 (West)</div>
+                  <div class="seven-seg">24,000</div>
+                </div>
+
+                <!-- Center HUD -->
+                <div class="hud-center">
+                  <div>작탁 중앙</div>
+                  <div style="font-size: 10px; color: #6ee7b7; margin-top: 2px;">합계 100,000</div>
+                </div>
+
+                <!-- East -->
+                <div class="hud-seat east">
+                  <div class="hud-label">東 (East)</div>
+                  <div class="seven-seg">48,000</div>
+                </div>
+
+                <!-- South -->
+                <div class="hud-seat south">
+                  <div class="hud-label">南 (South)</div>
+                  <div class="seven-seg">32,000</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HUD Bottom Bar -->
+            <div class="hud-bottom-bar">
+              <span style="color: #4ade80; font-weight: 800;">✓ 합계 100,000점 일치 (오차 0)</span>
+              <span style="color: #94a3b8;">신뢰도: 99.4%</span>
+            </div>
+          </div>
+
+          <button class="mock-scan-btn">
+            🚀 우마·오카 기록판으로 점수 전송하기
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- PAGE 3: QUEUE & SEAT DRAW -->
+  <article class="page-block">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h2>
+          👥 3. 오프라인 마장 대기열 &amp; 자리 추첨
+          <span class="route-pill">/queue</span>
+        </h2>
+        <p class="page-summary">
+          마장 방문객이 온라인으로 줄을 서고, 4명이 모이면 동·남·서·북 좌석을 무작위로 공정하게 추첨해 테이블 편성을 완성합니다.
+        </p>
+      </div>
+      <span class="badge badge-live">● 기능 배포 완료</span>
+    </div>
+
+    <div class="page-content-grid">
+      <!-- Story / Usage -->
+      <div class="story-panel">
+        <div class="scenario-card">
+          <div class="scenario-title">💡 실제 사용 시나리오</div>
+          <ul class="scenario-steps">
+            <li class="scenario-step">
+              <span class="step-circle">1</span>
+              <div><strong>대기 등록:</strong> 매장에 들어와 닉네임을 적고 등록 버튼을 누르면 고유 순번(예: 101번)을 받습니다.</div>
+            </li>
+            <li class="scenario-step">
+              <span class="step-circle">2</span>
+              <div><strong>현장 인원 확인:</strong> 온라인 등록자 중 실제 현장에 있는 4명을 직관적으로 확인합니다.</div>
+            </li>
+            <li class="scenario-step">
+              <span class="step-circle">3</span>
+              <div><strong>4인 자리 추첨:</strong> 버튼을 누르면 동(東, 청색), 남(南, 적색), 서(西, 흑색), 북(北, 녹색) 타일이 무작위 배정되어 시각적 타일로 나타납니다.</div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="features-highlight">
+          <div class="feature-point">
+            <span>🎲</span>
+            <div><strong>공정한 타일 추첨:</strong> 가위바위보나 주사위 대신 암호학적 난수로 공정하게 자풍을 배정합니다.</div>
+          </div>
+          <div class="feature-point">
+            <span>🎨</span>
+            <div><strong>공식 방위 컬러 적용:</strong> 東(청색)·南(적색)·西(흑색)·北(녹색)의 표준 시각 색상을 적용했습니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realistic Queue Mockup -->
+      <div class="mockup-window">
+        <div class="window-bar">
+          <div class="window-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="window-address">mahjong.aquaco.work/queue</div>
+        </div>
+
+        <div class="screen-body">
+          <div class="mockup-header-app">
+            <span class="app-logo">🀄 마장 대기열 &amp; 좌석 추첨</span>
+            <span class="lang-badge">대기 5명</span>
+          </div>
+
+          <!-- Input Box -->
+          <div class="queue-input-box">
+            <div class="mock-input">닉네임 입력 (예: 타로)</div>
+            <div class="mock-input-btn">대기 등록</div>
+          </div>
+
+          <!-- Queue List -->
+          <div class="queue-items-list">
+            <div class="queue-row selected">
+              <div>
+                <span class="queue-num">101</span>
+                <span class="queue-name">민수 (나)</span>
+              </div>
+              <span class="status-pill-ok">현장 도착 🟢</span>
+            </div>
+            <div class="queue-row selected">
+              <div>
+                <span class="queue-num">102</span>
+                <span class="queue-name">지훈</span>
+              </div>
+              <span class="status-pill-ok">현장 도착 🟢</span>
+            </div>
+            <div class="queue-row">
+              <div>
+                <span class="queue-num">103</span>
+                <span class="queue-name">철수</span>
+              </div>
+              <span class="status-pill-wait">이동 중 ⚪</span>
+            </div>
+            <div class="queue-row selected">
+              <div>
+                <span class="queue-num">104</span>
+                <span class="queue-name">영희</span>
+              </div>
+              <span class="status-pill-ok">현장 도착 🟢</span>
+            </div>
+            <div class="queue-row selected">
+              <div>
+                <span class="queue-num">105</span>
+                <span class="queue-name">수진</span>
+              </div>
+              <span class="status-pill-ok">현장 도착 🟢</span>
+            </div>
+          </div>
+
+          <!-- Draw Results -->
+          <div class="draw-result-container">
+            <div class="draw-title">🎲 이번 탁 추첨 편성 결과</div>
+            <div class="draw-grid">
+              <div class="draw-tile">
+                <div class="wind-east">東 (동)</div>
+                <div class="draw-player-name">민수</div>
+              </div>
+              <div class="draw-tile">
+                <div class="wind-south">南 (남)</div>
+                <div class="draw-player-name">지훈</div>
+              </div>
+              <div class="draw-tile">
+                <div class="wind-west">西 (서)</div>
+                <div class="draw-player-name">영희</div>
+              </div>
+              <div class="draw-tile">
+                <div class="wind-north">北 (북)</div>
+                <div class="draw-player-name">수진</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- PAGE 4: MVP 2 FIXED QR SEAT SESSION -->
+  <article class="page-block">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h2>
+          🏷️ 4. 작탁 고정 QR 좌석 세션 연동
+          <span class="route-pill">/seat</span>
+        </h2>
+        <p class="page-summary">
+          마장 각 작탁의 4개 좌석에 붙은 고정 QR 코드를 휴대폰으로 찍으면 자동으로 좌석에 체크인되고, 4명이 모이면 세션이 시작되어 경기 결과와 연동되는 차세대 시스템입니다.
+        </p>
+      </div>
+      <span class="badge badge-plan">○ MVP 2 기획 중</span>
+    </div>
+
+    <div class="page-content-grid">
+      <!-- Story / Usage -->
+      <div class="story-panel">
+        <div class="scenario-card">
+          <div class="scenario-title">💡 구현 예정 시나리오</div>
+          <ul class="scenario-steps">
+            <li class="scenario-step">
+              <span class="step-circle">1</span>
+              <div><strong>좌석 QR 태그:</strong> 테이블 1번 東가 자리에 앉아 모서리에 부착된 고정 QR 코드를 카메라로 찍습니다.</div>
+            </li>
+            <li class="scenario-step">
+              <span class="step-circle">2</span>
+              <div><strong>자동 체크인:</strong> 별도의 복잡한 앱 설치 없이 브라우저에서 즉시 "테이블 1 · 東가 착석" 상태로 등록됩니다.</div>
+            </li>
+            <li class="scenario-step">
+              <span class="step-circle">3</span>
+              <div><strong>4인 자동 세션 개설:</strong> 남/서/북가 플레이어가 모두 등록(4/4)되면 해당 탁의 대국 세션이 활성화되고, 경기 후 AI 스캔 결과가 해당 세션으로 바로 매핑됩니다.</div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="features-highlight">
+          <div class="feature-point">
+            <span>📌</span>
+            <div><strong>마장 전용 고정 스티커:</strong> 테이블마다 영구 부착된 QR 코드를 그대로 재사용하므로 매번 새 링크를 만들 필요가 없습니다.</div>
+          </div>
+          <div class="feature-point">
+            <span>🔗</span>
+            <div><strong>MVP 1 스캐너와 결합:</strong> 4명의 착석 닉네임과 카메라 점수 스캔 결과가 자동으로 하나로 합쳐져 완벽한 마장 관리 자동화가 완성됩니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realistic QR Checkin Mockup -->
+      <div class="mockup-window">
+        <div class="window-bar">
+          <div class="window-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="window-address">mahjong.aquaco.work/seat?table=1&amp;seat=east</div>
+        </div>
+
+        <div class="screen-body">
+          <div class="seat-card-hero">
+            <span class="seat-badge-pill">테이블 1 · 東 (동가) 좌석</span>
+            <div class="seat-title-lg">민수 님, 착석 등록 완료!</div>
+            <div class="seat-sub">4명이 모두 등록하면 게임 세션이 시작됩니다.</div>
+          </div>
+
+          <!-- Mini Seat Map -->
+          <div class="seat-table-diagram">
+            <div class="seat-box done n">北: 수진 (완료)</div>
+            <div class="seat-box done w">西: 영희 (완료)</div>
+            <div class="table-center-box">
+              1번 탁<br />
+              <strong>4 / 4 완료</strong>
+            </div>
+            <div class="seat-box done e">東: 민수 (완료)</div>
+            <div class="seat-box done s">南: 지훈 (완료)</div>
+          </div>
+
+          <div class="sum-status-bar" style="background: #e0f2fe; color: #0369a1; justify-content: center; margin-top: 14px;">
+            <span>🟢 4명 전원 착석 완료! 대국 세션이 활성화되었습니다.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- Complete End-to-End Pipeline Section -->
+  <section class="pipeline-section">
+    <h2 style="font-size: 21px; font-weight: 800; color: var(--primary-dark);">
+      🔄 한눈에 보는 완벽한 서비스 파이프라인 (End-to-End)
+    </h2>
+    <p style="font-size: 14px; color: var(--muted); margin-top: 4px;">
+      입장부터 정산까지, 이용자와 마장 운영자 모두에게 번거로움 없는 매끄러운 경험을 제공합니다.
+    </p>
+
+    <div class="pipeline-grid">
+      <div class="pipeline-card">
+        <span class="pipeline-tag">1단계 · 대기 및 매칭</span>
+        <div class="pipeline-title">/queue 대기 및 추첨</div>
+        <div class="pipeline-desc">온라인 순번 등록 후 4인 모이면 동남서북 무작위 공정 자리 추첨.</div>
+      </div>
+
+      <div class="pipeline-card">
+        <span class="pipeline-tag">2단계 · 좌석 등록</span>
+        <div class="pipeline-title">/seat 고정 QR 착석</div>
+        <div class="pipeline-desc">작탁 모서리 QR 스캔으로 4인 좌석 매핑 및 세션 자동 시작.</div>
+      </div>
+
+      <div class="pipeline-card">
+        <span class="pipeline-tag">3단계 · 경기 후 스캔</span>
+        <div class="pipeline-title">/scan_score AI 스캔</div>
+        <div class="pipeline-desc">카메라로 계기판 1초 비추면 7세그먼트 점수 및 합계 자동 판독.</div>
+      </div>
+
+      <div class="pipeline-card">
+        <span class="pipeline-tag">4단계 · 정산 및 공유</span>
+        <div class="pipeline-title">/set_score_umaoka</div>
+        <div class="pipeline-desc">우마·오카 순위점수 자동 계산 후 초경량 링크로 단체방 공유.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final Callout -->
+  <div class="final-note">
+    <strong>💡 요약 및 차기 방향:</strong>
+    핵심 정산 로직(1단계)과 실시간 AI 점수판 스캔(MVP 1)이 실기 검증을 통과하여 <strong>누구나 스마트폰으로 즉시 사용 가능한 프로덕션 레벨</strong>에 도달했습니다. 이어지는 <strong>MVP 2 고정 QR 좌석 세션</strong>이 완성되면 오프라인 마장의 완전 무인화·자동화 대탁 생태계가 구축됩니다.
+  </div>
+
+  <footer>
+    mahjong.aquaco.work · 일본 리치 마작 대탁 및 마장 관리 플랫폼<br />
+    본 문서는 다른 분들과 프로젝트 진행 상황 및 UI를 공유하고 논의하기 위해 제작된 시각 자료입니다.
+  </footer>
+
+</main>
+</body>
+</html>

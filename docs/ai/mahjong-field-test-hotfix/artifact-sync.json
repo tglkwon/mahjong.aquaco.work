@@ -1,0 +1,34 @@
+{
+  "schema_version": 3,
+  "artifact_mode": "canonical",
+  "work_id": "mahjong-field-test-hotfix",
+  "artifact_revision": "2",
+  "artifacts": {
+    "intent": {
+      "path": "intent.md",
+      "sha256": "7f42c22a4fbbe3f30d9e7eb90dbfcace11f7487a847f43430758ef2e135b28ed",
+      "content_sha256": "7f42c22a4fbbe3f30d9e7eb90dbfcace11f7487a847f43430758ef2e135b28ed"
+    },
+    "spec": {
+      "path": "spec.md",
+      "sha256": "f278bc32c0b65dc6847cebad98cc21aa03ceef2ea8213ab581cb88f9b7740b0f",
+      "content_sha256": "f278bc32c0b65dc6847cebad98cc21aa03ceef2ea8213ab581cb88f9b7740b0f"
+    },
+    "plan": {
+      "path": "plan.md",
+      "sha256": "99e564539c7469973631688b61fdacc31d8c2b571d7178f84a8401babb8f7141",
+      "content_sha256": "99e564539c7469973631688b61fdacc31d8c2b571d7178f84a8401babb8f7141"
+    },
+    "evidence": {
+      "path": "evidence.md",
+      "sha256": "73a636299ff56169151d53328363d8ffe6e00e821ed113c2000adecf2b03aba7",
+      "content_sha256": "73a636299ff56169151d53328363d8ffe6e00e821ed113c2000adecf2b03aba7"
+    }
+  },
+  "preview": {
+    "path": "expected-outcome.html",
+    "source": "intent.md",
+    "source_revision": "1",
+    "sha256": "e634c294babcb317afcfe88df87cee84866b0e1be989332ef7ef019edf07ddb3"
+  }
+}

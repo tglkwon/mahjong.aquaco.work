@@ -93,4 +93,39 @@ describe('QueuePage component', () => {
     fireEvent.click(scanBtn);
     expect(screen.getByText('Scan Score Page')).toBeInTheDocument();
   });
+
+  test('automatically renders 3D wind tiles and hides draw button when latest_draw is received from polling', async () => {
+    const drawData = [
+      { seat: 'east', wind_char: '東', seat_label: '동가 (East)', client_id: 'q1', nickname: '플레이어1' },
+      { seat: 'south', wind_char: '南', seat_label: '남가 (South)', client_id: 'q2', nickname: '플레이어2' },
+      { seat: 'west', wind_char: '西', seat_label: '서가 (West)', client_id: 'q3', nickname: '플레이어3' },
+      { seat: 'north', wind_char: '北', seat_label: '북가 (North)', client_id: 'q4', nickname: '플레이어4' },
+    ];
+
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        count: 0,
+        queue: [],
+        latest_draw: { table_id: 1, session_id: 10, draw: drawData, drawn_at: '2026-09-23T10:00:00Z' },
+      }),
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <QueuePage />
+      </MemoryRouter>
+    );
+
+    // Automatically transitions without manual click
+    await waitFor(() => {
+      expect(screen.getByText('東')).toBeInTheDocument();
+      expect(screen.getByText('南')).toBeInTheDocument();
+      expect(screen.getByText('동가 (East)')).toBeInTheDocument();
+      expect(screen.getByText('📊 자리 배정 완료 후 점수 입력/인식 페이지로 이동 ➔')).toBeInTheDocument();
+    });
+
+    // Draw button must NOT be present
+    expect(screen.queryByText(/🀄 4인 마작패 자리 추첨/)).toBeNull();
+  });
 });

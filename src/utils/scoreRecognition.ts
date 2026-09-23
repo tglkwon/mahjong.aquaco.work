@@ -144,26 +144,46 @@ function recognizeUpright(
   }
   return orderedRuns.map((group, index) => {
     const shouldSliceRank = model === 'amos_rexx3' && index === 0 && group.length === 4 && !group[0].isMinus;
+    let digitConfidences: number[] = [];
     const digits = (shouldSliceRank ? group.slice(1) : group).map((box, digitIndex) => {
       if (box.isMinus) return digitIndex === 0 ? '-' : '';
-      if (box.w / box.h < .33) return '1';
+      if (box.w / box.h < .33) {
+        digitConfidences.push(0.95);
+        return '1';
+      }
+
       // Seven segment centers: top, upper-left, upper-right, middle,
-      // lower-left, lower-right, bottom. Occupancy tolerates modest perspective.
-      // Note: Middle bar (zIndex 3) and bottom bar (zIndex 6) use left-bias coordinates
-      // (.40, .5) and (.30, .93) so that digit 7's diagonal stem passing through center/bottom-right
-      // is never mistaken for middle/bottom horizontal bars (which would misclassify 7 as 3).
-      // Lower-left probe (zIndex 4) uses cy=0.64, dy=0.05, threshold=0.38 to prevent digit 9's
-      // bottom horizontal bar from bleeding into lower-left (which would misclassify 9 as 8).
-      const zones = [[.5,.08],[.18,.27],[.82,.25],[.40,.5],[.14,.64],[.78,.73],[.30,.93]];
-      const bits = zones.map(([cx, cy], zIndex) => {
+      // lower-left, lower-right, bottom.
+      // Middle bar (zIndex 3) uses centered coordinates (.48, .50) with relative contrast.
+      const zones = [[.5,.08],[.18,.27],[.82,.25],[.48,.50],[.14,.64],[.78,.73],[.30,.93]];
+      const densities = zones.map(([cx, cy], zIndex) => {
         const dx = zIndex === 3 ? .06 : (zIndex === 6 ? .08 : .14);
         const dy = zIndex === 3 ? .06 : (zIndex === 4 ? .05 : (zIndex === 6 ? .06 : .09));
-        const threshold = zIndex === 3 ? .40 : (zIndex === 4 ? .38 : (zIndex === 6 ? .30 : .25));
         let count = 0, total = 0;
         for (let yy = Math.max(0, Math.floor((cy - dy) * box.h)); yy <= Math.min(box.h - 1, Math.ceil((cy + dy) * box.h)); yy++)
           for (let xx = Math.max(0, Math.floor((cx - dx) * box.w)); xx <= Math.min(box.w - 1, Math.ceil((cx + dx) * box.w)); xx++) { count += mask[(box.y + yy) * width + box.x + xx]; total++; }
-        return count / total > threshold ? '1' : '0';
+        return total > 0 ? count / total : 0;
+      });
+
+      // Outer active segments average (top, upper-left, upper-right, lower-left, lower-right, bottom)
+      const outerIndices = [0, 1, 2, 4, 5, 6];
+      const outerAvg = outerIndices.reduce((sum, idx) => sum + densities[idx], 0) / outerIndices.length;
+
+      const bits = zones.map((_, zIndex) => {
+        const density = densities[zIndex];
+        if (zIndex === 3) {
+          // Middle bar (Segment G): Relative contrast against outer segments to eliminate LED flare/bloom
+          // In digit 0, outerAvg is high (>=0.45) but middle bar light is only bleeding flare.
+          // Require middle bar to have at least 70% of outer average AND >= 0.45 density.
+          if (outerAvg >= 0.45) {
+            return density >= Math.max(0.45, outerAvg * 0.70) ? '1' : '0';
+          }
+          return density > 0.40 ? '1' : '0';
+        }
+        const threshold = zIndex === 4 ? .38 : (zIndex === 6 ? .30 : .25);
+        return density > threshold ? '1' : '0';
       }).join('');
+
       let digit = patterns.indexOf(bits);
       if (digit < 0) {
         if (bits === '1110010' || bits === '1010000' || bits === '1010001' || bits === '1010011' || bits === '1011010') digit = 7;
@@ -172,9 +192,18 @@ function recognizeUpright(
         else if (bits === '0010111' || bits === '0110111') digit = 0;
         else if (bits === '1101010') digit = 5;
       }
+
+      const conf = Math.max(0.70, Math.min(0.98, 0.75 + outerAvg * 0.22));
+      digitConfidences.push(conf);
       return digit < 0 ? '' : String(digit);
     });
-    return digits.every(Boolean) ? { raw: digits.join(''), confidence: .82 } : { raw: '', confidence: 0 };
+
+    const avgConf = digitConfidences.length > 0
+      ? digitConfidences.reduce((a, b) => a + b, 0) / digitConfidences.length
+      : 0.82;
+    const roundedConf = Math.round(avgConf * 100) / 100;
+
+    return digits.every(Boolean) ? { raw: digits.join(''), confidence: roundedConf } : { raw: '', confidence: 0 };
   });
 }
 
