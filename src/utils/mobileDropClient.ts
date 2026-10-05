@@ -184,3 +184,16 @@ export async function uploadToMobileDrop(
     serverMessage: completeData.message || '전송 완료',
   };
 }
+
+/**
+ * Uploads diagnostic telemetry or metadata as a JSON sidecar file.
+ */
+export async function uploadSidecarJson(
+  data: object,
+  filename: string,
+  options: DropUploadOptions
+): Promise<DropUploadResult> {
+  const jsonString = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  return uploadToMobileDrop(blob, filename, options);
+}

@@ -219,26 +219,27 @@ test('testMode clicking record button calls /api/sessions/:id/finish', async () 
   );
 });
 
-test('hides test lab transition tab on /scan_score and shows return link on test mode', () => {
-  // 1. Production route: /scan_score
+test('shows test controls on /scan_score when testMode is true and hides in normal mode', () => {
+  // 1. Normal mode: /scan_score
   window.history.pushState({}, '', '/scan_score');
   const { unmount } = render(<App />);
 
-  expect(screen.queryByText(/PC 전송 테스트 Lab 이동/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/테스트 점수 채우기/i)).not.toBeInTheDocument();
   unmount();
 
-  // 2. Test mode route: /scan_score_test
-  window.history.pushState({}, '', '/scan_score_test');
+  // 2. Test mode via query param: /scan_score?testMode=true
+  window.history.pushState({}, '', '/scan_score?testMode=true');
   const { unmount: unmountTest } = render(<App />);
 
-  expect(screen.getByText(/일반 서비스 화면 이동/i)).toBeInTheDocument();
+  expect(screen.getByText(/테스트 점수 채우기/i)).toBeInTheDocument();
   unmountTest();
 
-  // 3. Query param test mode: /scan_score?testMode=true
-  window.history.pushState({}, '', '/scan_score?testMode=true');
+  // 3. Test mode via redirect: /scan_score_test?testMode=true redirects to /scan_score?testMode=true
+  window.history.pushState({}, '', '/scan_score_test?testMode=true');
   render(<App />);
 
-  expect(screen.getByText(/일반 서비스 화면 이동/i)).toBeInTheDocument();
+  expect(window.location.pathname).toBe('/scan_score');
+  expect(screen.getByText(/테스트 점수 채우기/i)).toBeInTheDocument();
 });
 
 test('production /scan_score polls Table 1 status, displays nicknames, and calls finish API', async () => {

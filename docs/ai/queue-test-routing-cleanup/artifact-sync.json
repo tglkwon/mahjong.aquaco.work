@@ -1,0 +1,25 @@
+{
+  "schema_version": 3,
+  "artifact_mode": "canonical",
+  "work_id": "queue-test-routing-cleanup",
+  "artifact_revision": "3",
+  "artifacts": {
+    "intent": {
+      "path": "intent.md"
+    },
+    "spec": {
+      "path": "spec.md"
+    },
+    "plan": {
+      "path": "plan.md"
+    },
+    "evidence": {
+      "path": "evidence.md"
+    }
+  },
+  "preview": {
+    "path": "expected-outcome.html",
+    "source": "intent.md",
+    "source_revision": "2"
+  }
+}

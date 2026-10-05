@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="ko" data-work-id="adaptive-score-recognition" data-artifact-revision="3" data-intent-sha256="0a5db725269e7f21450a46e3d99e51ef6e66a0d653894d918a3dfe73c6ef5b81">
+<head>
+  <meta charset="utf-8" />
+  <title>Adaptive Score Recognition and Viewfinder Alignment - Visual Outcome</title>
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.5;
+      color: #1e293b;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 24px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e3a8a, #0f172a);
+      color: #ffffff;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .header h1 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .header p {
+      margin: 0;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      background-color: #0284c7;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 16px;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 8px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .box-compare {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .box-before {
+      background-color: #fff1f2;
+      border-color: #fecdd3;
+    }
+    .box-after {
+      background-color: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .box-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .box-before .box-title { color: #9f1239; }
+    .box-after .box-title { color: #166534; }
+    .flow-step {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 10px 14px;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+    .flow-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: #2563eb;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    .flow-content {
+      font-size: 13px;
+    }
+    .flow-title {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .flow-desc {
+      color: #64748b;
+      font-size: 12px;
+    }
+    .diagram-panel {
+      background-color: #0f172a;
+      border-radius: 8px;
+      padding: 16px;
+      color: #f8fafc;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 12px;
+      overflow-x: auto;
+    }
+    .segment-preview {
+      display: inline-block;
+      width: 60px;
+      height: 90px;
+      position: relative;
+      background-color: #020617;
+      border-radius: 4px;
+      border: 1px solid #334155;
+      margin: 0 10px;
+    }
+    .seg-bar {
+      position: absolute;
+      background-color: #ef4444;
+      border-radius: 2px;
+    }
+    .seg-off {
+      background-color: #1e293b;
+    }
+    .seg-flare {
+      background-color: #7f1d1d;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="badge">Phase 1 Design Preview</span>
+      <h1>조준 가이드 연동 및 밝기·대비 적응형 점수판 인식</h1>
+      <p>WYSIWYG 조준 영역 분석, 2단계 적응형 정규화, 원본 픽셀 상대 대비 기반 7세그먼트 해석 설계 프리뷰</p>
+    </div>
+
+    <!-- 1. 분석 영역 연동 (Viewfinder ROI Synchronization) -->
+    <div class="card">
+      <div class="card-title">1. 조준 가이드와 실제 분석 영역 1:1 일치 (WYSIWYG)</div>
+      <div class="grid-2">
+        <div class="box-compare box-before">
+          <div class="box-title">기존 방식 (불일치)</div>
+          <p style="font-size: 12px; margin: 0 0 6px 0;">
+            - 화면에는 w-[94%], h-[78%] 조준 상자 표시<br />
+            - 내부 로직은 화면과 무관하게 세로 중앙 50%를 맹목적으로 추출<br />
+            - <strong>결과:</strong> 조준창 밖의 조명/손/잡음이 유입되고, 상하단 숫자가 잘리는 오작동 발생
+          </p>
+          <div class="diagram-panel">
+[전체 카메라 스트림: 1080x1920]
++-------------------------------+
+| (외부 조명/주사위통 잡음 유입) |
+|   +-----------------------+   |
+|   | 화면의 조준창 (실제 조준) |   |
+|---|- - - - - - - - - - - -|---|  &lt;- 25% 라인
+|   | [하단][우측][상단][좌측] |   |  &lt;- 세로 50% 강제 크롭
+|---|- - - - - - - - - - - -|---|  &lt;- 75% 라인
+|   | (조준창 아래 숫자는 절단) |   |
++-------------------------------+
+          </div>
+        </div>
+        <div class="box-compare box-after">
+          <div class="box-title">개선 방식 (100% 동기화)</div>
+          <p style="font-size: 12px; margin: 0 0 6px 0;">
+            - CSS object-cover 좌표를 역변환하여 조준창 영역만 정확히 크롭<br />
+            - 잘라낸 영역을 최대 960px로 축소하여 분석 캔버스에 주입<br />
+            - <strong>결과:</strong> 점수판 내부 4개 점수 영역만 안전하게 캡처되어 오탐지 원천 차단
+          </p>
+          <div class="diagram-panel">
+[전체 카메라 스트림: 1080x1920]
++-------------------------------+
+| (바깥 영역 완전 배제)          |
+|   +-----------------------+   |
+|   | ★ 조준창 1:1 정확 크롭 |   |
+|   | [하단][우측][상단][좌측] |   |
+|   | (4개 점수 완벽 포함)   |   |
+|   +-----------------------+   |
+| (점수판 외곽 잡음 0%)          |
++-------------------------------+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 처리 파이프라인 흐름도 -->
+    <div class="card">
+      <div class="card-title">2. 개선된 적응형 인식 처리 파이프라인</div>
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-content">
+          <div class="flow-title">조준 창 영역 크롭 &amp; 최대 960px 축소</div>
+          <div class="flow-desc">사용자가 바라보는 조준 가이드 내부 사각형만 잘라내어 해상도 최적화 (가로/세로 최대 960px)</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-content">
+          <div class="flow-title">1단계: 조준창 전체 대략적 밝기 기준 계산 (샘플링)</div>
+          <div class="flow-desc">격자 샘플링(4px 간격)으로 배경과 LED의 밝기 분포를 빠르게 파악하여 적응형 후보 마스크 생성</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-content">
+          <div class="flow-title">숫자 영역 탐색 &amp; 4개 점수 표시부 군집화</div>
+          <div class="flow-desc">기존 연결요소(Connected Component) 탐색 및 가로/세로 배치 알고리즘으로 4개 플레이어 표시 영역 확정</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div class="flow-content">
+          <div class="flow-title">2단계: 4개 점수 표시부별 밝기 기준 세부 재조정</div>
+          <div class="flow-desc">한쪽 점수판에만 천장 조명이 반사되거나 그림자가 져도, 4개 점수판 각각의 독립 기준값으로 국소 정규화</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">5</div>
+        <div class="flow-content">
+          <div class="flow-title">원본 픽셀 상대 대비 기반 7세그먼트 막대 판정</div>
+          <div class="flow-desc">이진 마스크 밀도 대신 원본 RGB의 중심 밝기와 인접 내부 공간(캐비티) 배경의 상대 대비를 비교하여 확정</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">6</div>
+        <div class="flow-content">
+          <div class="flow-title">숫자 해석 &amp; 4인 합계 검증 &amp; 프레임 일치 확인</div>
+          <div class="flow-desc">합계 검증(startingScore * 4) 및 연속 3프레임 일치 시 자동 확정 (불확실 판정 시 자동 채택 차단)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 원본 픽셀 상대 대비 막대 판정 (0 vs 8 블룸 방지) -->
+    <div class="card">
+      <div class="card-title">3. 막대 판정 분리: 번진 빛(Flare/Bloom)으로 인한 0 → 8 오인식 원천 차단</div>
+      <p style="font-size: 13px; color: #475569; margin-top: 0;">
+        숫자 &apos;0&apos;의 중앙 막대(G 세그먼트)는 꺼져 있으나, 외곽의 A, B, C, D, E, F 세그먼트에서 방출된 강한 빛이 중앙으로 번집니다.
+        기존의 이진 마스크 밀도 검사는 이 번진 빛을 켜진 막대로 오판하여 &apos;0&apos;을 &apos;8&apos;로 잘못 읽는 문제가 있었습니다.
+      </p>
+      <div class="grid-2">
+        <div class="box-compare box-before">
+          <div class="box-title">기존: 이진 마스크 밀도 판정 (오탐지 발생)</div>
+          <div style="text-align: center; padding: 12px 0;">
+            <div class="segment-preview">
+              <!-- digit 0 with blooming middle -->
+              <div class="seg-bar" style="top:4px; left:8px; width:44px; height:6px;"></div>
+              <div class="seg-bar" style="top:8px; left:4px; width:6px; height:34px;"></div>
+              <div class="seg-bar" style="top:8px; right:4px; width:6px; height:34px;"></div>
+              <div class="seg-bar seg-flare" style="top:42px; left:8px; width:44px; height:6px;"></div>
+              <div class="seg-bar" style="bottom:8px; left:4px; width:6px; height:34px;"></div>
+              <div class="seg-bar" style="bottom:8px; right:4px; width:6px; height:34px;"></div>
+              <div class="seg-bar" style="bottom:4px; left:8px; width:44px; height:6px;"></div>
+            </div>
+          </div>
+          <p style="font-size: 12px; margin: 0; color: #9f1239;">
+            ❌ 중앙 G 세그먼트에 번진 붉은빛이 마스크 밀도 임계값을 초과하여 &apos;8&apos;로 잘못 인식됨.
+          </p>
+        </div>
+        <div class="box-compare box-after">
+          <div class="box-title">개선: 원본 픽셀 중심-캐비티 상대 대비 판정 (해결)</div>
+          <div style="text-align: center; padding: 12px 0;">
+            <div class="segment-preview">
+              <div class="seg-bar" style="top:4px; left:8px; width:44px; height:6px;"></div>
+              <div class="seg-bar" style="top:8px; left:4px; width:6px; height:34px;"></div>
+              <div class="seg-bar" style="top:8px; right:4px; width:6px; height:34px;"></div>
+              <div class="seg-bar seg-off" style="top:42px; left:8px; width:44px; height:6px;"></div>
+              <div class="seg-bar" style="bottom:8px; left:4px; width:6px; height:34px;"></div>
+              <div class="seg-bar" style="bottom:8px; right:4px; width:6px; height:34px;"></div>
+              <div class="seg-bar" style="bottom:4px; left:8px; width:44px; height:6px;"></div>
+            </div>
+          </div>
+          <p style="font-size: 12px; margin: 0; color: #166534;">
+            ✅ 막대 중심과 인접 상·하 내부 캐비티의 명암비(Peak Contrast)를 비교하므로, 번진 빛과 실제 켜진 막대를 100% 구별하여 정확히 &apos;0&apos;으로 판정.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 정량적 검증 및 비교 기준 -->
+    <div class="card">
+      <div class="card-title">4. 검증 지표 및 기존 방식 대비 개선 목표</div>
+      <table>
+        <thead>
+          <tr>
+            <th>지표</th>
+            <th>기존 (3-Pass 고정/완화/Otsu)</th>
+            <th>개선 (적응형 밝기 + 원본 상대 대비)</th>
+            <th>합격 기준</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>네 점수 전체 정답률</strong></td>
+            <td>조명 반사 시 위치 탐색 실패 빈발</td>
+            <td>조준창 크롭 + 4개 영역별 국소 정규화로 안정 확보</td>
+            <td>기존 픽스처 100% + 현장 영상 향상</td>
+          </tr>
+          <tr>
+            <td><strong>0 / 8 오인식 발생률</strong></td>
+            <td>LED 번짐 시 중앙 막대 오인식 위험 존재</td>
+            <td>중심-캐비티 피크 대비 비교로 원천 차단</td>
+            <td>0 / 8 관련 오판율 0.0%</td>
+          </tr>
+          <tr>
+            <td><strong>잘못된 점수 자동 채택률</strong></td>
+            <td>0.0% (합계 검증 + 3회 일치 유지)</td>
+            <td>0.0% (대비 불명확 시 불확실 판정 추가)</td>
+            <td>엄격한 0.0% 불변 유지</td>
+          </tr>
+          <tr>
+            <td><strong>프레임당 처리 시간</strong></td>
+            <td>최대 3회 패스 반복 시 ~25ms</td>
+            <td>단일 적응형 패스 + 국소 막대 샘플링 (~10ms)</td>
+            <td>프레임당 25ms 이하</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

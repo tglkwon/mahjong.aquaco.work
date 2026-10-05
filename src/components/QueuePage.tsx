@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   getClientId,
   ensureClientId,
@@ -31,6 +31,7 @@ const WIND_COLORS: Record<string, string> = {
 
 export const QueuePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [storedNick, setStoredNick] = useState('');
   const [nicknameInput, setNicknameInput] = useState('');
@@ -39,7 +40,41 @@ export const QueuePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const currentClientId = getClientId();
+  const [currentClientId, setCurrentClientId] = useState<string | null>(getClientId());
+
+  // 쿼리 파라미터 및 세션 스토리지 기반 테스트 파라미터 감지 및 보존
+  const getScoreScanTarget = useCallback((tableParam = '1') => {
+    try {
+      const searchString = (location && location.search) || (typeof window !== 'undefined' ? window.location.search : '');
+      const searchParams = new URLSearchParams(searchString);
+      const hashString = (location && location.hash) || (typeof window !== 'undefined' ? window.location.hash : '');
+      const hashQuery = hashString.includes('?')
+        ? new URLSearchParams(hashString.split('?')[1])
+        : new URLSearchParams();
+
+      const dropUrl = searchParams.get('dropUrl') || hashQuery.get('dropUrl') || sessionStorage.getItem('mahjong_drop_url') || '';
+      const dropPin = searchParams.get('dropPin') || hashQuery.get('dropPin') || sessionStorage.getItem('mahjong_drop_pin') || '';
+      const device = searchParams.get('device') || hashQuery.get('device') || sessionStorage.getItem('mahjong_device') || '';
+      const testMode = searchParams.get('testMode') || hashQuery.get('testMode') || sessionStorage.getItem('mahjong_test_mode') || '';
+
+      if (dropUrl) sessionStorage.setItem('mahjong_drop_url', dropUrl);
+      if (dropPin) sessionStorage.setItem('mahjong_drop_pin', dropPin);
+      if (device) sessionStorage.setItem('mahjong_device', device);
+      if (testMode) sessionStorage.setItem('mahjong_test_mode', testMode);
+
+      const targetParams = new URLSearchParams();
+      if (tableParam) targetParams.set('table', tableParam);
+      if (dropUrl) targetParams.set('dropUrl', dropUrl);
+      if (dropPin) targetParams.set('dropPin', dropPin);
+      if (device) targetParams.set('device', device);
+      if (testMode) targetParams.set('testMode', testMode);
+
+      const qs = targetParams.toString();
+      return qs ? `/scan_score?${qs}` : '/scan_score';
+    } catch {
+      return tableParam ? `/scan_score?table=${tableParam}` : '/scan_score';
+    }
+  }, [location]);
 
   const fetchQueue = useCallback(async () => {
     try {
@@ -47,27 +82,28 @@ export const QueuePage: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setQueue(data.queue || []);
-        if (currentClientId) {
+        const activeCid = currentClientId || getClientId();
+        if (activeCid) {
           const inQueue = (data.queue || []).some(
-            (item: QueueItem) => item.client_id === currentClientId
+            (item: QueueItem) => item.client_id === activeCid
           );
           setIsEnqueued(inQueue);
         }
 
-        // 4인 자리 추첨 실시간 동기화
+        // 4인 자리 추첨 실시간 동기화 (전원 동시 전환 및 초기화 동기화)
         if (data.latest_draw && Array.isArray(data.latest_draw.draw) && data.latest_draw.draw.length === 4) {
-          const isParticipant = currentClientId && data.latest_draw.draw.some(
-            (d: TileDrawResult) => d.client_id === currentClientId
-          );
-          if (isParticipant || !drawResult) {
-            setDrawResult(data.latest_draw.draw);
+          setDrawResult(data.latest_draw.draw);
+          if (activeCid && data.latest_draw.draw.some((d: TileDrawResult) => d.client_id === activeCid)) {
+            setIsEnqueued(false);
           }
+        } else if (data.latest_draw === null) {
+          setDrawResult(null);
         }
       }
     } catch {
       // ignore network errors during poll
     }
-  }, [currentClientId, drawResult]);
+  }, [currentClientId]);
 
   useEffect(() => {
     const nick = getStoredNickname();
@@ -90,6 +126,7 @@ export const QueuePage: React.FC = () => {
     setErrorMsg(null);
     try {
       const cid = ensureClientId();
+      setCurrentClientId(cid);
       setStoredNickname(nameToUse);
       setStoredNick(nameToUse);
 
@@ -114,13 +151,14 @@ export const QueuePage: React.FC = () => {
   };
 
   const handleLeaveQueue = async () => {
-    if (!currentClientId) return;
+    const activeCid = currentClientId || getClientId();
+    if (!activeCid) return;
     setLoading(true);
     try {
       await fetch('/api/queue/leave', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client_id: currentClientId }),
+        body: JSON.stringify({ client_id: activeCid }),
       });
       setIsEnqueued(false);
       await fetchQueue();
@@ -148,8 +186,51 @@ export const QueuePage: React.FC = () => {
 
       const data = await res.json();
       setDrawResult(data.draw);
+      setIsEnqueued(false);
+      await fetchQueue();
     } catch (err: any) {
       setErrorMsg(err.message || '자리 추첨 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearDraw = async () => {
+    if (!window.confirm('자리 뽑기 결과를 정리하시겠습니까?\n화면의 배정 결과가 초기화됩니다.')) {
+      return;
+    }
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      await fetch('/api/queue/clear-draw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table_id: 1 }),
+      });
+      setDrawResult(null);
+      await fetchQueue();
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearQueue = async () => {
+    if (!window.confirm('대기 명단을 모두 비우시겠습니까?\n대기 중인 모든 플레이어의 등록이 취소됩니다.')) {
+      return;
+    }
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      await fetch('/api/queue/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      setIsEnqueued(false);
+      await fetchQueue();
+    } catch {
+      // ignore
     } finally {
       setLoading(false);
     }
@@ -177,7 +258,7 @@ export const QueuePage: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/scan_score')}
+            onClick={() => navigate(getScoreScanTarget(''))}
             style={{
               padding: '6px 14px',
               background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
@@ -276,25 +357,42 @@ export const QueuePage: React.FC = () => {
       {/* 4인 모였을 때 자리 추첨 버튼 (추첨 완료 시 숨김) */}
       {queue.length >= 4 && !drawResult && (
         <div style={{ marginBottom: 20 }}>
-          <button
-            type="button"
-            onClick={handleDrawSeats}
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: 'linear-gradient(135deg, #15803d 0%, #22c55e 100%)',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: 16,
-              border: 'none',
-              borderRadius: 10,
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
-            }}
-          >
-            🀄 4인 마작패 자리 추첨 (바람패 타일 뽑기)
-          </button>
+          {(!currentClientId || queue[0]?.client_id === currentClientId) ? (
+            <button
+              type="button"
+              onClick={handleDrawSeats}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: loading ? '#475569' : 'linear-gradient(135deg, #15803d 0%, #22c55e 100%)',
+                color: '#ffffff',
+                fontWeight: 800,
+                fontSize: 16,
+                border: 'none',
+                borderRadius: 10,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
+              }}
+            >
+              {loading ? '🎲 자리 추첨 진행 중...' : '🀄 4인 마작패 자리 추첨 (바람패 타일 뽑기)'}
+            </button>
+          ) : (
+            <div
+              style={{
+                background: 'rgba(37, 99, 235, 0.12)',
+                border: '1px solid #3b82f6',
+                borderRadius: 10,
+                padding: '12px 16px',
+                textAlign: 'center',
+                color: '#93c5fd',
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              ⏳ 1번 대기자({queue[0]?.nickname || '방장'})가 자리 추첨을 진행합니다
+            </div>
+          )}
         </div>
       )}
 
@@ -312,7 +410,8 @@ export const QueuePage: React.FC = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
             {drawResult.map((item) => {
-              const isMe = currentClientId && item.client_id === currentClientId;
+              const activeCid = currentClientId || getClientId();
+              const isMe = Boolean(activeCid && item.client_id === activeCid);
               return (
                 <div
                   key={item.seat}
@@ -367,7 +466,7 @@ export const QueuePage: React.FC = () => {
                   {isMe && (
                     <button
                       type="button"
-                      onClick={() => navigate(`/seat?table=1&seat=${item.seat}`)}
+                      onClick={() => navigate(`/seat?table=1&seat=${item.seat}${window.location.search ? `&${window.location.search.replace(/^\?/, '')}` : ''}`)}
                       style={{
                         marginTop: 8,
                         fontSize: 10,
@@ -391,7 +490,7 @@ export const QueuePage: React.FC = () => {
           <div style={{ marginTop: 14 }}>
             <button
               type="button"
-              onClick={() => navigate('/scan_score?table=1', { state: { drawnSeats: drawResult } })}
+              onClick={() => navigate(getScoreScanTarget('1'), { state: { drawnSeats: drawResult } })}
               style={{
                 width: '100%',
                 padding: '12px',
@@ -407,6 +506,24 @@ export const QueuePage: React.FC = () => {
             >
               📊 자리 배정 완료 후 점수 입력/인식 페이지로 이동 ➔
             </button>
+            <div style={{ marginTop: 8, textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={handleClearDraw}
+                disabled={loading}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  fontSize: 12,
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                }}
+              >
+                [자리 뽑기 결과 정리 / 초기화]
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -417,9 +534,28 @@ export const QueuePage: React.FC = () => {
           <h2 style={{ fontSize: 15, fontWeight: 700, color: '#ffffff' }}>
             현재 대기 명단 ({queue.length}명)
           </h2>
-          <span style={{ fontSize: 11, color: '#94a3b8' }}>
-            {queue.length >= 4 ? '자리 추첨 가능' : `${4 - queue.length}명 더 필요`}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {queue.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearQueue}
+                disabled={loading}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#ef4444',
+                  fontSize: 11,
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                }}
+              >
+                [대기열 비우기]
+              </button>
+            )}
+            <span style={{ fontSize: 11, color: '#94a3b8' }}>
+              {queue.length >= 4 ? '자리 추첨 가능' : `${4 - queue.length}명 더 필요`}
+            </span>
+          </div>
         </div>
 
         {queue.length === 0 ? (
@@ -429,7 +565,8 @@ export const QueuePage: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {queue.map((item, idx) => {
-              const isMe = currentClientId && item.client_id === currentClientId;
+              const activeCid = currentClientId || getClientId();
+              const isMe = Boolean(activeCid && item.client_id === activeCid);
               return (
                 <div
                   key={item.client_id}

@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import PlayerManagementAndScores from './PlayerManagementAndScores';
 import PlayerTotals from './PlayerTotals';
@@ -82,10 +82,11 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
   } | null>(null);
   const [sessionTimingText, setSessionTimingText] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+  const [isTestServerOnline, setIsTestServerOnline] = useState<boolean>(false);
 
-  // effectiveTestMode: isTestMode prop 또는 URL 쿼리 파라미터(?testMode=true) 판별
+  // effectiveTestMode: isTestMode prop, 테스트 서버 온라인 감지, 또는 URL 쿼리 파라미터(?testMode=true) 판별
   const effectiveTestMode = useMemo(() => {
-    if (isTestMode) return true;
+    if (isTestMode || isTestServerOnline) return true;
     try {
       const searchParams = new URLSearchParams(window.location.search);
       const hashQuery = window.location.hash.includes('?')
@@ -95,7 +96,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     } catch {
       return false;
     }
-  }, [isTestMode]);
+  }, [isTestMode, isTestServerOnline]);
 
   // 테이블 1 좌석 2초 주기 폴링 훅 (프로덕션/테스트 상시 실행)
   useEffect(() => {
@@ -568,14 +569,6 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
         <p className="text-sm sm:text-base text-gray-600">
           {getText('umaOkaGuide')}
         </p>
-        {effectiveTestMode && (
-          <Link
-            to="/scan_score"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors shrink-0"
-          >
-            <span>📹 일반 서비스 화면 이동</span>
-          </Link>
-        )}
       </div>
 
       {/* 테이블 1 실시간 연동 및 다기종 검증 인디케이터 */}
@@ -627,6 +620,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
         targetTotalScore={targetTotalScore}
         onScoresRecognized={handleScoresRecognized}
         isTestMode={effectiveTestMode}
+        onTestServerStatusChange={setIsTestServerOnline}
       />
 
       {confirmedGamesCount > 0 && (

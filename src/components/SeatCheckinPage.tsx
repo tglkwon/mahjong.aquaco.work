@@ -50,6 +50,32 @@ export const SeatCheckinPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
+  const getScoreScanTarget = useCallback(() => {
+    try {
+      const dropUrl = searchParams.get('dropUrl') || sessionStorage.getItem('mahjong_drop_url') || '';
+      const dropPin = searchParams.get('dropPin') || sessionStorage.getItem('mahjong_drop_pin') || '';
+      const device = searchParams.get('device') || sessionStorage.getItem('mahjong_device') || '';
+      const testMode = searchParams.get('testMode') || sessionStorage.getItem('mahjong_test_mode') || '';
+
+      if (dropUrl) sessionStorage.setItem('mahjong_drop_url', dropUrl);
+      if (dropPin) sessionStorage.setItem('mahjong_drop_pin', dropPin);
+      if (device) sessionStorage.setItem('mahjong_device', device);
+      if (testMode) sessionStorage.setItem('mahjong_test_mode', testMode);
+
+      const target = new URLSearchParams();
+      target.set('table', tableParam);
+      if (dropUrl) target.set('dropUrl', dropUrl);
+      if (dropPin) target.set('dropPin', dropPin);
+      if (device) target.set('device', device);
+      if (testMode) target.set('testMode', testMode);
+
+      const qs = target.toString();
+      return qs ? `/scan_score?${qs}` : '/scan_score';
+    } catch {
+      return `/scan_score?table=${tableParam}`;
+    }
+  }, [searchParams, tableParam]);
+
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch(`/api/tables/${tableParam}/status`);
@@ -87,14 +113,14 @@ export const SeatCheckinPage: React.FC = () => {
   useEffect(() => {
     if (redirectCountdown === null) return;
     if (redirectCountdown <= 0) {
-      navigate('/scan_score');
+      navigate(getScoreScanTarget());
       return;
     }
     const timer = setTimeout(() => {
       setRedirectCountdown(prev => (prev !== null ? prev - 1 : null));
     }, 1000);
     return () => clearTimeout(timer);
-  }, [redirectCountdown, navigate]);
+  }, [redirectCountdown, navigate, getScoreScanTarget]);
 
   const handleCheckin = async (customNick?: string) => {
     const nameToUse = (customNick || nicknameInput).trim();
@@ -206,7 +232,7 @@ export const SeatCheckinPage: React.FC = () => {
               </p>
               <button
                 type="button"
-                onClick={() => navigate('/scan_score')}
+                onClick={() => navigate(getScoreScanTarget())}
                 style={{
                   width: '100%',
                   padding: '10px 14px',

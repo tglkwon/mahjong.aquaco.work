@@ -85,15 +85,32 @@ function createApp(dbInstance = null) {
   });
 
   let latestDrawCache = null;
+  const DRAW_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours auto-expiry for stale test/uncommitted draws
+
+  function isDrawExpired(drawnAt) {
+    if (!drawnAt) return true;
+    const drawnTime = new Date(drawnAt).getTime();
+    if (isNaN(drawnTime)) return true;
+    return Date.now() - drawnTime > DRAW_TTL_MS;
+  }
 
   function getLatestDrawForTable(tableId = 1) {
     if (latestDrawCache && latestDrawCache.table_id === tableId) {
+      if (isDrawExpired(latestDrawCache.drawn_at)) {
+        latestDrawCache = null;
+        return null;
+      }
       return latestDrawCache;
     }
     const table = db.prepare('SELECT * FROM tables WHERE table_id = ?').get(tableId);
     if (!table || !table.current_session_id) return null;
     const session = db.prepare('SELECT * FROM sessions WHERE session_id = ?').get(table.current_session_id);
-    if (!session || session.status !== 'active') return null;
+    if (!session || session.status === 'finished' || session.status === 'canceled') return null;
+
+    const drawnAt = session.started_at || session.created_at;
+    if (isDrawExpired(drawnAt)) {
+      return null;
+    }
 
     const seats = db.prepare(`
       SELECT ss.seat, ss.client_id, c.nickname
@@ -123,7 +140,7 @@ function createApp(dbInstance = null) {
         table_id: tableId,
         session_id: session.session_id,
         draw,
-        drawn_at: session.started_at || session.created_at,
+        drawn_at: drawnAt,
       };
       return latestDrawCache;
     }
@@ -268,10 +285,10 @@ function createApp(dbInstance = null) {
       VALUES (?, ?, ?, ?)
     `).run(session.session_id, seat, client_id, now);
 
-    // If client was in queue, update queue status to 'playing'
+    // If client was in queue, update queue status to 'playing' (matching client_id OR nickname)
     db.prepare(`
-      UPDATE queue SET status = 'playing', updated_at = ? WHERE client_id = ?
-    `).run(now, client_id);
+      UPDATE queue SET status = 'playing', updated_at = ? WHERE client_id = ? OR nickname = ?
+    `).run(now, client_id, nickname ? nickname.trim() : '');
 
     // Check if all 4 seats are occupied to promote session to active
     const occupiedRows = db.prepare(`
@@ -366,58 +383,67 @@ function createApp(dbInstance = null) {
   // 10. 4-Player Digital Seat Draw (3D Wind Tile Allocation)
   app.post('/api/queue/draw-seats', (req, res) => {
     const tableId = parseInt(req.body.table_id || 1, 10);
-    const session = getOrCreateTableSession(tableId);
-
-    // Idempotency: return active draw if 4 seats are already occupied
-    const existingSeats = db.prepare(`
-      SELECT ss.seat, ss.client_id, c.nickname
-      FROM session_seats ss
-      LEFT JOIN clients c ON ss.client_id = c.client_id
-      WHERE ss.session_id = ?
-    `).all(session.session_id);
-
-    if (existingSeats.length === 4 && session.status === 'active') {
-      const activeDraw = getLatestDrawForTable(tableId);
-      if (activeDraw) {
-        return res.json({ success: true, ...activeDraw, idempotent: true });
-      }
-    }
-
-    const waitingList = db.prepare(`
-      SELECT client_id, nickname FROM queue WHERE status = 'waiting' ORDER BY enqueued_at ASC LIMIT 4
-    `).all();
-
-    if (waitingList.length < 4) {
-      return res.status(400).json({
-        error: '최소 4명의 대기자가 있어야 자리 뽑기가 가능합니다.',
-        current_count: waitingList.length,
-      });
-    }
-
-    // Shuffle 4 players
-    const shuffled = [...waitingList];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-
-    const windTiles = [
-      { seat: 'east', wind_char: '東', seat_label: '동가 (East)' },
-      { seat: 'south', wind_char: '南', seat_label: '남가 (South)' },
-      { seat: 'west', wind_char: '西', seat_label: '서가 (West)' },
-      { seat: 'north', wind_char: '北', seat_label: '북가 (North)' },
-    ];
-
+    const forceNew = Boolean(req.body.force_new);
     const now = new Date().toISOString();
-    const draw = windTiles.map((wind, idx) => ({
-      ...wind,
-      client_id: shuffled[idx].client_id,
-      nickname: shuffled[idx].nickname,
-    }));
 
     // Atomic DB execution
-    const runTransaction = db.transaction(() => {
-      // 1. Claim seats
+    const executeDraw = db.transaction(() => {
+      let session = getOrCreateTableSession(tableId);
+
+      const existingSeats = db.prepare(`
+        SELECT ss.seat, ss.client_id, c.nickname
+        FROM session_seats ss
+        LEFT JOIN clients c ON ss.client_id = c.client_id
+        WHERE ss.session_id = ?
+      `).all(session.session_id);
+
+      const waitingList = db.prepare(`
+        SELECT client_id, nickname FROM queue WHERE status = 'waiting' ORDER BY enqueued_at ASC LIMIT 4
+      `).all();
+
+      // If current session already has 4 seats
+      if (existingSeats.length === 4) {
+        const seatedClientIds = new Set(existingSeats.map(s => s.client_id));
+        const isSameGroup = waitingList.length > 0 && waitingList.every(w => seatedClientIds.has(w.client_id));
+
+        // If it's a concurrent draw request for the same group or not enough new waiting players to form a new game
+        if (!forceNew && (isSameGroup || waitingList.length < 4)) {
+          return { isExisting: true, session_id: session.session_id };
+        }
+
+        // New waiting group detected: Archive previous session and start fresh session for Table 1
+        db.prepare(`
+          UPDATE sessions SET status = 'finished', finished_at = ? WHERE session_id = ? AND status != 'finished'
+        `).run(now, session.session_id);
+
+        session = getOrCreateTableSession(tableId);
+      }
+
+      if (waitingList.length < 4) {
+        return { error: '최소 4명의 대기자가 있어야 자리 뽑기가 가능합니다.', count: waitingList.length };
+      }
+
+      // Shuffle 4 players
+      const shuffled = [...waitingList];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      const windTiles = [
+        { seat: 'east', wind_char: '東', seat_label: '동가 (East)' },
+        { seat: 'south', wind_char: '南', seat_label: '남가 (South)' },
+        { seat: 'west', wind_char: '西', seat_label: '서가 (West)' },
+        { seat: 'north', wind_char: '北', seat_label: '북가 (North)' },
+      ];
+
+      const draw = windTiles.map((wind, idx) => ({
+        ...wind,
+        client_id: shuffled[idx].client_id,
+        nickname: shuffled[idx].nickname,
+      }));
+
+      // Claim seats
       const insertSeat = db.prepare(`
         INSERT OR REPLACE INTO session_seats (session_id, seat, client_id, joined_at)
         VALUES (?, ?, ?, ?)
@@ -426,30 +452,51 @@ function createApp(dbInstance = null) {
         insertSeat.run(session.session_id, d.seat, d.client_id, now);
       });
 
-      // 2. Update queue status for the 4 players to 'playing'
+      // Update queue status for the 4 players to 'playing' (matching client_id OR nickname)
       const updateQueue = db.prepare(`
-        UPDATE queue SET status = 'playing', updated_at = ? WHERE client_id = ?
+        UPDATE queue SET status = 'playing', updated_at = ? WHERE client_id = ? OR nickname = ?
       `);
       draw.forEach(d => {
-        updateQueue.run(now, d.client_id);
+        updateQueue.run(now, d.client_id, d.nickname);
       });
 
-      // 3. Promote session to active
+      // Promote session to active
       db.prepare(`
         UPDATE sessions SET status = 'active', started_at = ? WHERE session_id = ?
       `).run(now, session.session_id);
+
+      return { isExisting: false, draw, drawn_at: now, session_id: session.session_id };
     });
 
-    runTransaction();
+    const txResult = executeDraw();
+
+    if (txResult.error) {
+      return res.status(400).json({ error: txResult.error, current_count: txResult.count });
+    }
+
+    if (txResult.isExisting) {
+      latestDrawCache = null;
+      const activeDraw = getLatestDrawForTable(tableId);
+      if (activeDraw) {
+        return res.json({ success: true, ...activeDraw, idempotent: true });
+      }
+    }
 
     latestDrawCache = {
       table_id: tableId,
-      session_id: session.session_id,
-      draw,
-      drawn_at: now,
+      session_id: txResult.session_id,
+      draw: txResult.draw,
+      drawn_at: txResult.drawn_at,
     };
 
-    res.json({ success: true, table_id: tableId, session_id: session.session_id, draw, drawn_at: now });
+    res.json({
+      success: true,
+      table_id: tableId,
+      session_id: txResult.session_id,
+      draw: txResult.draw,
+      drawn_at: txResult.drawn_at,
+      idempotent: false,
+    });
   });
 
   // 10-B. Submit OCR/Manual Score for Multi-Device Cross-Verification & Telemetry
@@ -596,10 +643,39 @@ function createApp(dbInstance = null) {
     });
   });
 
-  // 12. Admin Reset
+  // 12. Clear Seat Draw Result
+  app.post('/api/queue/clear-draw', (req, res) => {
+    latestDrawCache = null;
+    const tableId = parseInt(req.body.table_id || 1, 10);
+    const table = db.prepare('SELECT * FROM tables WHERE table_id = ?').get(tableId);
+    if (table && table.current_session_id) {
+      const now = new Date().toISOString();
+      db.prepare("UPDATE sessions SET status = 'canceled', finished_at = ? WHERE session_id = ? AND status != 'finished'").run(now, table.current_session_id);
+      db.prepare('UPDATE tables SET current_session_id = NULL WHERE table_id = ?').run(tableId);
+    }
+    res.json({ success: true, message: 'Draw result cleared' });
+  });
+
+  // 13. Clear All Waiting Queue
+  app.post('/api/queue/clear', (req, res) => {
+    const now = new Date().toISOString();
+    const result = db.prepare("UPDATE queue SET status = 'canceled', updated_at = ? WHERE status = 'waiting'").run(now);
+    res.json({ success: true, count: result.changes, message: 'Waiting queue cleared' });
+  });
+
+  // 14. Admin Reset
   app.post('/api/admin/reset', (req, res) => {
     const tableId = parseInt(req.body.table_id || 1, 10);
+    latestDrawCache = null;
+    const now = new Date().toISOString();
+    const table = db.prepare('SELECT * FROM tables WHERE table_id = ?').get(tableId);
+    if (table && table.current_session_id) {
+      db.prepare("UPDATE sessions SET status = 'canceled', finished_at = ? WHERE session_id = ? AND status != 'finished'").run(now, table.current_session_id);
+    }
     db.prepare('UPDATE tables SET current_session_id = NULL WHERE table_id = ?').run(tableId);
+    if (req.body.clear_queue) {
+      db.prepare("UPDATE queue SET status = 'canceled', updated_at = ? WHERE status IN ('waiting', 'playing')").run(now);
+    }
     res.json({ success: true, message: `Table ${tableId} reset` });
   });
 

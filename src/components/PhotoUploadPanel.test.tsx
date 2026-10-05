@@ -4,14 +4,15 @@ import PhotoUploadPanel from './PhotoUploadPanel';
 import { extractLocalFrames, framePixels, rotateFrame } from '../utils/scoreMedia';
 import { recognizeScoreboard } from '../utils/scoreRecognition';
 import { startScoreCamera } from '../utils/scoreCamera';
-import { checkDropStatus, uploadToMobileDrop } from '../utils/mobileDropClient';
+import { checkDropStatus, uploadToMobileDrop, uploadSidecarJson } from '../utils/mobileDropClient';
 
 jest.mock('../utils/scoreMedia', () => ({ extractLocalFrames: jest.fn(), framePixels: jest.fn(), rotateFrame: jest.fn() }));
 jest.mock('../utils/scoreRecognition', () => ({ recognizeScoreboard: jest.fn() }));
 jest.mock('../utils/scoreCamera', () => ({ startScoreCamera: jest.fn() }));
 jest.mock('../utils/mobileDropClient', () => ({
-  checkDropStatus: jest.fn(),
+  checkDropStatus: jest.fn().mockResolvedValue({ ok: true, status: 'ready', message: '연결 성공' }),
   uploadToMobileDrop: jest.fn(),
+  uploadSidecarJson: jest.fn().mockResolvedValue({ ok: true }),
   cleanServerUrl: (url: string) => url,
 }));
 const extracted = extractLocalFrames as jest.Mock;
@@ -44,6 +45,7 @@ const triggerCapture = (scores = ['102', '0266', '0606', '0026']) => {
 beforeEach(() => {
   jest.clearAllMocks();
   localStorage.clear();
+  (checkDropStatus as jest.Mock).mockResolvedValue({ ok: true, status: 'ready', message: '연결 성공' });
   (startScoreCamera as jest.Mock).mockReturnValue(jest.fn());
   extracted.mockResolvedValue([{ url: 'data:image/jpeg;base64,test', time: 1, width: 1920, height: 1080 }]);
   rotated.mockResolvedValue({ url: 'data:image/jpeg;base64,rotated', time: 1, width: 1080, height: 1920 });
@@ -68,6 +70,30 @@ test('renders viewfinder guide card without manual photo capture button or redun
 test('renders PC transfer mode button when isTestMode is true', () => {
   setup(true);
   expect(screen.getByRole('button', { name: 'PC 전송 모드 설정 열기' })).toBeInTheDocument();
+});
+
+test('automatically activates PC transfer mode when test server check succeeds', async () => {
+  (checkDropStatus as jest.Mock).mockResolvedValueOnce({ ok: true, status: 'ready' });
+  localStorage.setItem('mahjong_mobile_drop_config', JSON.stringify({
+    serverUrl: 'https://test-drop.trycloudflare.com',
+    pin: '123456',
+    enabled: true,
+  }));
+
+  const onTestServerStatusChange = jest.fn();
+  render(
+    <PhotoUploadPanel
+      getText={key => key}
+      playerNames={['A', 'B', 'C', 'D']}
+      isTestMode={false}
+      onTestServerStatusChange={onTestServerStatusChange}
+    />
+  );
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'PC 전송 모드 설정 열기' })).toBeInTheDocument();
+  });
+  expect(onTestServerStatusChange).toHaveBeenCalledWith(true);
 });
 
 test('invokes onScoresRecognized directly upon live capture without intermediate review', async () => {
@@ -382,4 +408,55 @@ test('manual override suppresses auto-detection when user manually changes model
   expect(screen.queryByTestId('auto-detected-badge')).toBeNull();
   expect(localStorage.getItem('mahjong_table_model')).toBe('amos_rexx3');
 });
+
+test('renders outer viewfinder ROI without confusing inner dotted guide during scan', () => {
+  setup();
+  fireEvent.click(screen.getByRole('button', { name: '실시간 스캔 시작' }));
+
+  const roi = screen.getByTestId('viewfinder-roi');
+  expect(roi).toBeInTheDocument();
+  expect(screen.queryByTestId('viewfinder-80-guide')).toBeNull();
+});
+
+test('uploads diagnostic telemetry sidecar json when onDiagnosticReady is invoked and PC Drop is enabled', async () => {
+  localStorage.setItem('mahjong_mobile_drop_config', JSON.stringify({
+    enabled: true,
+    serverUrl: 'https://test-drop.trycloudflare.com',
+    pin: '112233',
+    device: 'rex3',
+    autoUpload: true,
+  }));
+
+  setup(true);
+  fireEvent.click(screen.getByRole('button', { name: '실시간 스캔 시작' }));
+  const options = (startScoreCamera as jest.Mock).mock.calls[0][1];
+
+  const diagnosticTelemetry = {
+    captureId: 'test-cap-123',
+    camera: { resolution: '1920x1080', fps: 30, orientation: 'portrait' as const },
+    roi: { x: 0, y: 0.25, width: 1.0, height: 0.5 },
+    totalAnalysisTimeMs: 120,
+    tableModel: 'amos_rexx3' as const,
+    frames: [],
+    finalScores: ['25000', '25000', '25000', '25000'],
+    sumValidationPassed: true,
+    exitReason: 'consensus_achieved' as const,
+  };
+
+  act(() => {
+    options.onDiagnosticReady(diagnosticTelemetry);
+  });
+
+  await waitFor(() => {
+    expect(uploadSidecarJson).toHaveBeenCalledWith(
+      diagnosticTelemetry,
+      expect.stringMatching(/^rex3_scan_.*\.json$/),
+      expect.objectContaining({
+        serverUrl: 'https://test-drop.trycloudflare.com',
+        pin: '112233',
+      })
+    );
+  });
+});
+
 

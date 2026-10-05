@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko" data-work-id="queue-draw-atomic-lock" data-artifact-revision="1" data-intent-sha256="7544111e6518d32c59a900752ace254e7065c3a18faee455153dfa7782d096bc">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <title>대기열 4인 자리 추첨 원자적 동기화 및 중복 방지 - 예상 결과 (ELI5)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Malgun Gothic", sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 28px; }
+    .badge {
+      display: inline-block;
+      background: #0284c7;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      margin-bottom: 8px;
+    }
+    h1 { font-size: 24px; font-weight: 800; color: #38bdf8; margin-bottom: 8px; }
+    .subtitle { font-size: 14px; color: #94a3b8; }
+    
+    .grid-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 640px) {
+      .grid-compare { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .card-bad { border-color: #ef4444; }
+    .card-good { border-color: #22c55e; }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-bad .card-title { color: #f87171; }
+    .card-good .card-title { color: #4ade80; }
+
+    .step-box {
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .step-box strong { color: #38bdf8; }
+
+    .tiles-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .tile {
+      background: #fffdf8;
+      border: 1px solid #d4cbb8;
+      border-bottom: 4px solid #166534;
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      color: #0f172a;
+    }
+    .tile .char { font-size: 20px; font-weight: 900; }
+    .tile .wind-east { color: #1e3a8a; }
+    .tile .wind-south { color: #dc2626; }
+    .tile .wind-west { color: #1e293b; }
+    .tile .wind-north { color: #15803d; }
+    .tile .name { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .flow-diagram {
+      background: #1e293b;
+      border: 1px solid #38bdf8;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .flow-title { font-size: 15px; font-weight: 700; color: #38bdf8; margin-bottom: 12px; }
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    .flow-num {
+      background: #0284c7;
+      color: white;
+      font-weight: 800;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .highlight { color: #facc15; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">WORK ID: queue-draw-atomic-lock</div>
+      <h1>🀄 4인 자리 추첨 원자적 동기화 &amp; 멱등성 보장</h1>
+      <p class="subtitle">모바일 다기종 실시간 대기열에서 1회 추첨으로 전원 동시 전환 및 좌석 순서 일치화</p>
+    </div>
+
+    <!-- Before vs After Comparison -->
+    <div class="grid-compare">
+      <div class="card card-bad">
+        <div class="card-title">❌ 현장 발견 결함 (Before)</div>
+        <div class="step-box">
+          <strong>1. 제각각 추첨 실행</strong>: 4명 화면에 모두 [추첨] 버튼이 활성화되어 여러 명이 누름.
+        </div>
+        <div class="step-box">
+          <strong>2. 무작위 재셔플 발생</strong>: 누를 때마다 DB 저장 없이 메모리 셔플되어 A, B, C, D가 서로 다른 바람 순서 수신.
+        </div>
+        <div class="tiles-row">
+          <div class="tile"><div class="char wind-east">東</div><div class="name">철수</div></div>
+          <div class="tile"><div class="char wind-south">南</div><div class="name">영희</div></div>
+          <div class="tile"><div class="char wind-west">西</div><div class="name">민수</div></div>
+          <div class="tile"><div class="char wind-north">北</div><div class="name">지우</div></div>
+        </div>
+        <p style="font-size: 11px; color: #fca5a5; text-align: center;">▲ 폰 A 화면: 철수(동) 영희(남)</p>
+        <div class="tiles-row">
+          <div class="tile"><div class="char wind-east">東</div><div class="name">지우</div></div>
+          <div class="tile"><div class="char wind-south">南</div><div class="name">철수</div></div>
+          <div class="tile"><div class="char wind-west">西</div><div class="name">영희</div></div>
+          <div class="tile"><div class="char wind-north">北</div><div class="name">민수</div></div>
+        </div>
+        <p style="font-size: 11px; color: #fca5a5; text-align: center;">▲ 폰 B 화면: 지우(동) 철수(남) [불일치 충돌!]</p>
+      </div>
+
+      <div class="card card-good">
+        <div class="card-title">✅ 수정 후 기대 동작 (After)</div>
+        <div class="step-box">
+          <strong>1. 단일 주도 추첨</strong>: 1번 대기자(방장)만 [추첨] 버튼 활성. 2~4번 대기자는 [추첨 대기 중] 안내.
+        </div>
+        <div class="step-box">
+          <strong>2. DB 원자적 영속 &amp; 멱등성</strong>: 최초 1회 추첨 결과가 SQLite `session_seats`에 잠금 기록되어 누가 다시 눌러도 동일 결과 반환.
+        </div>
+        <div class="tiles-row">
+          <div class="tile"><div class="char wind-east">東</div><div class="name">철수</div></div>
+          <div class="tile"><div class="char wind-south">南</div><div class="name">영희</div></div>
+          <div class="tile"><div class="char wind-west">西</div><div class="name">민수</div></div>
+          <div class="tile"><div class="char wind-north">北</div><div class="name">지우</div></div>
+        </div>
+        <p style="font-size: 11px; color: #86efac; text-align: center;">▲ 4대 스마트폰 전원 100% 동일한 좌석 결과 공유</p>
+        <div class="step-box" style="margin-top: 12px;">
+          <strong>3. 3초 내 전원 자동 전환</strong>: `latest_draw` 폴링 수신 시 4명 전원의 화면이 즉시 3D 바람패 카드로 동시 전환.
+        </div>
+      </div>
+    </div>
+
+    <!-- Resolution Architecture Flow -->
+    <div class="flow-diagram">
+      <div class="flow-title">🔄 무중단 패치 및 동기화 아키텍처 흐름</div>
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div><strong>터널 유지</strong>: Cloudflare 터널 및 React 개발 서버(포트 3000)는 끄지 않고 유지 (모바일 접속 URL 보존).</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div><strong>백엔드 멱등성 강화</strong>: `POST /api/queue/draw-seats`에 세션 락을 적용하여 이미 1회 배정된 테이블은 동일한 좌석 배열을 즉시 리턴.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div><strong>프론트엔드 React State 수정</strong>: `clientId`를 React `useState`로 바인딩하여 닉네임 등록 직후 폴링에서도 누락 없이 `data.latest_draw`를 즉시 렌더링.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div><strong>백엔드 단독 1초 재기동</strong>: 포트 3001(`node server/index.js`) 프로세스만 재시작하여 최신 로직을 모바일 현장에 즉시 주입.</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

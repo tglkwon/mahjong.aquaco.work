@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import QueuePage from './QueuePage';
 
 describe('QueuePage component', () => {
@@ -94,6 +94,36 @@ describe('QueuePage component', () => {
     expect(screen.getByText('Scan Score Page')).toBeInTheDocument();
   });
 
+  test('clicking score scan buttons forwards dropUrl test parameters to /scan_score', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ count: 0, queue: [] }),
+    } as any);
+
+    let capturedSearch = '';
+    function LocationCapture() {
+      const loc = useLocation();
+      capturedSearch = loc.search;
+      return <div>Captured Score Page</div>;
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/queue?dropUrl=https%3A%2F%2Ftest-drop.trycloudflare.com&dropPin=999888&device=rex3']}>
+        <Routes>
+          <Route path="/queue" element={<QueuePage />} />
+          <Route path="/scan_score" element={<LocationCapture />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const scanBtn = screen.getByText(/점수 입력\/인식 페이지/);
+    fireEvent.click(scanBtn);
+    expect(screen.getByText('Captured Score Page')).toBeInTheDocument();
+    expect(capturedSearch).toContain('dropUrl=https%3A%2F%2Ftest-drop.trycloudflare.com');
+    expect(capturedSearch).toContain('dropPin=999888');
+    expect(capturedSearch).toContain('device=rex3');
+  });
+
   test('automatically renders 3D wind tiles and hides draw button when latest_draw is received from polling', async () => {
     const drawData = [
       { seat: 'east', wind_char: '東', seat_label: '동가 (East)', client_id: 'q1', nickname: '플레이어1' },
@@ -126,6 +156,34 @@ describe('QueuePage component', () => {
     });
 
     // Draw button must NOT be present
+    expect(screen.queryByText(/🀄 4인 마작패 자리 추첨/)).toBeNull();
+  });
+
+  test('shows waiting banner instead of draw button for non-host queued player', async () => {
+    localStorage.setItem('mahjong_client_id', 'q2');
+
+    const queueData = [
+      { client_id: 'q1', nickname: '플레이어1', status: 'waiting', enqueued_at: '2026-09-18T10:00:00Z' },
+      { client_id: 'q2', nickname: '플레이어2', status: 'waiting', enqueued_at: '2026-09-18T10:01:00Z' },
+      { client_id: 'q3', nickname: '플레이어3', status: 'waiting', enqueued_at: '2026-09-18T10:02:00Z' },
+      { client_id: 'q4', nickname: '플레이어4', status: 'waiting', enqueued_at: '2026-09-18T10:03:00Z' },
+    ];
+
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ count: 4, queue: queueData }),
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <QueuePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/1번 대기자\(플레이어1\)가 자리 추첨을 진행합니다/)).toBeInTheDocument();
+    });
+
     expect(screen.queryByText(/🀄 4인 마작패 자리 추첨/)).toBeNull();
   });
 });

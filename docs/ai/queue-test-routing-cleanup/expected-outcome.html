@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>점수판 페이지 일원화 및 조건부 PC 데이터 전송 프리뷰</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --amber: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px 16px;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 28px; }
+    h1 { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    p.subtitle { color: var(--text-muted); font-size: 13px; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 700px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .badge.before { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid var(--danger); }
+    .badge.after { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid var(--accent); }
+
+    .route-box {
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-bottom: 12px;
+      word-break: break-all;
+    }
+    .route-box span.dest { font-weight: bold; }
+    .route-box.bad span.dest { color: #f87171; }
+    .route-box.good span.dest { color: #38bdf8; }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .status-pill.error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+    .status-pill.success { background: rgba(34, 197, 94, 0.15); color: #86efac; }
+    .status-pill.neutral { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+
+    .tile-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin: 10px 0;
+      text-align: center;
+    }
+    .tile {
+      background: #f8fafc;
+      color: #0f172a;
+      border-radius: 6px;
+      padding: 6px 4px;
+      font-size: 11px;
+      font-weight: bold;
+      border-bottom: 3px solid #166534;
+    }
+    .tile .char { font-size: 16px; font-weight: 900; }
+
+    .queue-list {
+      background: #090d16;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+    }
+    .queue-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 6px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .queue-item:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🀄 점수 입력 페이지 일원화 &amp; 조건부 PC 전송 프리뷰</h1>
+      <p class="subtitle">단일 경로(/scan_score) 통합 및 mobile-drop 서버 활성 상태에 따른 스마트 분기</p>
+    </header>
+
+    <h2 style="font-size: 16px; font-weight: 700; color: #38bdf8; margin-bottom: 12px;">1. 점수 입력 페이지 일원화 (Route Consolidation)</h2>
+    <div class="grid-2">
+      <div class="card">
+        <span class="badge before">기존 (이원화)</span>
+        <div class="route-box bad">
+          운영: <span class="dest">/scan_score</span><br>
+          테스트: <span class="dest">/scan_score_test</span>
+        </div>
+        <div class="status-pill error">
+          ❌ 화면/경로가 2개로 나뉘어 대기열 및 QR 연동 시 경로 혼선
+        </div>
+        <div class="status-pill error">
+          ❌ 대기열에서 일반 점수판으로 이동 시 전송 기능이 있는 테스트 모드 유실
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="badge after">개선 후 (단일 경로 일원화)</span>
+        <div class="route-box good">
+          모든 사용자: <span class="dest">/scan_score</span><br>
+          (구형 <code>/scan_score_test</code> 접속 시 쿼리 파라미터 유지한 채 자동 리다이렉트)
+        </div>
+        <div class="status-pill success">
+          ✅ 모든 화면(대기열, 좌석, 메인)이 오직 <code>/scan_score</code> 하나만 참조
+        </div>
+        <div class="status-pill success">
+          ✅ 인쇄된 QR이나 기존 북마크 100% 하위 호환
+        </div>
+      </div>
+    </div>
+
+    <h2 style="font-size: 16px; font-weight: 700; color: #38bdf8; margin-bottom: 12px;">2. 테스트 서버(mobile-drop) 상태 기반 조건부 전송</h2>
+    <div class="grid-2">
+      <div class="card">
+        <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid var(--accent);">케이스 A: 테스트 세션 가동 중 (터널 열림)</span>
+        <div class="route-box good">
+          mobile-drop <code>GET /status</code> ➔ <span class="dest">200 OK (ready)</span>
+        </div>
+        <div class="status-pill success">
+          🟢 <strong>PC 전송 모드 자동 활성화</strong>
+        </div>
+        <div class="status-pill success">
+          ✅ 실시간 점수판 촬영 시 PC(<code>research-data/rex3</code>)로 스냅샷/영상 자동 업로드
+        </div>
+        <div class="status-pill success">
+          ✅ 테스트용 10만점 자동 채우기 버튼 노출
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="badge" style="background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid var(--border);">케이스 B: 일반 운영 중 (테스트 세션 닫힘)</span>
+        <div class="route-box">
+          mobile-drop <code>GET /status</code> ➔ <span class="dest">접속 불가 / 미설정</span>
+        </div>
+        <div class="status-pill neutral">
+          ⚪ <strong>일반 운영 모드 (데이터 전송 미수행)</strong>
+        </div>
+        <div class="status-pill neutral">
+          ✅ 모바일 로컬에서만 점수 인식 수행, 외부 전송 네트워크 비용 0
+        </div>
+        <div class="status-pill neutral">
+          ✅ 손님용 일반 마작장 운영 화면으로 깔끔하게 동작
+        </div>
+      </div>
+    </div>
+
+    <h2 style="font-size: 16px; font-weight: 700; color: #38bdf8; margin-bottom: 12px;">3. 자리 추첨 후 대기열 제외 및 세션 갱신</h2>
+    <div class="grid-2">
+      <div class="card">
+        <span class="badge before">기존 (BEFORE)</span>
+        <div class="status-pill error">
+          ❌ 과거 세션 착석자 4명 고착 및 신규 대기자 4명 대기열에 방치
+        </div>
+        <div class="queue-list">
+          <div class="queue-item"><span>#1 신규테스터1</span><span style="color: #f87171;">대기 중 (제외 안 됨)</span></div>
+          <div class="queue-item"><span>#2 신규테스터2</span><span style="color: #f87171;">대기 중 (제외 안 됨)</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="badge after">개선 후 (AFTER)</span>
+        <div class="status-pill success">
+          ✅ 대기자 변경 감지 시 신규 세션 자동 생성 &amp; 4인 추첨 배정
+        </div>
+        <div class="status-pill success">
+          ✅ <code>client_id</code> &amp; <code>nickname</code> 듀얼 키로 즉시 대기열 목록에서 제거 (0명)
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

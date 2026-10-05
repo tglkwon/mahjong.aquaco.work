@@ -78,7 +78,7 @@ function App() {
             </Layout>
           }
         />
-        {/* 서비스 운영 페이지: 우마/오카 실시간 점수 스캔 */}
+        {/* 점수 스캔 및 기록 통합 페이지 (운영 및 테스트 겸용) */}
         <Route
           path="/scan_score"
           element={
@@ -94,38 +94,19 @@ function App() {
                 setCurrentLanguage={setCurrentLanguage}
                 getText={getText}
                 translations={translations}
-                isTestMode={false}
               />
             </Layout>
           }
         />
-        {/* 개발 및 현장 테스트 페이지: 다기종 데이터 수집 및 PC 전송 모드 탑재 */}
+        {/* 테스트 라우트 및 구형 별칭 하위 호환 리다이렉트 (쿼리 파라미터 보존) */}
         <Route
           path="/scan_score_test"
-          element={
-            <Layout
-              title={getText('scoreScanTestTitle')}
-              showHomeButton={true}
-              currentLanguage={currentLanguage}
-              setCurrentLanguage={setCurrentLanguage}
-              getText={getText}
-            >
-              <ScoreScanPage
-                currentLanguage={currentLanguage}
-                setCurrentLanguage={setCurrentLanguage}
-                getText={getText}
-                translations={translations}
-                isTestMode={true}
-              />
-            </Layout>
-          }
+          element={<LegacyPhotoRedirect />}
         />
-        {/* 테스트 라우트 별칭 호환 */}
         <Route
           path="/test_scan"
-          element={<Navigate to="/scan_score_test" replace />}
+          element={<LegacyPhotoRedirect />}
         />
-        {/* 구형 라우트 하위 호환 리다이렉트 */}
         <Route
           path="/set_score_photo"
           element={<LegacyPhotoRedirect />}

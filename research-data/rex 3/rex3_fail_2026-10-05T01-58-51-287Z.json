@@ -1,0 +1,155 @@
+{
+  "captureId": "amos_rexx3_1791165518519_2cjq3",
+  "timestamp": "2026-10-05T01:58:51.287Z",
+  "camera": {
+    "width": 640,
+    "height": 480,
+    "orientation": "landscape"
+  },
+  "roi": {
+    "x": 13,
+    "y": 180,
+    "width": 614,
+    "height": 120,
+    "scale": 1
+  },
+  "model": "amos_rexx3",
+  "exitReason": "canceled",
+  "initialFrame": {
+    "frameIndex": 0,
+    "timeSec": 0.207984,
+    "stages": [
+      {
+        "stage": "frame_ready",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 0,
+        "success": true
+      },
+      {
+        "stage": "red_candidates",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 23,
+        "redPixels": 0,
+        "success": false
+      },
+      {
+        "stage": "digit_groups",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 18,
+        "digitGroups": 0,
+        "success": false
+      },
+      {
+        "stage": "decoded",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 18,
+        "decoded": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "success": false
+      },
+      {
+        "stage": "score_validated",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 0,
+        "sumValid": false,
+        "success": false
+      }
+    ]
+  },
+  "firstFailureFrame": {
+    "frameIndex": 0,
+    "timeSec": 0.207984,
+    "stages": [
+      {
+        "stage": "frame_ready",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 0,
+        "success": true
+      },
+      {
+        "stage": "red_candidates",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 23,
+        "redPixels": 0,
+        "success": false
+      },
+      {
+        "stage": "digit_groups",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 18,
+        "digitGroups": 0,
+        "success": false
+      },
+      {
+        "stage": "decoded",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 18,
+        "decoded": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "success": false
+      },
+      {
+        "stage": "score_validated",
+        "timestampMs": 78766.29999995232,
+        "durationMs": 0,
+        "sumValid": false,
+        "success": false
+      }
+    ]
+  },
+  "lastFrame": {
+    "frameIndex": 48,
+    "timeSec": 6.703983,
+    "stages": [
+      {
+        "stage": "frame_ready",
+        "timestampMs": 85232.60000014305,
+        "durationMs": 0,
+        "success": true
+      },
+      {
+        "stage": "red_candidates",
+        "timestampMs": 85232.60000014305,
+        "durationMs": 6,
+        "redPixels": 0,
+        "success": false
+      },
+      {
+        "stage": "digit_groups",
+        "timestampMs": 85232.60000014305,
+        "durationMs": 5,
+        "digitGroups": 0,
+        "success": false
+      },
+      {
+        "stage": "decoded",
+        "timestampMs": 85232.60000014305,
+        "durationMs": 5,
+        "decoded": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "success": false
+      },
+      {
+        "stage": "score_validated",
+        "timestampMs": 85232.60000014305,
+        "durationMs": 0,
+        "sumValid": false,
+        "success": false
+      }
+    ]
+  },
+  "totalFramesAnalyzed": 49,
+  "totalDurationMs": 6540
+}

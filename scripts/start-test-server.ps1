@@ -60,7 +60,7 @@ if (Test-Path $cfPidFile) {
 if (Test-Path $serverOutFile) { Remove-Item $serverOutFile -Force }
 if (Test-Path $serverErrFile) { Remove-Item $serverErrFile -Force }
 
-$cmdArgs = "/c set PORT=$Port && set BROWSER=none && npm start"
+$cmdArgs = "/c set PORT=$Port && set BROWSER=none && set DANGEROUSLY_DISABLE_HOST_CHECK=true && npm start"
 $serverProc = Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArgs -WorkingDirectory $projectRoot -RedirectStandardOutput $serverOutFile -RedirectStandardError $serverErrFile -WindowStyle Hidden -PassThru
 $serverProc.Id | Out-File $serverPidFile -Encoding ascii
 
@@ -94,7 +94,7 @@ $cfProc.Id | Out-File $cfPidFile -Encoding ascii
 
 $tunnelUrl = $null
 $cfSw = [System.Diagnostics.Stopwatch]::StartNew()
-while ($cfSw.Elapsed.TotalSeconds -lt 15) {
+while ($cfSw.Elapsed.TotalSeconds -lt 20) {
     if (Test-Path $cfLogFile) {
         $logText = Get-Content -Path $cfLogFile -Raw -ErrorAction SilentlyContinue
         if ($logText -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") {
@@ -102,13 +102,18 @@ while ($cfSw.Elapsed.TotalSeconds -lt 15) {
             break
         }
     }
-    Start-Sleep -Milliseconds 400
+    Start-Sleep -Milliseconds 500
 }
 
-Write-Output "=== 🚀 테스트 서버 실행 완료 ==="
-Write-Output "로컬 PC 주소: http://localhost:$Port/set_score_photo"
+Write-Output "================================================================="
+Write-Output " 🀄 [mahjong.aquaco.work] 점수 인식 테스트 서버 & Cloudflare 터널"
+Write-Output "================================================================="
+Write-Output "로컬 PC 주소:     http://localhost:$Port/scan_score"
 if ($tunnelUrl) {
-    Write-Output "모바일 접속 (HTTPS): $tunnelUrl/set_score_photo"
+    Write-Output "모바일 점수판 링크: $tunnelUrl/scan_score"
+    Write-Output "모바일 대기열 링크: $tunnelUrl/queue"
+    Write-Output "모바일 동좌석 링크: $tunnelUrl/seat?table=1&seat=east"
 } else {
-    Write-Output "모바일 터널: 발급 대기 중 (로그: $cfLogFile)"
+    Write-Output "모바일 터널:       발급 대기 중 (로그: $cfLogFile)"
 }
+Write-Output "================================================================="

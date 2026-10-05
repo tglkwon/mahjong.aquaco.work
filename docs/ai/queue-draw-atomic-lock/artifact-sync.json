@@ -1,0 +1,34 @@
+{
+  "schema_version": 3,
+  "artifact_mode": "canonical",
+  "work_id": "queue-draw-atomic-lock",
+  "artifact_revision": "2",
+  "artifacts": {
+    "intent": {
+      "path": "intent.md",
+      "sha256": "7544111e6518d32c59a900752ace254e7065c3a18faee455153dfa7782d096bc",
+      "content_sha256": "7544111e6518d32c59a900752ace254e7065c3a18faee455153dfa7782d096bc"
+    },
+    "spec": {
+      "path": "spec.md",
+      "sha256": "032f570ba3f449c3784426afbc68256bcf747f9cc5d62a83982262341c1aa4ca",
+      "content_sha256": "032f570ba3f449c3784426afbc68256bcf747f9cc5d62a83982262341c1aa4ca"
+    },
+    "plan": {
+      "path": "plan.md",
+      "sha256": "90aef397a07c03fe8b1488f01233a7de7a2784929a03ede8a794c1f573e23dc9",
+      "content_sha256": "90aef397a07c03fe8b1488f01233a7de7a2784929a03ede8a794c1f573e23dc9"
+    },
+    "evidence": {
+      "path": "evidence.md",
+      "sha256": "d59518632fbf1df30376d4186c2d412ca1557a7451343eece90c65d10c6dc7f6",
+      "content_sha256": "d59518632fbf1df30376d4186c2d412ca1557a7451343eece90c65d10c6dc7f6"
+    }
+  },
+  "preview": {
+    "path": "expected-outcome.html",
+    "source": "intent.md",
+    "source_revision": "1",
+    "sha256": "aa36084655cb7bb50df68fb32f07bcb20bc87e4b563c22151a931aadb6939a88"
+  }
+}

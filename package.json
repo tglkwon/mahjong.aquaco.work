@@ -42,6 +42,7 @@
     ]
   },
   "devDependencies": {
+    "@flyingrobots/graft": "^0.14.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
     "@types/pako": "^2.0.4",

@@ -233,6 +233,65 @@ describe('REST API Endpoints', () => {
     assert.equal(drawRes2.status, 200);
     assert.equal(drawRes2.body.idempotent, true);
     assert.deepEqual(drawRes2.body.draw, drawRes.body.draw);
+
+    // 6. Test smart rotation: 4 NEW players join queue and draw
+    for (let i = 5; i <= 8; i++) {
+      await request('/api/queue/join', {
+        method: 'POST',
+        body: JSON.stringify({ client_id: `q_user_${i}`, nickname: `대기자${i}` }),
+      });
+    }
+
+    const queueNewBefore = await request('/api/queue');
+    assert.equal(queueNewBefore.body.count, 4);
+
+    const drawRes3 = await request('/api/queue/draw-seats', {
+      method: 'POST',
+      body: JSON.stringify({ table_id: 1 }),
+    });
+
+    assert.equal(drawRes3.status, 200);
+    assert.notEqual(drawRes3.body.session_id, drawRes.body.session_id);
+    const newDrawnIds = new Set(drawRes3.body.draw.map(d => d.client_id));
+    assert.ok(newDrawnIds.has('q_user_5'));
+    assert.ok(newDrawnIds.has('q_user_6'));
+    assert.ok(newDrawnIds.has('q_user_7'));
+    assert.ok(newDrawnIds.has('q_user_8'));
+
+    // Verify all 4 new players are removed from waiting queue
+    const queueNewAfter = await request('/api/queue');
+    assert.equal(queueNewAfter.body.count, 0);
+  });
+
+  test('POST /api/queue/draw-seats: parallel calls return identical arrangement without conflict', async () => {
+    // Reset table 1
+    await request('/api/admin/reset', { method: 'POST', body: JSON.stringify({ table_id: 1 }) });
+
+    // Join 4 players into queue
+    for (let i = 1; i <= 4; i++) {
+      await request('/api/queue/join', {
+        method: 'POST',
+        body: JSON.stringify({ client_id: `concur_u${i}`, nickname: `동시테스터${i}` }),
+      });
+    }
+
+    // Call draw-seats concurrently 4 times
+    const [res1, res2, res3, res4] = await Promise.all([
+      request('/api/queue/draw-seats', { method: 'POST', body: JSON.stringify({ table_id: 1 }) }),
+      request('/api/queue/draw-seats', { method: 'POST', body: JSON.stringify({ table_id: 1 }) }),
+      request('/api/queue/draw-seats', { method: 'POST', body: JSON.stringify({ table_id: 1 }) }),
+      request('/api/queue/draw-seats', { method: 'POST', body: JSON.stringify({ table_id: 1 }) }),
+    ]);
+
+    assert.equal(res1.status, 200);
+    assert.equal(res2.status, 200);
+    assert.equal(res3.status, 200);
+    assert.equal(res4.status, 200);
+
+    // All 4 responses must have the exact same draw arrangement
+    assert.deepEqual(res1.body.draw, res2.body.draw);
+    assert.deepEqual(res1.body.draw, res3.body.draw);
+    assert.deepEqual(res1.body.draw, res4.body.draw);
   });
 
   test('POST /api/sessions/:id/submit-score: multi-device optimistic scoring and high-confidence auto-correction', async () => {
@@ -338,5 +397,57 @@ describe('REST API Endpoints', () => {
     assert.equal(res2.body.status, 'finished');
     assert.equal(res2.body.record_id, firstRecordId);
     assert.equal(res2.body.message, '이미 기록이 완료되었습니다.');
+  });
+
+  test('POST /api/queue/clear-draw and POST /api/queue/clear reset draw result and waiting queue', async () => {
+    // 1. Join 4 players
+    for (let i = 1; i <= 4; i++) {
+      await request('/api/queue/join', {
+        method: 'POST',
+        body: JSON.stringify({ client_id: `c_${i}`, nickname: `P_${i}` }),
+      });
+    }
+
+    // 2. Draw seats
+    const drawRes = await request('/api/queue/draw-seats', {
+      method: 'POST',
+      body: JSON.stringify({ table_id: 1 }),
+    });
+    assert.equal(drawRes.status, 200);
+
+    // Verify latest_draw present
+    const q1 = await request('/api/queue');
+    assert.ok(q1.body.latest_draw);
+
+    // 3. Clear draw
+    const clearDrawRes = await request('/api/queue/clear-draw', {
+      method: 'POST',
+      body: JSON.stringify({ table_id: 1 }),
+    });
+    assert.equal(clearDrawRes.status, 200);
+
+    const q2 = await request('/api/queue');
+    assert.equal(q2.body.latest_draw, null);
+
+    // 4. Join 2 new players
+    await request('/api/queue/join', {
+      method: 'POST',
+      body: JSON.stringify({ client_id: 'c_wait1', nickname: 'W1' }),
+    });
+    await request('/api/queue/join', {
+      method: 'POST',
+      body: JSON.stringify({ client_id: 'c_wait2', nickname: 'W2' }),
+    });
+
+    const q3 = await request('/api/queue');
+    assert.equal(q3.body.count, 2);
+
+    // 5. Clear queue
+    const clearQRes = await request('/api/queue/clear', { method: 'POST' });
+    assert.equal(clearQRes.status, 200);
+    assert.equal(clearQRes.body.count, 2);
+
+    const q4 = await request('/api/queue');
+    assert.equal(q4.body.count, 0);
   });
 });

@@ -43,14 +43,10 @@ beforeEach(() => {
 });
 afterEach(() => { abort.abort(); jest.restoreAllMocks(); jest.clearAllMocks(); jest.useRealTimers(); });
 
-test('captures stable fresh frames once and releases the camera without recording', async () => {
+test('captures on first valid frame and releases the camera without recording', async () => {
   start(); await settle();
   expect(getUserMedia).toHaveBeenCalledWith(expect.objectContaining({ audio: false, video: expect.objectContaining({ facingMode: { ideal: 'environment' } }) }));
   await tick(200);
-  expect(capture).not.toHaveBeenCalled();
-  await tick(400);
-  expect(capture).not.toHaveBeenCalled();
-  await tick(600);
   expect(capture).toHaveBeenCalledTimes(1);
   expect(capture.mock.calls[0][0].url).toBe('data:image/jpeg;base64,capture');
   expect(stop).toHaveBeenCalledTimes(1);
@@ -58,8 +54,18 @@ test('captures stable fresh frames once and releases the camera without recordin
   expect(error).not.toHaveBeenCalled();
 });
 
-test('repeated polling of one frozen frame never auto captures', async () => {
-  start(); await settle();
+test('supports custom stabilityThreshold for multi-frame consensus when configured', async () => {
+  start({ stabilityThreshold: { count: 3, spanMs: 400 } }); await settle();
+  await tick(200);
+  expect(capture).not.toHaveBeenCalled();
+  await tick(400);
+  expect(capture).not.toHaveBeenCalled();
+  await tick(600);
+  expect(capture).toHaveBeenCalledTimes(1);
+});
+
+test('repeated polling of one frozen frame never auto captures when multiple frames required', async () => {
+  start({ stabilityThreshold: { count: 3, spanMs: 400 } }); await settle();
   for (let i = 0; i < 12; i++) await tick(200);
   expect(capture).not.toHaveBeenCalled();
 });
@@ -228,7 +234,7 @@ test('emits onVideoReady with canceled status when user aborts', async () => {
 test('passes specified table model to recognizeScoreboard', async () => {
   start({ model: 'amos_jp_ex' }); await settle();
   await tick(200);
-  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_jp_ex');
+  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_jp_ex', expect.anything());
 });
 
 test('invokes onModelDetected and updates recognition model when a table model is classified', async () => {
@@ -238,7 +244,7 @@ test('invokes onModelDetected and updates recognition model when a table model i
   await tick(200);
   expect(onModelDetected).toHaveBeenCalledTimes(1);
   expect(onModelDetected).toHaveBeenCalledWith('amos_jp_ex');
-  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_jp_ex');
+  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_jp_ex', expect.anything());
 });
 
 test('does not invoke onModelDetected when confidence is below 0.8', async () => {
@@ -247,7 +253,29 @@ test('does not invoke onModelDetected when confidence is below 0.8', async () =>
   start({ onModelDetected, model: 'amos_rexx3' }); await settle();
   await tick(200);
   expect(onModelDetected).not.toHaveBeenCalled();
-  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_rexx3');
+  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_rexx3', expect.anything());
+});
+
+test('suppresses auto-detection when autoDetectModel is false (manual user override)', async () => {
+  const onModelDetected = jest.fn();
+  ((classifyTableModel as unknown) as jest.Mock).mockReturnValue({ model: 'amos_jp_ex', confidence: 0.95 });
+  start({ onModelDetected, model: 'amos_rexx3', autoDetectModel: false }); await settle();
+  await tick(200);
+  expect(onModelDetected).not.toHaveBeenCalled();
+  expect(recognized).toHaveBeenCalledWith(expect.anything(), 'amos_rexx3', expect.anything());
+});
+
+test('emits onDiagnosticReady with stage telemetry upon scan completion', async () => {
+  const onDiagnosticReady = jest.fn();
+  start({ onDiagnosticReady }); await settle();
+  await tick(200);
+  await tick(400);
+  await tick(600);
+  expect(onDiagnosticReady).toHaveBeenCalledTimes(1);
+  const diag = onDiagnosticReady.mock.calls[0][0];
+  expect(diag.exitReason).toBe('consensus_achieved');
+  expect(diag.totalFramesAnalyzed).toBeGreaterThanOrEqual(1);
+  expect((diag as any).deviceId).toBeUndefined();
 });
 
 

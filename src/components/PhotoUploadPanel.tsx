@@ -3,7 +3,8 @@ import { Translation } from '../i18n/translations';
 import { framePixels, LocalFrame, rotateFrame } from '../utils/scoreMedia';
 import { recognizeScoreboard, ScoreCandidate, TableModel } from '../utils/scoreRecognition';
 import { startScoreCamera } from '../utils/scoreCamera';
-import { checkDropStatus, uploadToMobileDrop } from '../utils/mobileDropClient';
+import { checkDropStatus, uploadToMobileDrop, uploadSidecarJson } from '../utils/mobileDropClient';
+import { DiagnosticTelemetry } from '../utils/scoreDiagnostic';
 
 function dataUrlToBlob(dataUrl: string): Blob {
   const parts = dataUrl.split(',');
@@ -26,6 +27,7 @@ interface PhotoUploadPanelProps {
   onScoresRecognized?: (scores: { east: string; south: string; west: string; north: string }) => void;
   isTestMode?: boolean;
   defaultTableModel?: TableModel;
+  onTestServerStatusChange?: (online: boolean) => void;
 }
 const blank = () => ['', '', '', ''];
 const button = 'border rounded px-4 py-2 bg-blue-50 text-blue-900 disabled:opacity-50';
@@ -39,21 +41,35 @@ function PhotoUploadPanel({
   onScoresRecognized,
   isTestMode = false,
   defaultTableModel,
+  onTestServerStatusChange,
 }: PhotoUploadPanelProps) {
-  const [tableModel, setTableModel] = useState<TableModel>(() => {
+  const [tableModel, setTableModel] = useState<TableModel | 'auto'>(() => {
     try {
       const saved = localStorage.getItem('mahjong_table_model');
-      if (saved === 'amos_jp_ex' || saved === 'amos_rexx3') return saved;
+      if (saved === 'amos_jp_ex' || saved === 'amos_rexx3' || saved === 'auto') return saved as TableModel | 'auto';
     } catch {}
     return defaultTableModel || 'amos_rexx3';
   });
   const [detectedModel, setDetectedModel] = useState<TableModel | null>(null);
-  const [isManualOverride, setIsManualOverride] = useState<boolean>(false);
+  const [isManualOverride, setIsManualOverride] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('mahjong_table_model');
+      return saved === 'amos_jp_ex' || saved === 'amos_rexx3';
+    } catch {
+      return false;
+    }
+  });
 
-  const handleModelChange = (newModel: TableModel) => {
-    setIsManualOverride(true);
-    setDetectedModel(null);
-    setTableModel(newModel);
+  const handleModelChange = (newModel: TableModel | 'auto') => {
+    if (newModel === 'auto') {
+      setIsManualOverride(false);
+      setDetectedModel(null);
+      setTableModel('auto');
+    } else {
+      setIsManualOverride(true);
+      setDetectedModel(null);
+      setTableModel(newModel);
+    }
     try {
       localStorage.setItem('mahjong_table_model', newModel);
     } catch {}
@@ -111,6 +127,62 @@ function PhotoUploadPanel({
     status: 'idle',
   });
 
+  const [isServerOnline, setIsServerOnline] = useState<boolean | null>(null);
+  const isServerOnlineRef = useRef<boolean | null>(null);
+  const checkPromiseRef = useRef<Promise<boolean> | null>(null);
+
+  // 테스트 서버(mobile-drop) 헬스체크: 서버가 열려 있을 때만 데이터 전송 활성화
+  useEffect(() => {
+    if (!dropConfig.serverUrl || !dropConfig.pin) {
+      setIsServerOnline(false);
+      isServerOnlineRef.current = false;
+      checkPromiseRef.current = Promise.resolve(false);
+      if (onTestServerStatusChange) onTestServerStatusChange(false);
+      return;
+    }
+
+    let isMounted = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const promise = Promise.resolve(checkDropStatus(dropConfig.serverUrl, dropConfig.pin, controller.signal))
+      .then(res => {
+        const ok = Boolean(res && res.ok);
+        if (isMounted) {
+          setIsServerOnline(ok);
+          isServerOnlineRef.current = ok;
+          if (onTestServerStatusChange) onTestServerStatusChange(ok);
+          if (ok) {
+            setUploadState(prev => ({
+              ...prev,
+              status: 'connected',
+              message: '✅ mobile-drop 세션에 정상 연결되었습니다.',
+            }));
+          }
+        }
+        return ok;
+      })
+      .catch(() => {
+        if (isMounted) {
+          setIsServerOnline(false);
+          isServerOnlineRef.current = false;
+          if (onTestServerStatusChange) onTestServerStatusChange(false);
+        }
+        return false;
+      })
+      .finally(() => clearTimeout(timeout));
+
+    checkPromiseRef.current = promise;
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [dropConfig.serverUrl, dropConfig.pin, onTestServerStatusChange]);
+
+  const isTestActive = Boolean(isTestMode || isServerOnline);
+
   const [currentFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -126,7 +198,11 @@ function PhotoUploadPanel({
   }, [dropConfig]);
 
   const performDropUpload = async (data: Blob | File, filename: string) => {
-    if (!dropConfig.enabled || !dropConfig.serverUrl || !dropConfig.pin) return;
+    let online = isServerOnlineRef.current;
+    if (online === null && checkPromiseRef.current) {
+      online = await checkPromiseRef.current;
+    }
+    if (!dropConfig.enabled || !dropConfig.serverUrl || !dropConfig.pin || online === false) return;
     setUploadState(prev => ({
       ...prev,
       uploading: true,
@@ -171,8 +247,14 @@ function PhotoUploadPanel({
     setUploadState(prev => ({ ...prev, message: '서버 연결 확인 중...', status: 'idle' }));
     const result = await checkDropStatus(dropConfig.serverUrl, dropConfig.pin);
     if (result.ok) {
+      setIsServerOnline(true);
+      isServerOnlineRef.current = true;
+      if (onTestServerStatusChange) onTestServerStatusChange(true);
       setUploadState(prev => ({ ...prev, status: 'connected', message: '✅ mobile-drop 세션에 정상 연결되었습니다.' }));
     } else {
+      setIsServerOnline(false);
+      isServerOnlineRef.current = false;
+      if (onTestServerStatusChange) onTestServerStatusChange(false);
       setUploadState(prev => ({ ...prev, status: 'error', message: `⚠️ ${result.message}` }));
     }
   };
@@ -190,6 +272,7 @@ function PhotoUploadPanel({
   const job = useRef(0);
   const controller = useRef<AbortController | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const viewfinderBoxRef = useRef<HTMLDivElement>(null);
   const stopCamera = useRef<(() => void) | null>(null);
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -234,13 +317,18 @@ function PhotoUploadPanel({
     setFrames([]); setResults([]); setRaw(blank()); setSelected(0);
     setBusy(true); setScanning(true);
     setStatus('카메라를 여는 중입니다. 스마트폰을 세로로 들고 점수판을 비춰 주세요.');
+    const effectiveModel: TableModel = tableModel === 'auto' ? (detectedModel || defaultTableModel || 'amos_rexx3') : tableModel;
     const cancel = startScoreCamera(videoRef.current, {
       signal: abort.signal, unit, expected, players: [...players], playerCount: playerNames.length,
-      model: tableModel,
+      model: effectiveModel,
+      autoDetectModel: !isManualOverride,
+      getViewfinderElement: () => viewfinderBoxRef.current,
       onModelDetected: (detected: TableModel) => {
         if (token !== job.current) return;
         if (!isManualOverride) {
-          setTableModel(detected);
+          if (tableModel !== 'auto') {
+            setTableModel(detected);
+          }
           setDetectedModel(detected);
           try {
             localStorage.setItem('mahjong_table_model', detected);
@@ -251,7 +339,7 @@ function PhotoUploadPanel({
         if (token !== job.current) return;
         setConsensusCount(Math.min(3, Math.max(0, count)));
         setRaw(reading.map(value => value.raw));
-        setStatus(count > 0 ? `점수 확인 중 (${count}/3회). 잠시 유지해 주세요.` : '네 점수와 기준 합계가 맞는지 읽고 있습니다. 세로로 든 상태에서 점수판 전체를 비춰 주세요.');
+        setStatus(count > 0 ? '점수 확인 완료. 캡처 중...' : '네 점수와 기준 합계가 맞는지 읽고 있습니다. 세로로 든 상태에서 점수판 전체를 비춰 주세요.');
       },
       onCapture: (frame, reading) => {
         if (token !== job.current) return;
@@ -279,14 +367,42 @@ function PhotoUploadPanel({
           onConfirm(converted, players);
         }
       },
-      onVideoReady: (videoBlob, ext, status) => {
-        if (dropConfig.enabled && dropConfig.autoUpload && dropConfig.serverUrl && dropConfig.pin) {
+      onVideoReady: async (videoBlob, ext, status) => {
+        if (!dropConfig.enabled || !dropConfig.autoUpload || !dropConfig.serverUrl || !dropConfig.pin) {
+          return;
+        }
+        let online = isServerOnlineRef.current;
+        if (online === null && checkPromiseRef.current) {
+          online = await checkPromiseRef.current;
+        }
+        if (online) {
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           const prefix = dropConfig.device || 'rex3';
           const filename = status === 'success'
             ? `${prefix}_scan_${timestamp}.${ext}`
             : `${prefix}_fail_${timestamp}.${ext}`;
           void performDropUpload(videoBlob, filename);
+        }
+      },
+      onDiagnosticReady: async (diagnostic: DiagnosticTelemetry) => {
+        if (!dropConfig.enabled || !dropConfig.autoUpload || !dropConfig.serverUrl || !dropConfig.pin) {
+          return;
+        }
+        let online = isServerOnlineRef.current;
+        if (online === null && checkPromiseRef.current) {
+          online = await checkPromiseRef.current;
+        }
+        if (online) {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const prefix = dropConfig.device || 'rex3';
+          const filename = diagnostic.exitReason === 'consensus_achieved'
+            ? `${prefix}_scan_${timestamp}.json`
+            : `${prefix}_fail_${timestamp}.json`;
+          void uploadSidecarJson(diagnostic, filename, {
+            serverUrl: dropConfig.serverUrl,
+            pin: dropConfig.pin,
+            device: dropConfig.device,
+          });
         }
       },
       onError: error => {
@@ -313,7 +429,8 @@ function PhotoUploadPanel({
       if (token !== job.current) return;
       const pixels = await framePixels(rotated);
       if (token !== job.current) return;
-      const reading = recognizeScoreboard(pixels, tableModel);
+      const effectiveModel: TableModel | undefined = tableModel === 'auto' ? (detectedModel || defaultTableModel || undefined) : tableModel;
+      const reading = recognizeScoreboard(pixels, effectiveModel);
       const newFrames = [...frames];
       newFrames[selected] = rotated;
       const newResults = [...results];
@@ -369,7 +486,7 @@ function PhotoUploadPanel({
         <h3 className="text-xl font-semibold text-gray-800">{getText('scorePhotoInputTitle')}</h3>
         <p className="text-sm text-gray-600">카메라 영상은 이 기기에서만 처리하며 서버에 전송하지 않습니다. 스마트폰을 세로로 들고 점수판 전체를 비추면 같은 네 점수와 기준 합계가 확인될 때 자동 캡처합니다. 기록 전 점수와 플레이어를 확인해 주세요.</p>
       </div>
-      {isTestMode && (
+      {isTestActive && (
         <button
           type="button"
           aria-label="PC 전송 모드 설정 열기"
@@ -377,21 +494,21 @@ function PhotoUploadPanel({
           onClick={() => setDropConfig(c => ({ ...c, expanded: !c.expanded }))}
         >
           <span>🧪 PC 전송 모드</span>
-          <span className={`w-2 h-2 rounded-full ${dropConfig.enabled && dropConfig.serverUrl ? (uploadState.status === 'connected' ? 'bg-emerald-500' : 'bg-blue-500') : 'bg-gray-400'}`} />
+          <span className={`w-2 h-2 rounded-full ${dropConfig.enabled && dropConfig.serverUrl && isServerOnline ? 'bg-emerald-500' : 'bg-gray-400'}`} />
           <span>{dropConfig.expanded ? '▲' : '▼'}</span>
         </button>
       )}
     </div>
 
     {/* PC 전송 모드 (mobile-drop) 개발자 브리지 패널 */}
-    {isTestMode && dropConfig.expanded && (
+    {isTestActive && dropConfig.expanded && (
       <div className="border-2 border-emerald-300 bg-emerald-50/70 rounded-xl p-4 text-xs space-y-3" aria-label="PC 전송 모드 설정">
         <div className="flex items-center justify-between font-semibold text-emerald-950">
           <div className="flex items-center gap-2">
             <span>🧪 PC 전송 모드 (mobile-drop 연동)</span>
             {dropConfig.enabled && dropConfig.serverUrl ? (
-              <span className="bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded text-[11px] font-bold">
-                {uploadState.status === 'connected' ? '🟢 연결됨' : '연동 활성'}
+              <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${isServerOnline ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-100 text-amber-900'}`}>
+                {uploadState.status === 'connected' || isServerOnline ? '🟢 연결됨' : '서버 미연결'}
               </span>
             ) : (
               <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[11px]">비활성</span>
@@ -518,7 +635,7 @@ function PhotoUploadPanel({
         <button type="button" className="rounded-lg bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 font-semibold text-base shadow-sm disabled:opacity-50" onClick={beginScan} disabled={busy}>실시간 스캔 시작</button>
         {scanning && <button type="button" className="border rounded-lg px-4 py-2 bg-red-50 text-red-700 border-red-200 font-medium" onClick={manual}>스캔 중지</button>}
         <button type="button" className={button} onClick={manual}>직접 입력</button>
-        {isTestMode && dropConfig.enabled && (frames.length > 0 || currentFile) && (
+        {isTestActive && dropConfig.enabled && isServerOnline && (frames.length > 0 || currentFile) && (
           <button
             type="button"
             className="border rounded px-4 py-2 bg-emerald-50 text-emerald-900 border-emerald-300 font-medium hover:bg-emerald-100 disabled:opacity-50"
@@ -537,9 +654,10 @@ function PhotoUploadPanel({
           aria-label="작탁 기종 선택"
           className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs bg-white font-medium text-gray-800"
           value={tableModel}
-          onChange={e => handleModelChange(e.target.value as TableModel)}
+          onChange={e => handleModelChange(e.target.value as TableModel | 'auto')}
           disabled={busy || scanning}
         >
+          <option value="auto">자동 감지 (Auto)</option>
           <option value="amos_rexx3">AMOS REXX 3 (4자리 / 순위 내장)</option>
           <option value="amos_jp_ex">AMOS JP-EX (2~3자리 / 다이아몬드)</option>
         </select>
@@ -566,6 +684,7 @@ function PhotoUploadPanel({
         {/* 옵션 A: 클리어 윈도우 & 마스크 딤 조준 가이드 */}
         <div data-testid="viewfinder-roi" className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
           <div
+            ref={viewfinderBoxRef}
             className={`relative w-[94%] sm:w-[96%] h-[78%] sm:h-[82%] rounded-xl border-2 transition-all duration-200 ${
               consensusCount >= 2
                 ? 'border-emerald-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.52),0_0_16px_rgba(52,211,153,0.6)]'
@@ -574,6 +693,7 @@ function PhotoUploadPanel({
                 : 'border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.52)]'
             }`}
           >
+
             {/* 조준 가이드 상단 뱃지 */}
             <span
               className={`absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors duration-200 shadow-sm ${

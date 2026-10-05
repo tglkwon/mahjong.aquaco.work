@@ -23,12 +23,14 @@ describe('App routing and navigation', () => {
     expect(screen.queryByText(/PC 전송 모드/i)).not.toBeInTheDocument();
   });
 
-  test('renders test lab scan page on /scan_score_test route with PC transfer bridge', () => {
-    window.history.pushState({}, '', '/scan_score_test');
+  test('redirects /scan_score_test to /scan_score while preserving query params', () => {
+    window.history.pushState({}, '', '/scan_score_test?testMode=true');
     render(<App />);
-    const titleElements = screen.getAllByText((c) => c.includes('점수 스캔 테스트 랩'));
+    expect(window.location.pathname).toBe('/scan_score');
+    expect(window.location.search).toBe('?testMode=true');
+    const titleElements = screen.getAllByText((c) => c.includes('우마/오카 실시간 스캔'));
     expect(titleElements.length).toBeGreaterThan(0);
-    // In test mode, PC transfer bridge button should be present
+    // In test mode via forwarded query param, PC transfer bridge button should be present
     expect(screen.getByText(/PC 전송 모드/i)).toBeInTheDocument();
   });
 
@@ -39,11 +41,12 @@ describe('App routing and navigation', () => {
     const titleElements = screen.getAllByText((c) => c.includes('우마/오카 실시간 스캔'));
     expect(titleElements.length).toBeGreaterThan(0);
   });
-  test('redirects legacy /test_scan to /scan_score_test', () => {
+
+  test('redirects legacy /test_scan to /scan_score', () => {
     window.history.pushState({}, '', '/test_scan');
     render(<App />);
-    expect(window.location.pathname).toBe('/scan_score_test');
-    const titleElements = screen.getAllByText((c) => c.includes('점수 스캔 테스트 랩'));
+    expect(window.location.pathname).toBe('/scan_score');
+    const titleElements = screen.getAllByText((c) => c.includes('우마/오카 실시간 스캔'));
     expect(titleElements.length).toBeGreaterThan(0);
   });
 

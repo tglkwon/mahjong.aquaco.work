@@ -1,0 +1,34 @@
+{
+  "schema_version": 3,
+  "artifact_mode": "canonical",
+  "work_id": "score-scanner-hardening",
+  "artifact_revision": "2",
+  "artifacts": {
+    "intent": {
+      "path": "intent.md",
+      "sha256": "5252accca1808479e4f6633247d138282db90ccbe34d2494360ab67693c13521",
+      "content_sha256": "6ab7dba79ab23124cea2252519605f57fb81fbf9bef53e4b1d9beba8b0b06332"
+    },
+    "spec": {
+      "path": "spec.md",
+      "sha256": "775b87ff17a0e4abc67ff5ab84e0b117d34f889899c10b802757dfda04e84eab",
+      "content_sha256": "8bd87068d95d47e27b85df5b02ff03700f1d9de1f7c51c90650c435ce8b9497f"
+    },
+    "plan": {
+      "path": "plan.md",
+      "sha256": "7b81252416275b5a34788b834927cf8e97699359cf07a06f75159af796b4931d",
+      "content_sha256": "ac2f4e2b21775284d4e33ae12240a5f65d96d1d4ffa94539331db42d735c12e6"
+    },
+    "evidence": {
+      "path": "evidence.md",
+      "sha256": "f0883ea97609e26c578ed7a60a635bd104fa2035a0b0d3b6fe766bedbb8e2466",
+      "content_sha256": "d3632da450b7218c7a0200eae7d493986043ed91347a0d1a6cb0521ae554c15c"
+    }
+  },
+  "preview": {
+    "path": "expected-outcome.html",
+    "source": "intent.md",
+    "source_revision": "2",
+    "sha256": "2c73a54da808bd0bc7e1ee2e9560e7f41ccd360849d8051cdedc390390ec0905"
+  }
+}

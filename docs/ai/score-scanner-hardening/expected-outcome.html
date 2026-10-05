@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko" data-work-id="score-scanner-hardening" data-artifact-revision="2" data-intent-sha256="5252accca1808479e4f6633247d138282db90ccbe34d2494360ab67693c13521">
+<head>
+  <meta charset="utf-8" />
+  <title>점수 스캐너 실전 개선 프리뷰</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="artifact-kind" content="expected-outcome" />
+  <meta name="source-artifact" content="intent.md" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-inner: #0f172a;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 24px; line-height: 1.6; }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    h1 { font-size: 22px; color: var(--accent); margin-bottom: 8px; }
+    p.lead { color: var(--text-muted); font-size: 14px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .card h2 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--text); }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: bold; }
+    .badge-blue { background: rgba(59, 130, 246, 0.2); color: var(--blue); border: 1px solid var(--blue); }
+    .badge-green { background: rgba(34, 197, 94, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-amber { background: rgba(245, 158, 11, 0.2); color: var(--amber); border: 1px solid var(--amber); }
+    .badge-red { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    .flow-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .step { display: flex; gap: 14px; margin-bottom: 14px; }
+    .step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0; }
+    .step-body h3 { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+    .step-body p { font-size: 12px; color: var(--text-muted); }
+    .viewfinder-mock { width: 100%; height: 160px; background: #000; border-radius: 10px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 10px; border: 1px solid var(--border); }
+    .roi-box { width: 90%; height: 50%; border: 2px dashed var(--accent); border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; }
+    .guide-80 { width: 80%; height: 75%; border: 2px solid var(--green); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: var(--green); }
+    .json-mock { background: var(--card-inner); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 11px; color: #a5f3fc; line-height: 1.4; margin-top: 10px; white-space: pre-wrap; }
+    .pipeline-bar { display: flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 11px; }
+    .stage-item { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent); padding: 4px 8px; border-radius: 6px; text-align: center; flex: 1; }
+    .stage-arrow { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>점수 스캐너 실전 개선 6대 핵심 아키텍처</h1>
+      <p class="lead">실제 마장 촬영 영상 데이터 분석을 기반으로, 실패 원인 추적 진단 메타데이터·뷰파인더 좌표 완전 일치·적응형 빨강 보정 폴백·엄격한 자동 확정 안전 게이트를 도입합니다.</p>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h2><span class="badge badge-blue">원칙 1</span> 진단 메타데이터 Sidecar JSON</h2>
+        <p style="font-size: 12px; color: var(--text-muted);">프레임마다가 아닌 대표 프레임과 종료 시점에만 실패 원인을 찾는 필수 값 수집 (deviceId 제외, captureId 연동).</p>
+        <div class="json-mock">{
+  "captureId": "rex3_scan_2026-09-27...",
+  "camera": { "res": "1920x1080", "fps": 30, "orientation": "portrait" },
+  "roi": { "sy": 0.25, "sHeight": 0.50, "scale": 0.5 },
+  "stage": "score_validated",
+  "redCandidates": 482,
+  "digitGroups": 4,
+  "decoded": ["250", "250", "250", "250"],
+  "sumValid": true,
+  "exitReason": "consensus_achieved"
+}</div>
+      </div>
+
+      <div class="card">
+        <h2><span class="badge badge-green">원칙 2</span> 뷰파인더-분석 ROI 좌표 동기화 (WYSIWYG)</h2>
+        <p style="font-size: 12px; color: var(--text-muted);">세로 원본 중앙 50%를 가로 ROI로 유지하고, 화면 미리보기와 캔버스 분석 좌표를 1:1 일치시키며 내부 80% 안전 가이드를 제공합니다.</p>
+        <div class="viewfinder-mock">
+          <div class="roi-box">
+            <div class="guide-80">내부 80% 점수 조준 가이드</div>
+          </div>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px; text-align: center;">화면 밖 25% 상/하단 여백 자동 마스킹 -> 번호 잘림 방지</p>
+      </div>
+    </div>
+
+    <div class="flow-box">
+      <h2><span class="badge badge-amber">원칙 3 &amp; 4</span> 2단계 빨강 검출 &amp; 3중 자동 확정 안전 게이트</h2>
+      <div class="pipeline-bar">
+        <div class="stage-item">1. frame_ready</div>
+        <div class="stage-arrow">-></div>
+        <div class="stage-item">2. red_candidates (1차 엄격 / 실패시 적응형 Otsu)</div>
+        <div class="stage-arrow">-></div>
+        <div class="stage-item">3. digit_groups (기하 검증)</div>
+        <div class="stage-arrow">-></div>
+        <div class="stage-item">4. decoded (세그먼트 판독)</div>
+        <div class="stage-arrow">-></div>
+        <div class="stage-item">5. score_validated (합계 10만점)</div>
+      </div>
+
+      <div class="step" style="margin-top: 18px;">
+        <div class="step-num">A</div>
+        <div class="step-body">
+          <h3>1차 경로: 엄격한 고속 판독 (Fast Path)</h3>
+          <p>고정 임계값(R &gt; 180, R &gt; G*1.6)으로 2ms 이내 초고속 판독 유지.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">B</div>
+        <div class="step-body">
+          <h3>2차 경로: 실패 시에만 R - max(G,B) 적응형 Otsu 보정 (Fallback)</h3>
+          <p>어두운 마장 조명 대응. 상/하한선(35~120) 클램핑과 7세그먼트 크기 조건으로 오탐 차단.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">C</div>
+        <div class="step-body">
+          <h3>3중 안전 게이트: 불확실 판독 자동 확정 원천 차단</h3>
+          <p>1. 4개 점수 배치 기하 검증(T자/다이아몬드) + 2. 점수 총합 100% 일치 + 3. 3회 연속 프레임 일치 조건 미통과 시 미확정 유지 후 직접 입력 안내.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2><span class="badge badge-blue">원칙 5</span> 실전 영상 정량 평가 프레임워크</h2>
+        <p style="font-size: 12px; color: var(--text-muted);">research-data 내 실제 성공/실패 영상에 정답 라벨을 부착하여 벤치마크 검증.</p>
+        <div style="font-size: 12px; margin-top: 8px; line-height: 1.8;">
+          <div>- <strong>4자리 전체 정답률</strong>: 실전 영상 기준 측정</div>
+          <div>- <strong>오인식 자동 확정률</strong>: <span style="color: var(--green); font-weight: bold;">0.0% 절대 사수</span> (최우선 안전 기준)</div>
+          <div>- <strong>인식 지연시간</strong>: 중앙값(Median) 및 95백분위(P95) 모니터링</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="badge badge-red">원칙 6</span> 수동 작탁 선택 절대 우선권</h2>
+        <p style="font-size: 12px; color: var(--text-muted);">드롭다운에서 사용자가 REXX 3 또는 JP-EX를 수동 선택하면 자동 감지가 모델을 덮어쓰지 못하도록 엄격 격리.</p>
+        <div style="background: var(--card-inner); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-top: 8px; font-size: 12px;">
+          <div>- <strong>자동 감지 모드</strong>: 카메라 프레임 분석에 따라 자동 전환</div>
+          <div>- <strong>수동 지정 모드</strong>: 사용자 선택 모델 완전 고정 (분석기 내부 재할당 차단)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
