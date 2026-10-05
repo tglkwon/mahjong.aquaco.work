@@ -154,6 +154,7 @@ function App() {
             >
               <AboutPage
                 getText={getText}
+                currentLanguage={currentLanguage}
               />
             </Layout>
           }

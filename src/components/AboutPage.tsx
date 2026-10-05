@@ -1,11 +1,12 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { Translation, Translations } from '../i18n/translations';
+import LegalDraft from './LegalDraft';
 
 type Language = keyof Translations;
 type TranslationKey = keyof Translation;
 
 interface AboutPageProps {
-  currentLanguage?: string; // Not used in component but passed down
+  currentLanguage?: string;
   setCurrentLanguage?: (lang: Language) => void;
   getText: (key: TranslationKey, params?: Record<string, string | number>) => string;
 }
@@ -35,7 +36,7 @@ const AccordionItem = ({ title, children }: AccordionItemProps) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
         </svg>
       </button>
-      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-screen' : 'max-h-0'}`}>
+      <div hidden={!isOpen}>
         <div className="p-4 pt-0 text-gray-600">
           {children}
         </div>
@@ -44,7 +45,7 @@ const AccordionItem = ({ title, children }: AccordionItemProps) => {
   );
 };
 
-function AboutPage({ getText }: AboutPageProps) {
+function AboutPage({ getText, currentLanguage }: AboutPageProps) {
   // isSidebarOpen 상태 및 Header/Sidebar 임포트는 Layout 컴포넌트에서 관리합니다.
   const [versionHistory, setVersionHistory] = useState('');
 
@@ -99,6 +100,8 @@ function AboutPage({ getText }: AboutPageProps) {
         <AccordionItem title={getText('termsOfServiceTitle')}>
           <p>{getText('termsOfServiceDesc')}</p>
         </AccordionItem>
+
+        <LegalDraft language={currentLanguage} />
 
         {/* 버전 정보 */}
         <AccordionItem title={getText('versionHistoryTitle')}>
