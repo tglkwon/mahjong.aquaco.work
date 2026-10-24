@@ -15,10 +15,11 @@ beforeEach(() => {
   (startScoreCamera as jest.Mock).mockReturnValue(jest.fn());
 });
 
-test('real-time scan consensus automatically injects scores into UmaOkaTable and commits via ControlPanel', () => {
+test.each([25000, 250])('real-time scan injects scores in starting score %s units and commits via ControlPanel', startingScore => {
   const encoded = encodeShareState({
-    startingScore: 25000,
-    returnScore: 30000,
+    startingScore,
+    returnScore: startingScore === 250 ? 300 : 30000,
+    isOkaEnabled: true,
     playerPool: ['A', 'B', 'C', 'D'],
     playerNames: ['A', 'B', 'C', 'D'],
     activeUmaOka: { uma: '1-2', oka: true },
@@ -27,7 +28,9 @@ test('real-time scan consensus automatically injects scores into UmaOkaTable and
     games: [{
       id: 90,
       isEditable: false,
-      scores: { east: '35000', south: '25000', west: '25000', north: '15000' },
+      scores: startingScore === 250
+        ? { east: '350', south: '250', west: '250', north: '150' }
+        : { east: '35000', south: '25000', west: '25000', north: '15000' },
       participants: { east: 0, south: 1, west: 2, north: 3 },
     }],
   }, true);
@@ -50,10 +53,10 @@ test('real-time scan consensus automatically injects scores into UmaOkaTable and
   act(() => options.onCapture(frame, reading));
 
   // UmaOkaTable 편집 행에 4자리 변환 점수가 즉시 주입되었는지 확인
-  expect(screen.getByLabelText('경기 2 동 점수')).toHaveValue('30000');
-  expect(screen.getByLabelText('경기 2 남 점수')).toHaveValue('30000');
-  expect(screen.getByLabelText('경기 2 서 점수')).toHaveValue('20000');
-  expect(screen.getByLabelText('경기 2 북 점수')).toHaveValue('20000');
+  expect(screen.getByLabelText('경기 2 동 점수')).toHaveValue(startingScore === 250 ? '300' : '30000');
+  expect(screen.getByLabelText('경기 2 남 점수')).toHaveValue(startingScore === 250 ? '300' : '30000');
+  expect(screen.getByLabelText('경기 2 서 점수')).toHaveValue(startingScore === 250 ? '200' : '20000');
+  expect(screen.getByLabelText('경기 2 북 점수')).toHaveValue(startingScore === 250 ? '200' : '20000');
 
   // ControlPanel의 기록 추가 및 공유 버튼으로 확정
   const addRecordButton = screen.getByRole('button', { name: '기록 추가하고 공유하기' });
@@ -168,7 +171,7 @@ test('testMode automatically polls Table 1 status and populates player names', a
   expect((await screen.findAllByText(/북마스터/)).length).toBeGreaterThanOrEqual(1);
 });
 
-test('testMode clicking record button calls /api/sessions/:id/finish', async () => {
+test.each([25000, 250])('testMode records scores in actual points for starting score %s', async startingScore => {
   const tableStatusMock = {
     table_id: 1,
     session_id: 88,
@@ -203,12 +206,13 @@ test('testMode clicking record button calls /api/sessions/:id/finish', async () 
   render(<App />);
 
   await screen.findByText('테이블 1 실시간 연동 중');
+  fireEvent.change(screen.getByLabelText('시작 점수'), { target: { value: String(startingScore) } });
 
   // 수식의 계산 결과를 서버와 로컬 기록에 저장합니다.
-  fireEvent.change(screen.getByLabelText('경기 1 동 점수'), { target: { value: '25000+32000' } });
-  fireEvent.change(screen.getByLabelText('경기 1 남 점수'), { target: { value: '25000-32000' } });
-  fireEvent.change(screen.getByLabelText('경기 1 서 점수'), { target: { value: '25000' } });
-  fireEvent.change(screen.getByLabelText('경기 1 북 점수'), { target: { value: '25000' } });
+  fireEvent.change(screen.getByLabelText('경기 1 동 점수'), { target: { value: startingScore === 250 ? '250+320' : '25000+32000' } });
+  fireEvent.change(screen.getByLabelText('경기 1 남 점수'), { target: { value: startingScore === 250 ? '250-320' : '25000-32000' } });
+  fireEvent.change(screen.getByLabelText('경기 1 서 점수'), { target: { value: String(startingScore) } });
+  fireEvent.change(screen.getByLabelText('경기 1 북 점수'), { target: { value: String(startingScore) } });
 
   const addBtn = screen.getByRole('button', { name: '기록 추가하고 공유하기' });
   fireEvent.click(addBtn);

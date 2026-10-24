@@ -4,6 +4,7 @@ import PlayerManagementAndScores from './PlayerManagementAndScores';
 import PlayerTotals from './PlayerTotals';
 import UmaOkaTable from './UmaOkaTable';
 import { evaluateScoreExpression } from '../utils/scoreExpression';
+import { getDefaultReturnScore, getScoreBasis, getScoreMultiplier } from '../utils/scoreUnits';
 import ControlPanel from './ControlPanel';
 import MessageDisplay from './MessageDisplay';
 import PhotoUploadPanel from './PhotoUploadPanel';
@@ -36,8 +37,19 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
   const loadedState = useMemo(() => parseStateFromUrl(), [parseStateFromUrl]);
 
   const [startingScore, setStartingScore] = useState<number>(() => loadedState?.startingScore ?? 25000);
-  const [returnScore, setReturnScore] = useState<number>(() => loadedState?.returnScore ?? 30000);
-  const [isOkaEnabled, setIsOkaEnabled] = useState<boolean>(() => loadedState?.activeUmaOka?.oka ?? true);
+  const [isOkaEnabled, setIsOkaEnabled] = useState<boolean>(() => loadedState ? Boolean(loadedState.isOkaEnabled || loadedState.activeUmaOka?.oka) : true);
+  const [returnScore, setReturnScore] = useState<number>(() => loadedState?.returnScore ?? getDefaultReturnScore(startingScore, isOkaEnabled));
+  const { scoreMultiplier, scaledStartingScore, scaledReturnScore, okaAmount } = useMemo(
+    () => getScoreBasis(startingScore, returnScore, isOkaEnabled),
+    [startingScore, returnScore, isOkaEnabled]
+  );
+  useEffect(() => {
+    if (!isOkaEnabled) setReturnScore(startingScore);
+  }, [startingScore, isOkaEnabled]);
+  const handleStartingScoreChange = (value: number) => {
+    if (isOkaEnabled) setReturnScore(score => score * scoreMultiplier / getScoreMultiplier(value));
+    setStartingScore(value);
+  };
   const [activeUmaOka, setActiveUmaOka] = useState<{ uma: string | null; oka: boolean }>(() => (
     loadedState?.activeUmaOka || { uma: '1-2', oka: true }
   ));
@@ -225,7 +237,6 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
   // 우마/오카 점수 계산
   const calculatedGames = useMemo(() => {
     const positions = getDefaultPlayerPositions();
-    const okaAmount = isOkaEnabled ? (returnScore - startingScore) * 4 / 1000 : 0;
 
     return games.map(game => {
       if (game.isEditable) return { ...game, finalScores: undefined as Record<number, number> | undefined };
@@ -238,7 +249,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
       positions.forEach(pos => {
         const pIdx = gameParticipants[pos as keyof UmaOkaParticipants];
         const val = parseInt(gameScores[pos as keyof UmaOkaScores] || '0', 10);
-        rawScores[pIdx] = val;
+        rawScores[pIdx] = val * scoreMultiplier;
         positionByPlayer[pIdx] = pos;
       });
 
@@ -247,7 +258,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
 
       Object.entries(rawScores).forEach(([pIdxStr, score]) => {
         const pIdx = Number(pIdxStr);
-        const base = (score - returnScore) / 1000;
+        const base = (score - scaledReturnScore) / 1000;
         const award = awards[pIdx] || 0;
         finalScores[pIdx] = parseFloat((base + award).toFixed(1));
       });
@@ -257,7 +268,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
         finalScores,
       };
     });
-  }, [games, isOkaEnabled, returnScore, startingScore, activeUmaOka.uma, tieHandlingMode]);
+  }, [games, scoreMultiplier, scaledReturnScore, okaAmount, activeUmaOka.uma, tieHandlingMode]);
 
   // 플레이어별 총점 계산
   const totalScores = useMemo(() => {
@@ -332,6 +343,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
   };
 
   const onOkaToggle = () => {
+    if (!isOkaEnabled) setReturnScore(getDefaultReturnScore(startingScore, true));
     setIsOkaEnabled(prev => !prev);
     setActiveUmaOka(prev => ({ ...prev, oka: !prev.oka }));
   };
@@ -352,10 +364,10 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
         return {
           ...game,
           scores: {
-            east: recognizedScores.east,
-            south: recognizedScores.south,
-            west: recognizedScores.west,
-            north: recognizedScores.north,
+            east: String(Number(recognizedScores.east) / scoreMultiplier),
+            south: String(Number(recognizedScores.south) / scoreMultiplier),
+            west: String(Number(recognizedScores.west) / scoreMultiplier),
+            north: String(Number(recognizedScores.north) / scoreMultiplier),
           },
         };
       });
@@ -382,7 +394,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
         }),
       }).catch(() => {});
     }
-  }, [activeSessionId]);
+  }, [activeSessionId, scoreMultiplier]);
 
   // 테스트 모드용 점수 자동 채우기 (동: 35000, 남: 28000, 서: 22000, 북: 15000 = 합계 100,000점)
   const handleFillTestScores = () => {
@@ -441,11 +453,11 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     if (!currentEditableGame) return 0;
     const s = currentEditableGame.scores as UmaOkaScores;
     return ['east', 'south', 'west', 'north'].reduce((sum, pos) => {
-      return sum + (evaluateScoreExpression(s[pos as keyof UmaOkaScores] || '') ?? 0);
+      return sum + (evaluateScoreExpression(s[pos as keyof UmaOkaScores] || '') ?? 0) * scoreMultiplier;
     }, 0);
-  }, [currentEditableGame]);
+  }, [currentEditableGame, scoreMultiplier]);
 
-  const targetTotalScore = startingScore * 4;
+  const targetTotalScore = scaledStartingScore * 4;
 
   const handleRecordButtonPress = async () => {
     if (!currentEditableGame) return;
@@ -483,10 +495,10 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
           body: JSON.stringify({
             table_id: 1,
             scores: {
-              east: evaluateScoreExpression(s.east),
-              south: evaluateScoreExpression(s.south),
-              west: evaluateScoreExpression(s.west),
-              north: evaluateScoreExpression(s.north),
+              east: evaluateScoreExpression(s.east)! * scoreMultiplier,
+              south: evaluateScoreExpression(s.south)! * scoreMultiplier,
+              west: evaluateScoreExpression(s.west)! * scoreMultiplier,
+              north: evaluateScoreExpression(s.north)! * scoreMultiplier,
             },
             participants: {
               east: tableLiveSeats?.east?.client_id || playerPool[playersArr[0]],
@@ -533,7 +545,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     const input = (targetGame.scores as UmaOkaScores)[position as keyof UmaOkaScores] || '';
     const currentVal = input === '' ? 0 : evaluateScoreExpression(input);
     if (currentVal === null) return;
-    const step = 1000;
+    const step = 1000 / scoreMultiplier;
     const increment = operation === 'increment' ? step : -step;
     const newVal = String(currentVal + increment);
     handleUmaOkaScoreChange(gameId, position, newVal);
@@ -544,16 +556,17 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     const hash = encodeShareState({
       startingScore,
       returnScore,
+      isOkaEnabled,
       games: games.filter(g => !g.isEditable),
       playerPool,
       playerNames: playerPool,
-      activeUmaOka,
+      activeUmaOka: { ...activeUmaOka, oka: isOkaEnabled },
       tieHandlingMode,
       chomboCounts,
       language: currentLanguage,
     }, true);
     return `${window.location.pathname}#d=${hash}`;
-  }, [startingScore, returnScore, games, playerPool, activeUmaOka, tieHandlingMode, chomboCounts, currentLanguage]);
+  }, [startingScore, returnScore, isOkaEnabled, games, playerPool, activeUmaOka, tieHandlingMode, chomboCounts, currentLanguage]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(`${window.location.origin}${shareUrl}`).then(() => {
@@ -646,7 +659,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
       <p className="w-full max-w-6xl my-2 text-xs sm:text-sm text-gray-600">{getText('scoreExpressionHint')}</p>
       <ControlPanel
         startingScore={startingScore}
-        setStartingScore={setStartingScore}
+        setStartingScore={handleStartingScoreChange}
         returnScore={returnScore}
         setReturnScore={setReturnScore}
         isOkaEnabled={isOkaEnabled}

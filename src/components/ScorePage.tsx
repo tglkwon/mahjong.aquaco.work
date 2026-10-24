@@ -10,6 +10,7 @@ import UmaOkaTable from './UmaOkaTable';
 import { Translation, Translations } from '../i18n/translations';
 import { Game, UmaOkaParticipants, UmaOkaScores } from '../types';
 import { evaluateScoreExpression } from '../utils/scoreExpression';
+import { getDefaultReturnScore, getScoreBasis, getScoreMultiplier } from '../utils/scoreUnits';
 
 type Language = keyof Translations;
 type TranslationKey = keyof Translation;
@@ -136,14 +137,14 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     return 25000;
   });
 
-  const [isOkaEnabled, setIsOkaEnabled] = useState<boolean>(loadedState?.isOkaEnabled || false);
+  const [isOkaEnabled, setIsOkaEnabled] = useState<boolean>(Boolean(loadedState?.isOkaEnabled || loadedState?.activeUmaOka?.oka));
   const [tieHandlingMode, setTieHandlingMode] = useState<TieHandlingMode>(loadedState?.tieHandlingMode || 'split');
 
   const [returnScore, setReturnScore] = useState<number>(() => {
     if (typeof loadedState?.returnScore === 'number') {
       return loadedState.returnScore;
     }
-    return isOkaEnabled ? startingScore + 5000 : startingScore;
+    return getDefaultReturnScore(startingScore, isOkaEnabled);
   });
 
   const [activeUmaOka, setActiveUmaOka] = useState<{ uma: string | null; oka: boolean }>(() => {
@@ -181,24 +182,24 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     setPlayerPool(updateDefaultNames);
   }, [currentLanguage, getText, translations]);
 
-  const scoreMultiplier = useMemo(() => {
-    const len = String(startingScore).length;
-    if (len >= 5) return 1;
-    if (len <= 0) return 1;
-    return 10 ** (5 - len);
-  }, [startingScore]);
-
-  const scaledStartingScore = useMemo(() => startingScore * scoreMultiplier, [startingScore, scoreMultiplier]);
-  const scaledReturnScore = useMemo(() => returnScore * scoreMultiplier, [returnScore, scoreMultiplier]);
+  const { scoreMultiplier, scaledStartingScore, scaledReturnScore } = useMemo(
+    () => getScoreBasis(startingScore, returnScore, isOkaEnabled),
+    [startingScore, returnScore, isOkaEnabled]
+  );
 
   const totalTargetScore = useMemo(() => scaledStartingScore * 4, [scaledStartingScore]);
+
+  const handleStartingScoreChange = (value: number) => {
+    if (isOkaEnabled) setReturnScore(score => score * scoreMultiplier / getScoreMultiplier(value));
+    setStartingScore(value);
+  };
 
   const generateShareableUrl = useCallback(() => {
       const encodedData = encodeShareState({
       games: games.filter(g => !g.isEditable),
       startingScore,
       language: currentLanguage,
-      ...(isUmaOkaPage ? { playerPool, activeUmaOka, returnScore, isOkaEnabled, tieHandlingMode, chomboCounts } : { playerNames, activeUmaOka: { uma: null, oka: false } })
+      ...(isUmaOkaPage ? { playerPool, activeUmaOka: { ...activeUmaOka, oka: isOkaEnabled }, returnScore, isOkaEnabled, tieHandlingMode, chomboCounts } : { playerNames, activeUmaOka: { uma: null, oka: false } })
     }, isUmaOkaPage);
     return `${window.location.origin}${location.pathname}#d=${encodedData}`;
   }, [games, startingScore, currentLanguage, isUmaOkaPage, playerPool, playerNames, activeUmaOka, location.pathname, returnScore, isOkaEnabled, tieHandlingMode, chomboCounts]);
@@ -469,10 +470,10 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     if (!isOkaEnabled) {
       // Oka is 5,000 actual points above the starting score.
       // Convert that offset back to the user's input unit (e.g. 250 -> 300).
-      setReturnScore(startingScore + 5000 / scoreMultiplier);
+      setReturnScore(getDefaultReturnScore(startingScore, true));
     }
     setIsOkaEnabled(prev => !prev);
-  }, [isOkaEnabled, setReturnScore, startingScore, scoreMultiplier]);
+  }, [isOkaEnabled, setReturnScore, startingScore]);
 
   const isUmaOkaGlobalDisabled = useMemo(() => {
     return startingScore % 10 !== 0 || (isOkaEnabled && returnScore % 10 !== 0);
@@ -566,7 +567,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
       <p className="w-full max-w-6xl my-2 text-xs sm:text-sm text-gray-600">{getText('scoreExpressionHint')}</p>
       <ControlPanel
         startingScore={startingScore}
-        setStartingScore={setStartingScore}
+        setStartingScore={handleStartingScoreChange}
         returnScore={returnScore}
         setReturnScore={setReturnScore}
         isOkaEnabled={isOkaEnabled}
