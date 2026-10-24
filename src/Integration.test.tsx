@@ -7,7 +7,7 @@ jest.setTimeout(30000);
 
 const enterScoresAndAddRecord = async () => {
   const inputs = screen.getAllByRole('textbox', { name: /경기 1 .* 점수/ });
-  const scores = ['40000', '30000', '20000', '10000'];
+  const scores = ['400', '300', '200', '100'];
   for (let i = 0; i < 4; i += 1) {
     userEvent.clear(inputs[i]);
     userEvent.type(inputs[i], scores[i]);

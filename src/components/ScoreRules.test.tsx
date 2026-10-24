@@ -17,6 +17,22 @@ const cases = [
   { start: 30000, returned: 35000, scores: ['40000', '20000', '30000', '30000'] },
 ];
 
+test.each(['/set_score', '/set_score_umaoka', '/scan_score'])('%s defaults to 250 and switches both common starting scores in either direction', path => {
+  window.history.pushState({}, '', path);
+  render(<App />);
+  const input = screen.getByLabelText('시작 점수');
+  expect(input).toHaveValue(250);
+  fireEvent.click(screen.getByRole('button', { name: '시작 점수 100배로 전환' }));
+  expect(input).toHaveValue(25000);
+  fireEvent.click(screen.getByRole('button', { name: '시작 점수 100분의 1로 전환' }));
+  expect(input).toHaveValue(250);
+  fireEvent.change(input, { target: { value: '300' } });
+  fireEvent.click(screen.getByRole('button', { name: '시작 점수 100배로 전환' }));
+  expect(input).toHaveValue(30000);
+  fireEvent.click(screen.getByRole('button', { name: '시작 점수 100분의 1로 전환' }));
+  expect(input).toHaveValue(300);
+});
+
 describe.each(['/set_score_umaoka', '/scan_score'])('%s score rules', path => {
   test('keeps the same actual return score when switching from 25000 to 250 units', () => {
     const encoded = encodeShareState({
@@ -25,9 +41,11 @@ describe.each(['/set_score_umaoka', '/scan_score'])('%s score rules', path => {
     }, true);
     window.history.pushState({}, '', `${path}#d=${encoded}`);
     render(<App />);
-    fireEvent.change(screen.getByLabelText('시작 점수'), { target: { value: '250' } });
+    fireEvent.click(screen.getByRole('button', { name: '시작 점수 100분의 1로 전환' }));
     fireEvent.click(screen.getByRole('button', { name: '우마·오카 설정 펼치기' }));
     expect(screen.getByLabelText('반환 점수')).toHaveValue(300);
+    fireEvent.click(screen.getByRole('button', { name: '시작 점수 100배로 전환' }));
+    expect(screen.getByLabelText('반환 점수')).toHaveValue(30000);
   });
 
   test('restores legacy scan links carrying only the active oka flag', () => {

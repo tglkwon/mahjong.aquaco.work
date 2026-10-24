@@ -11,6 +11,7 @@ test.each(['/set_score', '/set_score_umaoka', '/scan_score'])(
   '%s applies adjustment buttons to the calculated result', path => {
     window.history.pushState({}, '', path);
     render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '시작 점수 100배로 전환' }));
     const input = scoreInputs()[0];
     fireEvent.change(input, { target: { value: '250-320' } });
     fireEvent.click(screen.getAllByRole('button', { name: 'Increment score' })[0]);
@@ -26,7 +27,7 @@ test.each(['/set_score', '/set_score_umaoka', '/scan_score'])(
     window.history.pushState({}, '', path);
     render(<App />);
     const scan = path === '/scan_score';
-    if (!scan) fireEvent.change(screen.getByLabelText('시작 점수'), { target: { value: '250' } });
+    if (scan) fireEvent.click(screen.getByRole('button', { name: '시작 점수 100배로 전환' }));
     const inputs = scoreInputs();
     const values = scan ? ['25000+32000', '25000-32000', '25000', '25000'] : ['250+320', '250-320', '250', '250'];
     values.forEach((value, index) => fireEvent.change(inputs[index], { target: { value } }));

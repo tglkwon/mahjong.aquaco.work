@@ -72,9 +72,17 @@ function ControlPanel({
               type="number"
               value={startingScore}
               onChange={(e) => setStartingScore(parseInt(e.target.value) || 0)}
-              className="w-full max-w-[120px] p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-base sm:text-lg md:text-xl"
+              className="w-full min-w-0 max-w-[120px] p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-base sm:text-lg md:text-xl"
               aria-label={getText('startingScore')}
             />
+            <button
+              type="button"
+              onClick={() => setStartingScore(startingScore >= 10000 ? startingScore / 100 : startingScore * 100)}
+              aria-label={getText(startingScore >= 10000 ? 'divideStartingScore' : 'multiplyStartingScore')}
+              className="shrink-0 px-2 py-1 rounded-md border border-blue-300 bg-blue-50 text-blue-700 font-semibold text-sm hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              {startingScore >= 10000 ? '÷100' : '×100'}
+            </button>
           </div>
 
           {/* Item 2: Sum Difference */}

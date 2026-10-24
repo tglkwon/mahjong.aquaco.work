@@ -14,6 +14,8 @@ export interface Translation {
   noRecordedScores: string;
   shareWarning: string;
   startingScore: string;
+  multiplyStartingScore: string;
+  divideStartingScore: string;
   returnScore: string;
   mahjongWorldTitle: string;
   share: string;
@@ -124,6 +126,8 @@ export const translations: Translations = {
     noRecordedScores: '아직 기록된 점수가 없습니다.',
     shareWarning: '기록은 공유 링크에 포함됩니다. 링크를 잃어버리면 복구할 수 없습니다.',
     startingScore: '시작 점수',
+    multiplyStartingScore: '시작 점수 100배로 전환',
+    divideStartingScore: '시작 점수 100분의 1로 전환',
     returnScore: '반환 점수',
     mahjongWorldTitle: '아쿠아컴퍼니의 마작 월드',
     share: '공유하기',
@@ -220,6 +224,8 @@ export const translations: Translations = {
     noRecordedScores: 'No scores have been recorded yet.',
     shareWarning: 'Records are included in the share link. If you lose the link, they cannot be recovered.',
     startingScore: 'Starting Score',
+    multiplyStartingScore: 'Multiply starting score by 100',
+    divideStartingScore: 'Divide starting score by 100',
     returnScore: 'Return Score',
     mahjongWorldTitle: "Aquaco's Mahjong World",
     share: 'Share',
@@ -315,6 +321,8 @@ export const translations: Translations = {
     noRecordedScores: 'まだ記録された点数はありません。',
     shareWarning: '記録は共有リンクに含まれます。リンクを失うと復元できません。',
     startingScore: '開始点',
+    multiplyStartingScore: '開始点を100倍に切り替え',
+    divideStartingScore: '開始点を100分の1に切り替え',
     returnScore: '返し点',
     mahjongWorldTitle: 'アクアカンパニーの麻雀ワールド',
     share: '共有',

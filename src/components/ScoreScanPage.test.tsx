@@ -112,7 +112,7 @@ test('changing starting score dynamically updates total target in ControlPanel a
   render(<App />);
 
   const startingScoreInput = screen.getByLabelText('시작 점수');
-  expect(startingScoreInput).toHaveValue(25000);
+  expect(startingScoreInput).toHaveValue(250);
   expect(screen.getByText(/100,000/)).toBeInTheDocument();
 
   // 시작 점수를 30,000점으로 변경
@@ -293,6 +293,7 @@ test('production /scan_score polls Table 1 status, displays nicknames, and calls
   expect(screen.getByText(/🟢 2개 기종 교차 검증 통과/)).toBeInTheDocument();
 
   // Test finish API call in production
+  fireEvent.click(screen.getByRole('button', { name: '시작 점수 100배로 전환' }));
   fireEvent.change(screen.getByLabelText('경기 1 동 점수'), { target: { value: '25000' } });
   fireEvent.change(screen.getByLabelText('경기 1 남 점수'), { target: { value: '25000' } });
   fireEvent.change(screen.getByLabelText('경기 1 서 점수'), { target: { value: '25000' } });

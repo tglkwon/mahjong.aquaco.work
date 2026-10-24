@@ -134,7 +134,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     if (typeof loadedState?.startingScore === 'number') {
       return loadedState.startingScore;
     }
-    return 25000;
+    return 250;
   });
 
   const [isOkaEnabled, setIsOkaEnabled] = useState<boolean>(Boolean(loadedState?.isOkaEnabled || loadedState?.activeUmaOka?.oka));

@@ -36,7 +36,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
   const parseStateFromUrl = useCallback(() => parseShareStateFromHash(window.location.hash, true), []);
   const loadedState = useMemo(() => parseStateFromUrl(), [parseStateFromUrl]);
 
-  const [startingScore, setStartingScore] = useState<number>(() => loadedState?.startingScore ?? 25000);
+  const [startingScore, setStartingScore] = useState<number>(() => loadedState?.startingScore ?? 250);
   const [isOkaEnabled, setIsOkaEnabled] = useState<boolean>(() => loadedState ? Boolean(loadedState.isOkaEnabled || loadedState.activeUmaOka?.oka) : true);
   const [returnScore, setReturnScore] = useState<number>(() => loadedState?.returnScore ?? getDefaultReturnScore(startingScore, isOkaEnabled));
   const { scoreMultiplier, scaledStartingScore, scaledReturnScore, okaAmount } = useMemo(
