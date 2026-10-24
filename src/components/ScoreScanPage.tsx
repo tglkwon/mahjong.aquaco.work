@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import PlayerManagementAndScores from './PlayerManagementAndScores';
 import PlayerTotals from './PlayerTotals';
 import UmaOkaTable from './UmaOkaTable';
+import { evaluateScoreExpression } from '../utils/scoreExpression';
 import ControlPanel from './ControlPanel';
 import MessageDisplay from './MessageDisplay';
 import PhotoUploadPanel from './PhotoUploadPanel';
@@ -300,14 +301,13 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
 
   // 점수 입력 및 라운드 관리 핸들러
   const handleUmaOkaScoreChange = (gameId: number, position: string, newScore: string) => {
-    const filtered = newScore.replace(/[^0-9-.]/g, '');
     setGames(prev => prev.map(g => {
       if (g.id !== gameId) return g;
       return {
         ...g,
         scores: {
           ...(g.scores as UmaOkaScores),
-          [position]: filtered,
+          [position]: newScore,
         },
       };
     }));
@@ -441,8 +441,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     if (!currentEditableGame) return 0;
     const s = currentEditableGame.scores as UmaOkaScores;
     return ['east', 'south', 'west', 'north'].reduce((sum, pos) => {
-      const val = parseInt(s[pos as keyof UmaOkaScores] || '0', 10);
-      return sum + (isNaN(val) ? 0 : val);
+      return sum + (evaluateScoreExpression(s[pos as keyof UmaOkaScores] || '') ?? 0);
     }, 0);
   }, [currentEditableGame]);
 
@@ -456,7 +455,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
     const scoresArr = [s.east, s.south, s.west, s.north];
     const playersArr = [p.east, p.south, p.west, p.north];
 
-    if (scoresArr.some(score => score === '' || isNaN(parseInt(score, 10)))) {
+    if (scoresArr.some(score => evaluateScoreExpression(score) === null)) {
       setPopupMessage({ show: true, text: getText('popup_generic_error') });
       setTimeout(() => setPopupMessage({ show: false, text: '' }), 2000);
       return;
@@ -484,10 +483,10 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
           body: JSON.stringify({
             table_id: 1,
             scores: {
-              east: parseInt(s.east, 10),
-              south: parseInt(s.south, 10),
-              west: parseInt(s.west, 10),
-              north: parseInt(s.north, 10),
+              east: evaluateScoreExpression(s.east),
+              south: evaluateScoreExpression(s.south),
+              west: evaluateScoreExpression(s.west),
+              north: evaluateScoreExpression(s.north),
             },
             participants: {
               east: tableLiveSeats?.east?.client_id || playerPool[playersArr[0]],
@@ -518,7 +517,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
       }
     }
 
-    handlePhotoConfirm(scoresArr, playersArr);
+    handlePhotoConfirm(scoresArr.map(score => String(evaluateScoreExpression(score))), playersArr);
   };
 
   const handleScoreInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -531,10 +530,12 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
   const handleUmaOkaScoreButtonClick = (gameId: number, position: string, operation: 'increment' | 'decrement') => {
     const targetGame = games.find(g => g.id === gameId);
     if (!targetGame) return;
-    const currentVal = parseInt((targetGame.scores as UmaOkaScores)[position as keyof UmaOkaScores] || '0', 10);
+    const input = (targetGame.scores as UmaOkaScores)[position as keyof UmaOkaScores] || '';
+    const currentVal = input === '' ? 0 : evaluateScoreExpression(input);
+    if (currentVal === null) return;
     const step = 1000;
     const increment = operation === 'increment' ? step : -step;
-    const newVal = String(isNaN(currentVal) ? increment : currentVal + increment);
+    const newVal = String(currentVal + increment);
     handleUmaOkaScoreChange(gameId, position, newVal);
   };
 
@@ -642,6 +643,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
       />
 
       {/* 제어 및 룰 설정 패널 */}
+      <p className="w-full max-w-6xl my-2 text-xs sm:text-sm text-gray-600">{getText('scoreExpressionHint')}</p>
       <ControlPanel
         startingScore={startingScore}
         setStartingScore={setStartingScore}
@@ -652,7 +654,7 @@ function ScoreScanPage({ currentLanguage, setCurrentLanguage, getText, translati
         totalTargetScore={targetTotalScore}
         currentTotal={currentTotal}
         onRecordButtonPress={handleRecordButtonPress}
-        isAddRecordButtonDisabled={currentTotal !== targetTotalScore}
+        isAddRecordButtonDisabled={currentTotal !== targetTotalScore || !currentEditableGame || Object.values(currentEditableGame.scores).some(score => evaluateScoreExpression(score) === null)}
         copyToClipboard={copyToClipboard}
         getText={getText}
         showUmaOkaControls={true}

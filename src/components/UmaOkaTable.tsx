@@ -1,4 +1,5 @@
 import React from 'react';
+import { evaluateScoreExpression } from '../utils/scoreExpression';
 import { Translation } from '../i18n/translations';
 import { Game, UmaOkaScores } from '../types';
 
@@ -100,7 +101,9 @@ function EditableGameRow({ game, gameNumber, playerNames, getText, handleScoreIn
               </select>
               <div className="relative">
                 <input
-                  type="number"
+                  type="text"
+                  aria-invalid={(game.scores as UmaOkaScores)[position] !== '' && evaluateScoreExpression((game.scores as UmaOkaScores)[position] ?? '') === null}
+                  title={getText('scoreExpressionHint')}
                   value={(game.scores as UmaOkaScores)[position] ?? ''}
                   onChange={(e) => handleUmaOkaScoreChange(game.id, position, e.target.value)}
                   onKeyDown={handleScoreInputKeyDown}

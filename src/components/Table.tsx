@@ -1,4 +1,5 @@
 import React from 'react';
+import { evaluateScoreExpression } from '../utils/scoreExpression';
 import { Translation } from '../i18n/translations';
 import { Game } from '../types';
 
@@ -80,7 +81,9 @@ function Table({ allowDeleteLast = false, playerNames, games, totalScores, getTe
                       {game.isEditable ? (
                         <div className="relative w-full">
                           <input
-                            type="number"
+                            type="text"
+                            aria-invalid={(game.scores as string[])[playerIndex] !== '' && evaluateScoreExpression((game.scores as string[])[playerIndex]) === null}
+                            title={getText('scoreExpressionHint')}
                             value={(game.scores as string[])[playerIndex]}
                             onChange={(e) => handleScoreChange(game.id, playerIndex, e.target.value)}
                             onKeyDown={handleScoreInputKeyDown}

@@ -6,7 +6,7 @@ import App from './App';
 jest.setTimeout(30000);
 
 const enterScoresAndAddRecord = async () => {
-  const inputs = screen.getAllByRole('spinbutton').slice(0, 4);
+  const inputs = screen.getAllByRole('textbox', { name: /경기 1 .* 점수/ });
   const scores = ['40000', '30000', '20000', '10000'];
   for (let i = 0; i < 4; i += 1) {
     userEvent.clear(inputs[i]);
@@ -20,7 +20,7 @@ describe('Integration Tests', () => {
   test('Score Page: enter scores and add a record', async () => {
     window.history.pushState({}, '', '/set_score');
     render(<App />);
-    expect(screen.getAllByRole('spinbutton').length).toBeGreaterThanOrEqual(4);
+    expect(screen.getAllByRole('textbox', { name: /경기 1 .* 점수/ })).toHaveLength(4);
     await enterScoresAndAddRecord();
     await waitFor(() => {
       expect(screen.getAllByText(/2/i, { selector: 'td' }).length).toBeGreaterThan(0);

@@ -9,6 +9,7 @@ import MessageDisplay from './MessageDisplay';
 import UmaOkaTable from './UmaOkaTable';
 import { Translation, Translations } from '../i18n/translations';
 import { Game, UmaOkaParticipants, UmaOkaScores } from '../types';
+import { evaluateScoreExpression } from '../utils/scoreExpression';
 
 type Language = keyof Translations;
 type TranslationKey = keyof Translation;
@@ -227,7 +228,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
 
     const lastGameScores = isUmaOkaPage ? Object.values(lastGame.scores as UmaOkaScores) : lastGame.scores as string[];
     // Cast strict logic: in umaoka scores is obj, normal is array
-    return (lastGameScores as string[]).reduce((sum, score) => sum + ((parseInt(score, 10) || 0) * scoreMultiplier), 0);
+    return (lastGameScores as string[]).reduce((sum, score) => sum + ((evaluateScoreExpression(score) ?? 0) * scoreMultiplier), 0);
   }, [games, isUmaOkaPage, scoreMultiplier]);
 
   const handleAddGame = () => {
@@ -242,11 +243,11 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
               }
             });
             Object.keys(newScores).forEach(position => {
-              newScores[position] = String(parseInt(newScores[position], 10));
+              newScores[position] = String(evaluateScoreExpression(newScores[position]) ?? 0);
             });
             return { ...game, scores: newScores, isEditable: false };
           } else {
-            const newScores = (game.scores as string[]).map(score => (score === '' || score === null ? '0' : String(score)));
+            const newScores = (game.scores as string[]).map(score => String(evaluateScoreExpression(score) ?? 0));
             return { ...game, scores: newScores, isEditable: false };
           }
         }
@@ -279,10 +280,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
           ...game,
           scores: (game.scores as string[]).map((score, idx) => {
             if (idx === playerIndex) {
-              const filteredScore = newScore.replace(/[^0-9-.]/g, '');
-              if (filteredScore === '' || filteredScore === '-') return filteredScore;
-              const num = parseInt(filteredScore, 10);
-              return isNaN(num) ? '' : String(num); // Ensure string
+              return newScore;
             }
             return score;
           }),
@@ -296,7 +294,9 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     setGames(currentGames =>
       currentGames.map(game => {
         if (game.id === gameId) {
-          const currentScore = parseInt((game.scores as string[])[playerIndex], 10) || 0;
+          const input = (game.scores as string[])[playerIndex];
+          const currentScore = input === '' ? 0 : evaluateScoreExpression(input);
+          if (currentScore === null) return game;
           const newScore = operation === 'increment' ? currentScore + amount : currentScore - amount;
           return {
             ...game,
@@ -375,7 +375,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     setGames(currentGames => currentGames.map(game =>
       game.id === gameId
         // Type assertion needed for nested object update in TS
-        ? { ...game, scores: { ...(game.scores as UmaOkaScores), [position]: newScore.replace(/[^0-9-.]/g, '') } }
+        ? { ...game, scores: { ...(game.scores as UmaOkaScores), [position]: newScore } }
         : game
     ));
   };
@@ -385,7 +385,9 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     setGames(currentGames =>
       currentGames.map(game => {
         if (game.id === gameId) {
-          const currentScore = parseInt((game.scores as UmaOkaScores)[position], 10) || 0;
+          const input = (game.scores as UmaOkaScores)[position];
+          const currentScore = input === '' ? 0 : evaluateScoreExpression(input);
+          if (currentScore === null) return game;
           const newScore = operation === 'increment' ? currentScore + amount : currentScore - amount;
           return {
             ...game,
@@ -409,7 +411,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
     if (!isUmaOkaPage) {
       return Array(PLAYER_COUNT).fill(0).map((_, playerIndex) =>
         games.reduce((sum, game) => {
-          const score = (parseInt((game.scores as string[])[playerIndex], 10) || 0) * scoreMultiplier;
+          const score = (evaluateScoreExpression((game.scores as string[])[playerIndex]) ?? 0) * scoreMultiplier;
           return sum + score;
         }, 0)
       );
@@ -477,6 +479,9 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
   }, [startingScore, returnScore, isOkaEnabled]);
 
   const addRecordButtonStatus = useMemo(() => {
+    const editableScores = games.filter(game => game.isEditable).flatMap(game =>
+      Array.isArray(game.scores) ? game.scores : Object.values(game.scores));
+    if (editableScores.some(score => score !== '' && evaluateScoreExpression(score) === null)) return 'invalid_score';
     if (isUmaOkaPage) {
       const lastGame = games[games.length - 1];
       if (!lastGame || !lastGame.participants) return 'no_participants';
@@ -558,6 +563,7 @@ function ScoreTrackerPage({ currentLanguage, setCurrentLanguage, getText, transl
           handleScoreButtonClick={handleScoreButtonClick}
         />
       )}
+      <p className="w-full max-w-6xl my-2 text-xs sm:text-sm text-gray-600">{getText('scoreExpressionHint')}</p>
       <ControlPanel
         startingScore={startingScore}
         setStartingScore={setStartingScore}

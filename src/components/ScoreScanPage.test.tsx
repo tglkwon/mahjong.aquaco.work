@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from '../App';
 import { encodeShareState, parseShareStateFromHash } from '../utils/shareState';
 import { startScoreCamera } from '../utils/scoreCamera';
@@ -50,10 +50,10 @@ test('real-time scan consensus automatically injects scores into UmaOkaTable and
   act(() => options.onCapture(frame, reading));
 
   // UmaOkaTable 편집 행에 4자리 변환 점수가 즉시 주입되었는지 확인
-  expect(screen.getByLabelText('경기 2 동 점수')).toHaveValue(30000);
-  expect(screen.getByLabelText('경기 2 남 점수')).toHaveValue(30000);
-  expect(screen.getByLabelText('경기 2 서 점수')).toHaveValue(20000);
-  expect(screen.getByLabelText('경기 2 북 점수')).toHaveValue(20000);
+  expect(screen.getByLabelText('경기 2 동 점수')).toHaveValue('30000');
+  expect(screen.getByLabelText('경기 2 남 점수')).toHaveValue('30000');
+  expect(screen.getByLabelText('경기 2 서 점수')).toHaveValue('20000');
+  expect(screen.getByLabelText('경기 2 북 점수')).toHaveValue('20000');
 
   // ControlPanel의 기록 추가 및 공유 버튼으로 확정
   const addRecordButton = screen.getByRole('button', { name: '기록 추가하고 공유하기' });
@@ -204,9 +204,9 @@ test('testMode clicking record button calls /api/sessions/:id/finish', async () 
 
   await screen.findByText('테이블 1 실시간 연동 중');
 
-  // 점수 25000점씩 입력
-  fireEvent.change(screen.getByLabelText('경기 1 동 점수'), { target: { value: '25000' } });
-  fireEvent.change(screen.getByLabelText('경기 1 남 점수'), { target: { value: '25000' } });
+  // 수식의 계산 결과를 서버와 로컬 기록에 저장합니다.
+  fireEvent.change(screen.getByLabelText('경기 1 동 점수'), { target: { value: '25000+32000' } });
+  fireEvent.change(screen.getByLabelText('경기 1 남 점수'), { target: { value: '25000-32000' } });
   fireEvent.change(screen.getByLabelText('경기 1 서 점수'), { target: { value: '25000' } });
   fireEvent.change(screen.getByLabelText('경기 1 북 점수'), { target: { value: '25000' } });
 
@@ -217,6 +217,9 @@ test('testMode clicking record button calls /api/sessions/:id/finish', async () 
     '/api/sessions/88/finish',
     expect.objectContaining({ method: 'POST' })
   );
+  const finishCall = fetchSpy.mock.calls.find(([url]) => url === '/api/sessions/88/finish')!;
+  expect(JSON.parse(finishCall[1]!.body as string).scores).toEqual({ east: 57000, south: -7000, west: 25000, north: 25000 });
+  await waitFor(() => expect(screen.getByText(/총 1 경기/)).toBeInTheDocument());
 });
 
 test('shows test controls on /scan_score when testMode is true and hides in normal mode', () => {

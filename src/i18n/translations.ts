@@ -26,6 +26,7 @@ export interface Translation {
   player: string;
   name: string;
   score: string;
+  scoreExpressionHint: string;
   unitFormationMachine: string;
   unitFormationDesc: string;
   scoreTrackerUmaOkaTitle: string;
@@ -135,6 +136,7 @@ export const translations: Translations = {
     player: '플레이어',
     name: '이름',
     score: '점수',
+    scoreExpressionHint: '덧셈·뺄셈 수식도 입력할 수 있습니다 (예: 250+320, 250-320). 기록 시 계산 결과가 저장됩니다.',
     unitFormationMachine: '대탁 기록표',
     unitFormationDesc: '대탁할 때 편하게 기록하세요. 여기는 서버에 저장되지 않는 페이지입니다.',
     scoreTrackerUmaOkaTitle: '대탁 기록표 (우마/오카)',
@@ -230,6 +232,7 @@ export const translations: Translations = {
     player: 'Player',
     name: 'Name',
     score: 'Score',
+    scoreExpressionHint: 'You can enter addition or subtraction (e.g. 250+320, 250-320). The calculated result is saved when recorded.',
     unitFormationMachine: 'Mahjong Score Record',
     unitFormationDesc: 'Easily record your mahjong games. This page is not saved to the server.',
     scoreTrackerUmaOkaTitle: 'Score Tracker (Uma/Oka)',
@@ -324,6 +327,7 @@ export const translations: Translations = {
     player: 'プレイヤー',
     name: '名前',
     score: '点数',
+    scoreExpressionHint: '足し算・引き算も入力できます（例: 250+320、250-320）。記録時に計算結果が保存されます。',
     unitFormationMachine: '麻雀スコア記録表',
     unitFormationDesc: '麻雀を打つ際に楽に記録できます。このページはサーバーに保存されません。',
     scoreTrackerUmaOkaTitle: 'スコア記録表 (ウマ/オカ)',
